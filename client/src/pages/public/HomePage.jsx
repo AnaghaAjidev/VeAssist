@@ -5,6 +5,8 @@ import {
     FilePlus, FolderOpen, UserCheck, MapPinned, CircleCheckBig
 } from "lucide-react";
 import Footer from "../../components/common/Footer";
+import aboutImage from "../../assets/about-image.png";
+import { Link } from "react-router-dom";
 
 
 function HomePage() {
@@ -83,7 +85,7 @@ function HomePage() {
         <>
             <Navbar />
 
-            <section className="min-h-screen pt-32 bg-gradient-to-br from-[#F8FBFF] via-[#EEF5FF] to-[#F7FAFC] flex items-center">  <div className="max-w-7xl mx-auto px-6 lg:px-12 grid lg:grid-cols-2 gap-12 items-center">
+            <section id="home" className="min-h-screen pt-32 bg-gradient-to-br from-[#F8FBFF] via-[#EEF5FF] to-[#F7FAFC] flex items-center">  <div className="max-w-7xl mx-auto px-6 lg:px-12 grid lg:grid-cols-2 gap-12 items-center">
 
                 {/* Left Content */}
                 <div>
@@ -112,9 +114,17 @@ function HomePage() {
                             Register Now
                         </button>
 
-                        <button className="border border-[#0B1F3A] text-[#0B1F3A] px-7 py-3 rounded-xl hover:bg-[#0B1F3A] hover:text-white transition">
-                            Explore Features
-                        </button>
+                        <button
+  onClick={() =>
+    document.getElementById("features")?.scrollIntoView({
+      behavior: "smooth",
+    })
+  }
+  className="border border-[#0B1F3A] text-[#0B1F3A] px-7 py-3 rounded-xl hover:bg-[#0B1F3A] hover:text-white transition"
+>
+  Explore Features
+</button>
+
                     </div>
                 </div>
 
@@ -134,8 +144,86 @@ function HomePage() {
             </div>
             </section>
 
+            {/* About Section */}
+            <section id="about" className="py-24 bg-white border-t border-slate-200">
+
+                <div className="max-w-7xl mx-auto px-6 lg:px-12">
+
+                    <div className="grid lg:grid-cols-2 gap-16 items-center">
+
+                        {/* Left Image */}
+
+                        <div className="flex justify-center">
+
+                            <img
+                                src={aboutImage}
+                                alt="About VeAssist"
+                                className="w-[85%] rounded-3xl drop-shadow-[0_25px_50px_rgba(0,0,0,0.18)]"
+                            />
+
+                        </div>
+
+                        {/* Right Content */}
+
+                        <div>
+
+                            <p className="uppercase tracking-[5px] text-[#D4AF37] font-semibold mb-4">
+                                Why VeAssist?
+                            </p>
+
+                            <h2 className="text-5xl font-bold text-[#0B1F3A] leading-tight">
+                                Because No Family
+                                <br />
+                                Should Navigate
+                                <br />
+                                Alone
+                            </h2>
+
+                            <p className="mt-6 text-gray-600 leading-8 text-lg">
+                                Losing a loved one is emotionally challenging, and navigating
+                                multiple government procedures during such a time can be
+                                overwhelming.
+
+                                VeAssist was created to simplify this journey by providing
+                                families with clear guidance, organized documentation,
+                                and continuous support—helping them focus on what truly
+                                matters while ensuring no important step is missed.
+                            </p>
+
+                            {/* Statistics */}
+
+                            <div className="grid grid-cols-3 gap-6 mt-10">
+
+                                <div>
+                                    <h3 className="text-3xl font-bold text-[#0B1F3A]">24/7</h3>
+                                    <p className="text-gray-500 mt-2">AI Guidance</p>
+                                </div>
+
+                                <div>
+                                    <h3 className="text-3xl font-bold text-[#0B1F3A]">100%</h3>
+                                    <p className="text-gray-500 mt-2">Secure Records</p>
+                                </div>
+
+                                <div>
+                                    <h3 className="text-3xl font-bold text-[#0B1F3A]">5+</h3>
+                                    <p className="text-gray-500 mt-2">Key Services</p>
+                                </div>
+
+                            </div>
+
+                            <Link to="/about">
+                                <button className="mt-10 bg-[#0B1F3A] text-white px-7 py-3 rounded-xl hover:bg-[#1F4E79] transition">
+                                    Read More
+                                </button>
+                            </Link>
+
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             {/* Features Section */}
-            <section className="py-24 bg-white">
+            <section id="features" className="py-24 bg-[#F4F8FD] border-t border-slate-200">
 
                 <div className="max-w-7xl mx-auto px-6">
 
@@ -183,7 +271,7 @@ function HomePage() {
             </section>
 
             {/* Workflow Section */}
-            <section className="py-24 bg-[#EDF4FC]">
+            <section className="py-24 bg-[#EEF5FF] border-t border-slate-200">
 
                 <div className="max-w-7xl mx-auto px-6">
 
@@ -227,7 +315,7 @@ function HomePage() {
                 </div>
             </section>
 
-            <Footer />
+            <Footer id="contact" />
         </>
     );
 }

@@ -1,7 +1,28 @@
 import logo from "../../assets/logo.png";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 function Navbar() {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const scrollToSection = (id) => {
+    if (location.pathname !== "/") {
+      navigate("/");
+
+      setTimeout(() => {
+        document.getElementById(id)?.scrollIntoView({
+          behavior: "smooth",
+        });
+      }, 100);
+    } else {
+      document.getElementById(id)?.scrollIntoView({
+        behavior: "smooth",
+      });
+    }
+  };
+
   return (
+
     <nav className="fixed top-0 left-0 w-full bg-white/90 backdrop-blur-md shadow-md z-50">
       <div className="max-w-7xl mx-auto flex items-center justify-between px-8 py-4">
 
@@ -20,19 +41,31 @@ function Navbar() {
 
         {/* Navigation Links */}
         <ul className="hidden md:flex items-center gap-10 text-[17px] font-medium text-gray-700">
-          <li className="cursor-pointer hover:text-[#D4AF37] transition duration-300">
+          <li
+            onClick={() => scrollToSection("home")}
+            className="cursor-pointer hover:text-[#0B1F3A]"
+          >
             Home
           </li>
 
-          <li className="cursor-pointer hover:text-[#D4AF37] transition duration-300">
+          <li
+            onClick={() => scrollToSection("about")}
+            className="cursor-pointer hover:text-[#0B1F3A]"
+          >
             About
           </li>
 
-          <li className="cursor-pointer hover:text-[#D4AF37] transition duration-300">
+          <li
+            onClick={() => scrollToSection("features")}
+            className="cursor-pointer hover:text-[#0B1F3A]"
+          >
             Features
           </li>
 
-          <li className="cursor-pointer hover:text-[#D4AF37] transition duration-300">
+          <li
+            onClick={() => scrollToSection("contact")}
+            className="cursor-pointer hover:text-[#0B1F3A]"
+          >
             Contact
           </li>
         </ul>
