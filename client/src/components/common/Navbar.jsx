@@ -71,7 +71,10 @@ function Navbar() {
         </ul>
 
         {/* Login Button */}
-        <button className="bg-[#0B1F3A] text-white px-6 py-3 rounded-xl font-medium hover:bg-[#1F4E79] transition duration-300 shadow-md hover:shadow-lg">
+        <button
+          onClick={() => navigate("/login")}
+          className="bg-[#0B1F3A] text-white px-6 py-3 rounded-xl font-medium hover:bg-[#1F4E79] transition duration-300 shadow-md hover:shadow-lg"
+        >
           Login
         </button>
 

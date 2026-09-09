@@ -116,9 +116,12 @@ function HomePage() {
                     </p>
 
                     <div className="mt-8 flex gap-4">
-                        <button className="bg-[#0B1F3A] text-white px-7 py-3 rounded-xl hover:bg-[#1F4E79] transition">
+                        <Link
+                            to="/register"
+                            className="bg-[#0B1F3A] text-white px-7 py-3 rounded-xl hover:bg-[#1F4E79] transition inline-block"
+                        >
                             Register Now
-                        </button>
+                        </Link>
 
                         <button
                             onClick={() =>
@@ -277,74 +280,74 @@ function HomePage() {
                 </div>
             </section>
 
-           {/* Workflow Section */}
-<section className="py-24 bg-[#EEF5FF] border-t border-slate-200">
+            {/* Workflow Section */}
+            <section className="py-24 bg-[#EEF5FF] border-t border-slate-200">
 
-    <div className="max-w-7xl mx-auto px-6">
+                <div className="max-w-7xl mx-auto px-6">
 
-        <h2 className="text-4xl font-bold text-center text-[#0B1F3A]">
-            How VeAssist Works
-        </h2>
+                    <h2 className="text-4xl font-bold text-center text-[#0B1F3A]">
+                        How VeAssist Works
+                    </h2>
 
-        <p className="text-center text-gray-600 mt-4 mb-16 text-lg">
-            A simple step-by-step assistance process for Naval Ex-Servicemen families.
-        </p>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-8">
-
-            {workflow.map((item, index) => (
-
-                <div
-                    key={index}
-                    className="relative bg-white rounded-2xl p-8 shadow-md border border-transparent hover:border-[#0B1F3A] hover:shadow-2xl hover:-translate-y-2 transition duration-300 text-center h-full"
-                >
-
-                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#0B1F3A] text-white w-10 h-10 rounded-full flex items-center justify-center font-bold">
-                        {item.step}
-                    </div>
-
-                    <div className="flex justify-center mt-6 text-[#1F4E79] mb-5">
-                        {item.icon}
-                    </div>
-
-                    <h3 className="text-xl font-semibold text-[#0B1F3A] mb-3">
-                        {item.title}
-                    </h3>
-
-                    <p className="text-gray-600 leading-7 text-sm">
-                        {item.description}
+                    <p className="text-center text-gray-600 mt-4 mb-16 text-lg">
+                        A simple step-by-step assistance process for Naval Ex-Servicemen families.
                     </p>
+
+                    <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-8">
+
+                        {workflow.map((item, index) => (
+
+                            <div
+                                key={index}
+                                className="relative bg-white rounded-2xl p-8 shadow-md border border-transparent hover:border-[#0B1F3A] hover:shadow-2xl hover:-translate-y-2 transition duration-300 text-center h-full"
+                            >
+
+                                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#0B1F3A] text-white w-10 h-10 rounded-full flex items-center justify-center font-bold">
+                                    {item.step}
+                                </div>
+
+                                <div className="flex justify-center mt-6 text-[#1F4E79] mb-5">
+                                    {item.icon}
+                                </div>
+
+                                <h3 className="text-xl font-semibold text-[#0B1F3A] mb-3">
+                                    {item.title}
+                                </h3>
+
+                                <p className="text-gray-600 leading-7 text-sm">
+                                    {item.description}
+                                </p>
+
+                            </div>
+
+                        ))}
+
+                    </div>
+
+                    {/* Continued Assistance */}
+                    <div className="mt-14 text-center">
+
+                        <p className="text-[#1F4E79] text-lg font-medium">
+                            Assistance continues beyond case completion
+                        </p>
+
+                        <div className="flex items-center justify-center gap-3 mt-3">
+                            <span className="text-[#0B1F3A] font-semibold">
+                                Scholarships
+                            </span>
+
+                            <span className="text-[#D4AF37]">•</span>
+
+                            <span className="text-[#0B1F3A] font-semibold">
+                                Widow Vocational Training
+                            </span>
+                        </div>
+
+                    </div>
 
                 </div>
 
-            ))}
-
-        </div>
-
-        {/* Continued Assistance */}
-        <div className="mt-14 text-center">
-
-            <p className="text-[#1F4E79] text-lg font-medium">
-                Assistance continues beyond case completion
-            </p>
-
-            <div className="flex items-center justify-center gap-3 mt-3">
-                <span className="text-[#0B1F3A] font-semibold">
-                    Scholarships
-                </span>
-
-                <span className="text-[#D4AF37]">•</span>
-
-                <span className="text-[#0B1F3A] font-semibold">
-                    Widow Vocational Training
-                </span>
-            </div>
-
-        </div>
-
-    </div>
-
-</section>
+            </section>
 
             <Footer id="contact" />
         </>
