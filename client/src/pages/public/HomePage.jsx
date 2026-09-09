@@ -1,7 +1,7 @@
 import Navbar from "../../components/common/Navbar";
 import heroImage from "../../assets/hero-image.png";
 import {
-    Bot, FileText, ClipboardCheck, Bell, Users, ShieldCheck,
+    Bot, FileText, ClipboardCheck, Bell, Users, ShieldCheck, GraduationCap,
     FilePlus, FolderOpen, UserCheck, MapPinned, CircleCheckBig
 } from "lucide-react";
 import Footer from "../../components/common/Footer";
@@ -14,32 +14,38 @@ function HomePage() {
         {
             icon: <Bot size={40} />,
             title: "AI Guidance",
-            description: "Receive personalized guidance and checklists for every assistance case.",
-        },
-        {
-            icon: <FileText size={40} />,
-            title: "Document Vault",
-            description: "Securely upload and manage all important documents in one place.",
+            description:
+                "Receive personalized guidance, checklists, and smart assistance throughout the welfare process.",
         },
         {
             icon: <ClipboardCheck size={40} />,
-            title: "Case Tracking",
-            description: "Monitor every assistance task and application status.",
+            title: "Case & Application Tracking",
+            description:
+                "Manage assistance cases, applications, tasks, and monitor progress from one place.",
         },
         {
-            icon: <Bell size={40} />,
-            title: "Smart Notifications",
-            description: "Receive reminders and important updates on pending tasks.",
+            icon: <FileText size={40} />,
+            title: "Document Management",
+            description:
+                "Securely upload, organize, and manage important documents with status and missing-document alerts.",
+        },
+        {
+            icon: <GraduationCap size={40} />,
+            title: "Scholarship & Training Assistance",
+            description:
+                "Discover relevant scholarships and widow vocational training opportunities with guidance on eligibility and applications.",
         },
         {
             icon: <Users size={40} />,
             title: "Welfare Officer Support",
-            description: "Stay connected with Welfare Officers throughout the process.",
+            description:
+                "Receive guidance and support from Welfare Officers throughout the assistance process.",
         },
         {
             icon: <ShieldCheck size={40} />,
-            title: "Secure Records",
-            description: "Your personal information and documents remain protected.",
+            title: "Notifications & Secure Records",
+            description:
+                "Receive timely reminders and updates while keeping personal information and records protected.",
         },
     ];
 
@@ -115,15 +121,15 @@ function HomePage() {
                         </button>
 
                         <button
-  onClick={() =>
-    document.getElementById("features")?.scrollIntoView({
-      behavior: "smooth",
-    })
-  }
-  className="border border-[#0B1F3A] text-[#0B1F3A] px-7 py-3 rounded-xl hover:bg-[#0B1F3A] hover:text-white transition"
->
-  Explore Features
-</button>
+                            onClick={() =>
+                                document.getElementById("features")?.scrollIntoView({
+                                    behavior: "smooth",
+                                })
+                            }
+                            className="border border-[#0B1F3A] text-[#0B1F3A] px-7 py-3 rounded-xl hover:bg-[#0B1F3A] hover:text-white transition"
+                        >
+                            Explore Features
+                        </button>
 
                     </div>
                 </div>
@@ -186,8 +192,9 @@ function HomePage() {
 
                                 VeAssist was created to simplify this journey by providing
                                 families with clear guidance, organized documentation,
-                                and continuous support—helping them focus on what truly
-                                matters while ensuring no important step is missed.
+                                application tracking, and continuous assistance—including
+                                access to relevant scholarships and widow vocational training
+                                opportunities.
                             </p>
 
                             {/* Statistics */}
@@ -270,50 +277,74 @@ function HomePage() {
                 </div>
             </section>
 
-            {/* Workflow Section */}
-            <section className="py-24 bg-[#EEF5FF] border-t border-slate-200">
+           {/* Workflow Section */}
+<section className="py-24 bg-[#EEF5FF] border-t border-slate-200">
 
-                <div className="max-w-7xl mx-auto px-6">
+    <div className="max-w-7xl mx-auto px-6">
 
-                    <h2 className="text-4xl font-bold text-center text-[#0B1F3A]">
-                        How VeAssist Works
-                    </h2>
+        <h2 className="text-4xl font-bold text-center text-[#0B1F3A]">
+            How VeAssist Works
+        </h2>
 
-                    <p className="text-center text-gray-600 mt-4 mb-16 text-lg">
-                        A simple step-by-step assistance process for Naval Ex-Servicemen families.
+        <p className="text-center text-gray-600 mt-4 mb-16 text-lg">
+            A simple step-by-step assistance process for Naval Ex-Servicemen families.
+        </p>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-8">
+
+            {workflow.map((item, index) => (
+
+                <div
+                    key={index}
+                    className="relative bg-white rounded-2xl p-8 shadow-md border border-transparent hover:border-[#0B1F3A] hover:shadow-2xl hover:-translate-y-2 transition duration-300 text-center h-full"
+                >
+
+                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#0B1F3A] text-white w-10 h-10 rounded-full flex items-center justify-center font-bold">
+                        {item.step}
+                    </div>
+
+                    <div className="flex justify-center mt-6 text-[#1F4E79] mb-5">
+                        {item.icon}
+                    </div>
+
+                    <h3 className="text-xl font-semibold text-[#0B1F3A] mb-3">
+                        {item.title}
+                    </h3>
+
+                    <p className="text-gray-600 leading-7 text-sm">
+                        {item.description}
                     </p>
 
-                    <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-8">
-
-                        {workflow.map((item, index) => (
-
-                            <div
-                                key={index}
-                                className="relative bg-white rounded-2xl p-8 shadow-md border border-transparent hover:border-[#0B1F3A] hover:shadow-2xl hover:-translate-y-2 transition duration-300 text-center h-full"
-                            >
-
-                                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#0B1F3A] text-white w-10 h-10 rounded-full flex items-center justify-center font-bold">
-                                    {item.step}
-                                </div>
-
-                                <div className="flex justify-center mt-6 text-[#1F4E79] mb-5">
-                                    {item.icon}
-                                </div>
-
-                                <h3 className="text-xl font-semibold text-[#0B1F3A] mb-3">
-                                    {item.title}
-                                </h3>
-
-                                <p className="text-gray-600 leading-7 text-sm">
-                                    {item.description}
-                                </p>
-
-                            </div>
-                        ))}
-
-                    </div>
                 </div>
-            </section>
+
+            ))}
+
+        </div>
+
+        {/* Continued Assistance */}
+        <div className="mt-14 text-center">
+
+            <p className="text-[#1F4E79] text-lg font-medium">
+                Assistance continues beyond case completion
+            </p>
+
+            <div className="flex items-center justify-center gap-3 mt-3">
+                <span className="text-[#0B1F3A] font-semibold">
+                    Scholarships
+                </span>
+
+                <span className="text-[#D4AF37]">•</span>
+
+                <span className="text-[#0B1F3A] font-semibold">
+                    Widow Vocational Training
+                </span>
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
 
             <Footer id="contact" />
         </>

@@ -53,13 +53,17 @@ function Footer() {
             Our Services
           </h3>
 
-          <ul className="space-y-3">
+          <ul className="space-y-2">
 
             <li>AI Guidance</li>
 
             <li>Document Repository</li>
 
-            <li>Case Tracking</li>
+            <li>Case & Application Tracking</li>
+
+            <li>Scholarship Assistance</li>
+
+            <li>Widow Vocational Training</li>
 
             <li>Welfare Officer Support</li>
 
