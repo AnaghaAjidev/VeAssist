@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
+import caseRoutes from "./routes/caseRoutes.js";
 
 dotenv.config();
 
