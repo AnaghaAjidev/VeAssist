@@ -6,6 +6,8 @@ import ScrollToTop from "./components/common/ScrollToTop";
 import LoginPage from "./pages/auth/LoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
+import FamilyDashboard from "./pages/family/FamilyDashboard";
+import DeathAssistancePage from "./pages/family/DeathAssistancePage";
 
 function App() {
   return (
@@ -17,6 +19,8 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/family/dashboard" element={<FamilyDashboard />} />
+        <Route path="/family/death-assistance" element={<DeathAssistancePage />} />
       </Routes>
     </BrowserRouter>
   );

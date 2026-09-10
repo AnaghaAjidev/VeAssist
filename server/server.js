@@ -30,7 +30,7 @@ app.get("/", (req, res) => {
 
 // Authentication routes
 app.use("/api/auth", authRoutes);
-
+app.use("/api/cases", caseRoutes);
 
 const PORT = process.env.PORT || 5000;
 
