@@ -8,13 +8,47 @@ const FamilyDashboard = () => {
     const navigate = useNavigate();
 
     const [cases, setCases] = useState([]);
-const [loadingCases, setLoadingCases] = useState(true);
-const [caseError, setCaseError] = useState("");                                     
-const [selectedCase, setSelectedCase] = useState(null);
-const [updatingTask, setUpdatingTask] = useState("");
+    const [loadingCases, setLoadingCases] = useState(true);
+    const [caseError, setCaseError] = useState("");
+    const [selectedCase, setSelectedCase] = useState(null);
 
     useEffect(() => {
-    const fetchCases = async () => {
+        const fetchCases = async () => {
+            try {
+                const token = localStorage.getItem("token");
+
+                if (!token) {
+                    navigate("/login");
+                    return;
+                }
+
+                const response = await axios.get(
+                    "http://localhost:5000/api/cases/my-cases",
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    }
+                );
+
+                setCases(response.data.cases);
+
+            } catch (error) {
+                console.error("Fetch cases error:", error);
+
+                setCaseError(
+                    error.response?.data?.message ||
+                    "Unable to load assistance cases."
+                );
+            } finally {
+                setLoadingCases(false);
+            }
+        };
+
+        fetchCases();
+    }, [navigate]);
+
+    const loadCaseDetails = async (caseId) => {
         try {
             const token = localStorage.getItem("token");
 
@@ -24,7 +58,7 @@ const [updatingTask, setUpdatingTask] = useState("");
             }
 
             const response = await axios.get(
-                "http://localhost:5000/api/cases/my-cases",
+                `http://localhost:5000/api/cases/${caseId}`,
                 {
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -32,108 +66,18 @@ const [updatingTask, setUpdatingTask] = useState("");
                 }
             );
 
-            setCases(response.data.cases);
+            setSelectedCase(response.data.case);
+            setCaseError("");
 
         } catch (error) {
-            console.error("Fetch cases error:", error);
+            console.error("Load case details error:", error);
 
             setCaseError(
                 error.response?.data?.message ||
-                "Unable to load assistance cases."
+                "Unable to load case details."
             );
-        } finally {
-            setLoadingCases(false);
         }
     };
-
-    fetchCases();
-}, [navigate]);
-
-    const loadCaseDetails = async (caseId) => {
-    try {
-        const token = localStorage.getItem("token");
-
-        if (!token) {
-            navigate("/login");
-            return;
-        }
-
-        const response = await axios.get(
-            `http://localhost:5000/api/cases/${caseId}`,
-            {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            }
-        );
-
-        setSelectedCase(response.data.case);
-        setCaseError("");
-
-    } catch (error) {
-        console.error("Load case details error:", error);
-
-        setCaseError(
-            error.response?.data?.message ||
-            "Unable to load case details."
-        );
-    }
-};
-
-
-const handleTaskStatusChange = async (
-    caseId,
-    taskId,
-    status
-) => {
-    try {
-        const token = localStorage.getItem("token");
-
-        if (!token) {
-            navigate("/login");
-            return;
-        }
-
-        setUpdatingTask(taskId);
-        setCaseError("");
-
-        const response = await axios.put(
-            `http://localhost:5000/api/cases/${caseId}/tasks/${taskId}`,
-            {
-                status,
-            },
-            {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            }
-        );
-
-        setSelectedCase(response.data.case);
-
-        setCases((prevCases) =>
-            prevCases.map((item) =>
-                item.caseId === caseId
-                    ? {
-                          ...item,
-                          status: response.data.case.status,
-                          progress: response.data.case.progress,
-                      }
-                    : item
-            )
-        );
-
-    } catch (error) {
-        console.error("Task update error:", error);
-
-        setCaseError(
-            error.response?.data?.message ||
-            "Unable to update task."
-        );
-    } finally {
-        setUpdatingTask("");
-    }
-};
 
     const storedUser = localStorage.getItem("user");
     const user = storedUser ? JSON.parse(storedUser) : null;
@@ -353,8 +297,11 @@ const handleTaskStatusChange = async (
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
 
                         {/* DOCUMENTS */}
-                        <div className="bg-white rounded-xl border border-slate-200
-                        p-5 flex items-center gap-4 hover:shadow-md transition">
+                        <div
+                            onClick={() => navigate("/family/documents")}
+                            className="bg-white rounded-xl border border-slate-200
+                            p-5 flex items-center gap-4 hover:shadow-md transition
+                            cursor-pointer">
 
                             <div className="w-12 h-12 rounded-lg bg-[#EEF5FF]
                             flex items-center justify-center">
@@ -484,311 +431,294 @@ const handleTaskStatusChange = async (
                 </section>
 
                 {/* ACTIVE ASSISTANCE CASE */}
-<section className="mt-12">
+                <section className="mt-12">
 
-    <div className="mb-6">
-        <h3 className="text-2xl font-bold text-[#0B1F3A]">
-            My Assistance Case
-        </h3>
+                    <div className="mb-6">
+                        <h3 className="text-2xl font-bold text-[#0B1F3A]">
+                            My Assistance Case
+                        </h3>
 
-        <p className="text-gray-600 mt-1">
-            View your current death assistance case and its progress.
-        </p>
-    </div>
+                        <p className="text-gray-600 mt-1">
+                            View your current death assistance case and its progress.
+                        </p>
+                    </div>
 
-    {loadingCases ? (
-        <div className="bg-white rounded-2xl border border-slate-200
+                    {loadingCases ? (
+                        <div className="bg-white rounded-2xl border border-slate-200
         p-8 text-center">
 
-            <p className="text-gray-500">
-                Loading your assistance case...
-            </p>
+                            <p className="text-gray-500">
+                                Loading your assistance case...
+                            </p>
 
-        </div>
-    ) : caseError ? (
-        <div className="bg-red-50 border border-red-200
+                        </div>
+                    ) : caseError ? (
+                        <div className="bg-red-50 border border-red-200
         text-red-700 rounded-xl p-5">
-            {caseError}
-        </div>
-    ) : cases.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-slate-200
+                            {caseError}
+                        </div>
+                    ) : cases.length === 0 ? (
+                        <div className="bg-white rounded-2xl border border-slate-200
         p-8 text-center">
 
-            <h4 className="text-lg font-bold text-[#0B1F3A]">
-                No Assistance Case Yet
-            </h4>
+                            <h4 className="text-lg font-bold text-[#0B1F3A]">
+                                No Assistance Case Yet
+                            </h4>
 
-            <p className="text-gray-500 mt-2">
-                Create a Death Assistance case to begin your
-                assistance journey.
-            </p>
+                            <p className="text-gray-500 mt-2">
+                                Create a Death Assistance case to begin your
+                                assistance journey.
+                            </p>
 
-            <button
-                onClick={() =>
-                    navigate("/family/death-assistance")
-                }
-                className="mt-5 px-5 py-3 bg-[#0B1F3A]
+                            <button
+                                onClick={() =>
+                                    navigate("/family/death-assistance")
+                                }
+                                className="mt-5 px-5 py-3 bg-[#0B1F3A]
                 text-white rounded-lg font-semibold
                 hover:bg-[#1F4E79] transition"
-            >
-                Create Assistance Case
-            </button>
+                            >
+                                Create Assistance Case
+                            </button>
 
-        </div>
-    ) : (
-        cases.map((item) => (
-            <div
-                key={item._id}
-                className="bg-white rounded-2xl border
+                        </div>
+                    ) : (
+                        cases.map((item) => (
+                            <div
+                                key={item._id}
+                                className="bg-white rounded-2xl border
                 border-slate-200 shadow-sm p-7"
-            >
+                            >
 
-                <div className="flex flex-col md:flex-row
+                                <div className="flex flex-col md:flex-row
                 md:items-center md:justify-between gap-5">
 
-                    <div>
-                        <p className="text-sm text-gray-500">
-                            Case ID
-                        </p>
+                                    <div>
+                                        <p className="text-sm text-gray-500">
+                                            Case ID
+                                        </p>
 
-                        <h4 className="text-2xl font-bold
+                                        <h4 className="text-2xl font-bold
                         text-[#0B1F3A] mt-1">
-                            {item.caseId}
-                        </h4>
+                                            {item.caseId}
+                                        </h4>
 
-                        <p className="text-gray-600 mt-2">
-                            Veteran:{" "}
-                            <span className="font-semibold">
-                                {item.veteranDetails?.name}
-                            </span>
-                        </p>
-                    </div>
+                                        <p className="text-gray-600 mt-2">
+                                            Veteran:{" "}
+                                            <span className="font-semibold">
+                                                {item.veteranDetails?.name}
+                                            </span>
+                                        </p>
+                                    </div>
 
-                    <div className="text-left md:text-right">
+                                    <div className="text-left md:text-right">
 
-                        <p className="text-sm text-gray-500">
-                            Status
-                        </p>
+                                        <p className="text-sm text-gray-500">
+                                            Status
+                                        </p>
 
-                        <p className="font-semibold text-[#1F4E79] mt-1">
-                            {item.status}
-                        </p>
+                                        <p className="font-semibold text-[#1F4E79] mt-1">
+                                            {item.status}
+                                        </p>
 
-                    </div>
+                                    </div>
 
-                </div>
+                                </div>
 
 
-                {/* PROGRESS */}
-                <div className="mt-7">
+                                {/* PROGRESS */}
+                                <div className="mt-7">
 
-                    <div className="flex justify-between mb-2">
+                                    <div className="flex justify-between mb-2">
 
-                        <span className="text-sm font-semibold
+                                        <span className="text-sm font-semibold
                         text-gray-600">
-                            Case Progress
-                        </span>
+                                            Case Progress
+                                        </span>
 
-                        <span className="text-sm font-bold
+                                        <span className="text-sm font-bold
                         text-[#0B1F3A]">
-                            {item.progress}%
-                        </span>
+                                            {item.progress}%
+                                        </span>
 
-                    </div>
+                                    </div>
 
-                    <div className="w-full h-3 bg-slate-200 rounded-full">
+                                    <div className="w-full h-3 bg-slate-200 rounded-full">
 
-                        <div
-                            className="h-3 bg-[#D4AF37]
+                                        <div
+                                            className="h-3 bg-[#D4AF37]
                             rounded-full transition-all"
-                            style={{
-                                width: `${item.progress}%`,
-                            }}
-                        />
+                                            style={{
+                                                width: `${item.progress}%`,
+                                            }}
+                                        />
 
-                    </div>
-                            <div className="mt-6">
+                                    </div>
+                                    <div className="mt-6">
 
-    <button
-        onClick={() => loadCaseDetails(item.caseId)}
-        className="flex items-center gap-2
-        text-[#1F4E79] font-semibold
-        hover:text-[#D4AF37] transition"
-    >
-        View Tasks & Timeline
-        <ArrowRight size={18} />
-    </button>
+                                        <button
+                                            onClick={() => {
+                                                loadCaseDetails(item.caseId);
+                                            }}
+                                            className="flex items-center gap-2
+                                            text-[#1F4E79] font-semibold
+                                            hover:text-[#D4AF37] transition"
+                                        >
+                                            View Tasks & Timeline
+                                            <ArrowRight size={18} />
+                                        </button>
 
-</div>
-                </div>
-                            
-            </div>
-        ))
-    )}
+                                    </div>
+                                </div>
 
-{selectedCase && (
-    <div className="mt-8 bg-white rounded-2xl border
+                            </div>
+                        ))
+                    )}
+
+                    {selectedCase && (
+                        <div className="mt-8 bg-white rounded-2xl border
     border-slate-200 shadow-sm p-7">
 
-        {/* CASE HEADER */}
-        <div className="flex flex-col md:flex-row
+                            {/* CASE HEADER */}
+                            <div className="flex flex-col md:flex-row
         md:items-center md:justify-between gap-4">
 
-            <div>
-                <p className="text-sm text-gray-500">
-                    Selected Case
-                </p>
+                                <div>
+                                    <p className="text-sm text-gray-500">
+                                        Selected Case
+                                    </p>
 
-                <h3 className="text-2xl font-bold text-[#0B1F3A] mt-1">
-                    {selectedCase.caseId}
-                </h3>
+                                    <h3 className="text-2xl font-bold text-[#0B1F3A] mt-1">
+                                        {selectedCase.caseId}
+                                    </h3>
 
-                <p className="text-gray-600 mt-1">
-                    Veteran: {selectedCase.veteranDetails?.name}
-                </p>
-            </div>
+                                    <p className="text-gray-600 mt-1">
+                                        Veteran: {selectedCase.veteranDetails?.name}
+                                    </p>
+                                </div>
 
-            <div>
-                <span className="inline-flex items-center
+                                <div>
+                                    <span className="inline-flex items-center
                 px-4 py-2 rounded-full bg-[#EEF5FF]
                 text-[#1F4E79] font-semibold">
 
-                    {selectedCase.status}
+                                        {selectedCase.status}
 
-                </span>
-            </div>
-
-        </div>
-
-
-        {/* TASKS */}
-        <div className="mt-10">
-
-            <h4 className="text-xl font-bold text-[#0B1F3A]">
-                Case Tasks
-            </h4>
-
-            <p className="text-gray-500 mt-1 mb-5">
-                Complete the required activities for your assistance case.
-            </p>
-
-            <div className="space-y-4">
-
-                {selectedCase.tasks?.map((task) => (
-
-                    <div
-                        key={task._id}
-                        className="border border-slate-200
-                        rounded-xl p-5"
-                    >
-
-                        <div className="flex flex-col md:flex-row
-                        md:items-center md:justify-between gap-4">
-
-                            <div>
-
-                                <h5 className="font-bold text-[#0B1F3A]">
-                                    {task.title}
-                                </h5>
-
-                                <p className="text-sm text-gray-500 mt-1">
-                                    {task.description}
-                                </p>
+                                    </span>
+                                </div>
 
                             </div>
 
-                            <select
-                                value={task.status}
-                                disabled={
-                                    updatingTask === task._id
-                                }
-                                onChange={(e) =>
-                                    handleTaskStatusChange(
-                                        selectedCase.caseId,
-                                        task._id,
-                                        e.target.value
-                                    )
-                                }
-                                className="border border-slate-300
-                                rounded-lg px-3 py-2 text-sm
-                                font-semibold outline-none
-                                focus:ring-2 focus:ring-[#1F4E79]"
-                            >
 
-                                <option value="Pending">
-                                    Pending
-                                </option>
+                            {/* TASKS */}
+                            <div className="mt-10">
 
-                                <option value="In Progress">
-                                    In Progress
-                                </option>
+                                <h4 className="text-xl font-bold text-[#0B1F3A]">
+                                    Case Tasks
+                                </h4>
 
-                                <option value="Completed">
-                                    Completed
-                                </option>
+                                <p className="text-gray-500 mt-1 mb-5">
+                                    Complete the required activities for your assistance case.
+                                </p>
 
-                            </select>
+                                <div className="space-y-4">
 
-                        </div>
+                                    {selectedCase.tasks?.map((task) => (
 
-                    </div>
+                                        <div
+                                            key={task._id}
+                                            className="border border-slate-200
+                        rounded-xl p-5"
+                                        >
 
-                ))}
+                                            <div className="flex flex-col md:flex-row
+                        md:items-center md:justify-between gap-4">
 
-            </div>
+                                                <div>
 
-        </div>
+                                                    <h5 className="font-bold text-[#0B1F3A]">
+                                                        {task.title}
+                                                    </h5>
+
+                                                    <p className="text-sm text-gray-500 mt-1">
+                                                        {task.description}
+                                                    </p>
+
+                                                </div>
+
+                                                <div
+                                                    className={`px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap
+        ${task.status === "Completed"
+                                                            ? "bg-green-50 text-green-700"
+                                                            : task.status === "In Progress"
+                                                                ? "bg-amber-50 text-amber-700"
+                                                                : "bg-slate-100 text-slate-600"
+                                                        }`}
+                                                >
+                                                    {task.status}
+                                                </div>
+
+                                            </div>
+
+                                        </div>
+
+                                    ))}
+
+                                </div>
+
+                            </div>
 
 
-        {/* TIMELINE */}
-        <div className="mt-10">
+                            {/* TIMELINE */}
+                            <div className="mt-10">
 
-            <h4 className="text-xl font-bold text-[#0B1F3A]">
-                Case Timeline
-            </h4>
+                                <h4 className="text-xl font-bold text-[#0B1F3A]">
+                                    Case Timeline
+                                </h4>
 
-            <p className="text-gray-500 mt-1 mb-6">
-                View important events and updates related to this case.
-            </p>
+                                <p className="text-gray-500 mt-1 mb-6">
+                                    View important events and updates related to this case.
+                                </p>
 
-            <div className="space-y-5">
+                                <div className="space-y-5">
 
-                {selectedCase.timeline
-                    ?.slice()
-                    .reverse()
-                    .map((event, index) => (
+                                    {selectedCase.timeline
+                                        ?.slice()
+                                        .reverse()
+                                        .map((event, index) => (
 
-                        <div
-                            key={index}
-                            className="border-l-2 border-[#D4AF37]
+                                            <div
+                                                key={index}
+                                                className="border-l-2 border-[#D4AF37]
                             pl-5"
-                        >
+                                            >
 
-                            <h5 className="font-semibold text-[#0B1F3A]">
-                                {event.event}
-                            </h5>
+                                                <h5 className="font-semibold text-[#0B1F3A]">
+                                                    {event.event}
+                                                </h5>
 
-                            <p className="text-sm text-gray-500 mt-1">
-                                {event.description}
-                            </p>
+                                                <p className="text-sm text-gray-500 mt-1">
+                                                    {event.description}
+                                                </p>
 
-                            <p className="text-xs text-gray-400 mt-1">
-                                {new Date(
-                                    event.date
-                                ).toLocaleString()}
-                            </p>
+                                                <p className="text-xs text-gray-400 mt-1">
+                                                    {new Date(
+                                                        event.date
+                                                    ).toLocaleString()}
+                                                </p>
+
+                                            </div>
+
+                                        ))}
+
+                                </div>
+
+                            </div>
 
                         </div>
+                    )}
 
-                    ))}
-
-            </div>
-
-        </div>
-
-    </div>
-)}
-</section>
+                </section>
 
                 {/* RECENT ACTIVITY */}
                 <section className="mt-12 mb-8">
