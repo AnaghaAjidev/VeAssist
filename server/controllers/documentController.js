@@ -307,3 +307,86 @@ export const getDocumentRequirements = async (req, res) => {
         });
     }
 };
+
+// REVIEW DOCUMENT - WELFARE OFFICER
+export const reviewDocument = async (req, res) => {
+    try {
+        const { documentId } = req.params;
+        const { status, remarks } = req.body;
+
+        // Validate status
+        const allowedStatuses = [
+            "Under Review",
+            "Verified",
+            "Rejected",
+        ];
+
+        if (!allowedStatuses.includes(status)) {
+            return res.status(400).json({
+                message: "Invalid document status.",
+            });
+        }
+
+        // Find document
+        const document = await Document.findById(documentId);
+
+        if (!document) {
+            return res.status(404).json({
+                message: "Document not found.",
+            });
+        }
+
+        // Update document review
+        document.status = status;
+        document.remarks = remarks || "";
+
+        await document.save();
+
+        res.status(200).json({
+            message: "Document review updated successfully.",
+            document,
+        });
+
+    } catch (error) {
+        console.error(
+            "Document review error:",
+            error
+        );
+
+        res.status(500).json({
+            message: "Unable to update document review.",
+        });
+    }
+};
+
+// GET DOCUMENTS FOR WELFARE OFFICER
+export const getOfficerCaseDocuments = async (req, res) => {
+    try {
+        const { caseId } = req.params;
+
+        const assistanceCase = await AssistanceCase.findOne({
+            caseId,
+        });
+
+        if (!assistanceCase) {
+            return res.status(404).json({
+                message: "Assistance case not found.",
+            });
+        }
+
+        const documents = await Document.find({
+            caseId: assistanceCase._id,
+        }).sort({ uploadedAt: -1 });
+
+        res.status(200).json({
+            documents,
+        });
+
+    } catch (error) {
+        console.error("Get officer documents error:", error);
+
+        res.status(500).json({
+            message: "Unable to retrieve case documents.",
+        });
+    }
+};

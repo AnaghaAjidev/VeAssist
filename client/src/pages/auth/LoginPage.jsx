@@ -46,8 +46,16 @@ function LoginPage() {
             localStorage.setItem("token", token);
             localStorage.setItem("user", JSON.stringify(user));
 
-            // Dashboard will be created in the next step
-            navigate("/family/dashboard");
+            // Redirect user based on role
+            if (user.role === "officer") {
+                navigate("/officer/dashboard");
+            } else if (user.role === "admin") {
+                navigate("/admin/dashboard");
+            } else if (user.role === "authority") {
+                navigate("/authority/dashboard");
+            } else {
+                navigate("/family/dashboard");
+            }
 
         } catch (error) {
 

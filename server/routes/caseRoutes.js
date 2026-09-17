@@ -5,6 +5,8 @@ import {
     getMyCases,
     getCaseById,
     updateCaseTask,
+    getOfficerCases,
+    getOfficerCaseById,
 } from "../controllers/caseController.js";
 
 import authMiddleware from "../middleware/authMiddleware.js";
@@ -24,6 +26,24 @@ router.get(
     "/my-cases",
     authMiddleware,
     getMyCases
+);
+
+// Get all cases for Welfare Officer
+
+router.get(
+    "/officer/cases",
+    authMiddleware,
+    roleMiddleware("officer", "admin"),
+    getOfficerCases
+);
+
+// Get single case for Welfare Officer
+
+router.get(
+    "/officer/:caseId",
+    authMiddleware,
+    roleMiddleware("officer", "admin"),
+    getOfficerCaseById
 );
 
 // Get single case

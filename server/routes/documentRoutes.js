@@ -5,11 +5,15 @@ import {
     reuploadDocument,
     getCaseDocuments,
     getDocumentRequirements,
+    reviewDocument,
+    getOfficerCaseDocuments,
 } from "../controllers/documentController.js";
 
 import authMiddleware from "../middleware/authMiddleware.js";
 
 import upload from "../middleware/uploadMiddleware.js";
+
+import roleMiddleware from "../middleware/roleMiddleware.js";
 
 const router = express.Router();
 
@@ -25,6 +29,22 @@ router.post(
     authMiddleware,
     upload.single("file"),
     reuploadDocument
+);
+
+router.put(
+    "/review/:documentId",
+    authMiddleware,
+    roleMiddleware("officer", "admin"),
+    reviewDocument
+);
+
+// Get documents for Welfare Officer
+
+router.get(
+    "/officer/:caseId",
+    authMiddleware,
+    roleMiddleware("officer", "admin"),
+    getOfficerCaseDocuments
 );
 
 router.get(

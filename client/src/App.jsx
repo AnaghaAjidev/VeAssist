@@ -9,6 +9,8 @@ import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
 import FamilyDashboard from "./pages/family/FamilyDashboard";
 import DocumentsPage from "./pages/family/DocumentsPage";
 import DeathAssistancePage from "./pages/family/DeathAssistancePage";
+import OfficerDashboard from "./pages/officer/OfficerDashboard";
+import OfficerCaseDetails from "./pages/officer/OfficerCaseDetails";
 
 function App() {
   return (
@@ -23,6 +25,8 @@ function App() {
         <Route path="/family/dashboard" element={<FamilyDashboard />} />
         <Route path="/family/documents" element={<DocumentsPage />} />
         <Route path="/family/death-assistance" element={<DeathAssistancePage />} />
+        <Route path="/officer/dashboard" element={<OfficerDashboard />} />
+        <Route path="/officer/cases/:caseId" element={<OfficerCaseDetails />} />
       </Routes>
     </BrowserRouter>
   );

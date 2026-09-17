@@ -257,3 +257,51 @@ export const updateCaseTask = async (req, res) => {
         });
     }
 };
+
+// GET ALL CASES FOR WELFARE OFFICER
+export const getOfficerCases = async (req, res) => {
+    try {
+        const cases = await AssistanceCase.find()
+            .populate("familyUser", "name email")
+            .sort({ createdAt: -1 });
+
+        res.status(200).json({
+            cases,
+        });
+
+    } catch (error) {
+        console.error("Get officer cases error:", error);
+
+        res.status(500).json({
+            message: "Unable to retrieve assistance cases.",
+        });
+    }
+};
+
+// GET SINGLE CASE FOR WELFARE OFFICER
+export const getOfficerCaseById = async (req, res) => {
+    try {
+        const { caseId } = req.params;
+
+        const assistanceCase = await AssistanceCase.findOne({
+            caseId,
+        }).populate("familyUser", "name email");
+
+        if (!assistanceCase) {
+            return res.status(404).json({
+                message: "Assistance case not found.",
+            });
+        }
+
+        res.status(200).json({
+            case: assistanceCase,
+        });
+
+    } catch (error) {
+        console.error("Get officer case error:", error);
+
+        res.status(500).json({
+            message: "Unable to retrieve assistance case.",
+        });
+    }
+};
