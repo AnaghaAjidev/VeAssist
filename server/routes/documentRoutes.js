@@ -2,6 +2,7 @@ import express from "express";
 
 import {
     uploadDocument,
+    reuploadDocument,
     getCaseDocuments,
     getDocumentRequirements,
 } from "../controllers/documentController.js";
@@ -17,6 +18,13 @@ router.post(
     authMiddleware,
     upload.single("file"),
     uploadDocument
+);
+
+router.post(
+    "/reupload",
+    authMiddleware,
+    upload.single("file"),
+    reuploadDocument
 );
 
 router.get(

@@ -22,6 +22,7 @@ const DocumentsPage = () => {
     const [showUploadForm, setShowUploadForm] = useState(false);
     const [selectedDocumentType, setSelectedDocumentType] = useState("");
     const [selectedFile, setSelectedFile] = useState(null);
+    const [selectedDocumentId, setSelectedDocumentId] = useState("");
     const [uploading, setUploading] = useState(false);
     const [uploadError, setUploadError] = useState("");
 
@@ -198,19 +199,39 @@ const DocumentsPage = () => {
             formData.append("file", selectedFile);
 
             // Send document to backend
-            await axios.post(
-                "http://localhost:5000/api/documents/upload",
-                formData,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            );
+            if (selectedDocumentId) {
+                // Re-upload rejected document
+                formData.append(
+                    "documentId",
+                    selectedDocumentId
+                );
+
+                await axios.post(
+                    "http://localhost:5000/api/documents/reupload",
+                    formData,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    }
+                );
+            } else {
+                // Upload new document
+                await axios.post(
+                    "http://localhost:5000/api/documents/upload",
+                    formData,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    }
+                );
+            }
 
             // Clear upload form
             setSelectedFile(null);
             setSelectedDocumentType("");
+            setSelectedDocumentId("");
             setShowUploadForm(false);
 
             if (fileInputRef.current) {
@@ -245,6 +266,7 @@ const DocumentsPage = () => {
             // Close upload form when changing case
             setShowUploadForm(false);
             setSelectedDocumentType("");
+            setSelectedDocumentId("");
             setSelectedFile(null);
             setUploadError("");
         }
@@ -437,7 +459,12 @@ const DocumentsPage = () => {
                                             {document.status === "Missing" && (
                                                 <button
                                                     onClick={() => {
-                                                        setSelectedDocumentType(document.documentType);
+                                                        setSelectedDocumentType(
+                                                            document.documentType
+                                                        );
+
+                                                        setSelectedDocumentId("");
+
                                                         setSelectedFile(null);
                                                         setUploadError("");
                                                         setShowUploadForm(true);
@@ -703,14 +730,14 @@ const DocumentsPage = () => {
 
                                         <div
                                             className="flex items-center
-                                            gap-3"
+    gap-3"
                                         >
 
                                             <span
                                                 className={`px-3 py-1
-                                                rounded-full text-sm
-                                                font-semibold
-                                                ${document.status === "Verified"
+        rounded-full text-sm
+        font-semibold
+        ${document.status === "Verified"
                                                         ? "bg-green-50 text-green-700"
                                                         : document.status === "Rejected"
                                                             ? "bg-red-50 text-red-700"
@@ -722,17 +749,50 @@ const DocumentsPage = () => {
                                                 {document.status}
                                             </span>
 
+                                            {document.status === "Rejected" && (
+                                                <button
+                                                    onClick={() => {
+                                                        setSelectedDocumentType(
+                                                            document.documentType
+                                                        );
+
+                                                        setSelectedDocumentId(
+                                                            document._id
+                                                        );
+
+                                                        setSelectedFile(null);
+                                                        setUploadError("");
+                                                        setShowUploadForm(true);
+
+                                                        setTimeout(() => {
+                                                            uploadSectionRef.current?.scrollIntoView({
+                                                                behavior: "smooth",
+                                                                block: "start",
+                                                            });
+                                                        }, 100);
+                                                    }}
+                                                    className="px-4 py-2 rounded-lg
+            border border-[#0B1F3A]
+            text-[#0B1F3A]
+            text-sm font-semibold
+            hover:bg-slate-50
+            transition"
+                                                >
+                                                    Re-upload
+                                                </button>
+                                            )}
+
                                             <a
                                                 href={document.fileUrl}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="px-4 py-2
-                                                rounded-lg
-                                                bg-[#0B1F3A]
-                                                text-white
-                                                text-sm font-semibold
-                                                hover:bg-[#1F4E79]
-                                                transition"
+        rounded-lg
+        bg-[#0B1F3A]
+        text-white
+        text-sm font-semibold
+        hover:bg-[#1F4E79]
+        transition"
                                             >
                                                 View Document
                                             </a>

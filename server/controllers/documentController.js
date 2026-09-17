@@ -66,21 +66,147 @@ export const uploadDocument = async (req, res) => {
             fileName: req.file.originalname,
             fileUrl: result.secure_url,
             publicId: result.public_id,
+            resourceType: result.resource_type || "image",
             status: "Pending",
         });
-
         res.status(201).json({
             message: "Document uploaded successfully.",
             document,
         });
 
-   } catch (error) {
-    console.error("Document upload error:", error);
+    } catch (error) {
+        console.error("Document upload error:", error);
 
-    res.status(500).json({
-        message: "Unable to upload document.",
-    });
-}
+        res.status(500).json({
+            message: "Unable to upload document.",
+        });
+    }
+};
+
+export const reuploadDocument = async (req, res) => {
+    try {
+        const { documentId } = req.body;
+
+        if (!documentId) {
+            return res.status(400).json({
+                message: "Document ID is required.",
+            });
+        }
+
+        if (!req.file) {
+            return res.status(400).json({
+                message: "Please select a document to upload.",
+            });
+        }
+
+        // Find the document
+        const document = await Document.findOne({
+            _id: documentId,
+            uploadedBy: req.user.userId,
+        });
+
+        if (!document) {
+            return res.status(404).json({
+                message: "Document not found.",
+            });
+        }
+
+        // Re-upload is allowed only for rejected documents
+        if (document.status !== "Rejected") {
+            return res.status(400).json({
+                message:
+                    "Only rejected documents can be re-uploaded.",
+            });
+        }
+
+        // Verify that the case belongs to the logged-in family
+        const assistanceCase = await AssistanceCase.findOne({
+            _id: document.caseId,
+            familyUser: req.user.userId,
+        });
+
+        if (!assistanceCase) {
+            return res.status(404).json({
+                message: "Assistance case not found.",
+            });
+        }
+
+        // Upload the new file to Cloudinary
+        const uploadToCloudinary = () => {
+            return new Promise((resolve, reject) => {
+                const stream =
+                    cloudinary.uploader.upload_stream(
+                        {
+                            folder: "veassist/documents",
+                            resource_type: "auto",
+                        },
+                        (error, result) => {
+                            if (error) {
+                                reject(error);
+                            } else {
+                                resolve(result);
+                            }
+                        }
+                    );
+
+                streamifier
+                    .createReadStream(req.file.buffer)
+                    .pipe(stream);
+            });
+        };
+
+        const result = await uploadToCloudinary();
+
+        // Delete the old Cloudinary file
+        if (document.publicId) {
+            try {
+                await cloudinary.uploader.destroy(
+                    document.publicId,
+                    {
+                        resource_type:
+                            document.resourceType || "image",
+                        invalidate: true,
+                    }
+                );
+
+                console.log(
+                    "Previous Cloudinary file deleted successfully."
+                );
+
+            } catch (deleteError) {
+                console.error(
+                    "Old Cloudinary file deletion error:",
+                    deleteError.message
+                );
+            }
+        }
+
+        // Update existing document record
+        document.fileName = req.file.originalname;
+        document.fileUrl = result.secure_url;
+        document.publicId = result.public_id;
+        document.resourceType = result.resource_type || "image";
+        document.status = "Pending";
+        document.remarks = "";
+        document.uploadedAt = new Date();
+
+        await document.save();
+
+        res.status(200).json({
+            message: "Document re-uploaded successfully.",
+            document,
+        });
+
+    } catch (error) {
+        console.error(
+            "Document re-upload error:",
+            error
+        );
+
+        res.status(500).json({
+            message: "Unable to re-upload document.",
+        });
+    }
 };
 
 // GET DOCUMENTS FOR A CASE

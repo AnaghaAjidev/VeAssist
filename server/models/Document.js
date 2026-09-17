@@ -41,6 +41,11 @@ const documentSchema = new mongoose.Schema(
             required: true,
         },
 
+        resourceType: {
+            type: String,
+            default: "image",
+        },
+
         status: {
             type: String,
             enum: [
