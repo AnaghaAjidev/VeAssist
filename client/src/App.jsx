@@ -11,6 +11,8 @@ import DocumentsPage from "./pages/family/DocumentsPage";
 import DeathAssistancePage from "./pages/family/DeathAssistancePage";
 import OfficerDashboard from "./pages/officer/OfficerDashboard";
 import OfficerCaseDetails from "./pages/officer/OfficerCaseDetails";
+import ApplicationsPage from "./pages/family/ApplicationsPage";
+import CreateApplicationPage from "./pages/family/CreateApplicationPage";
 
 function App() {
   return (
@@ -27,6 +29,8 @@ function App() {
         <Route path="/family/death-assistance" element={<DeathAssistancePage />} />
         <Route path="/officer/dashboard" element={<OfficerDashboard />} />
         <Route path="/officer/cases/:caseId" element={<OfficerCaseDetails />} />
+        <Route path="/family/applications" element={<ApplicationsPage />} />
+        <Route path="/family/applications/new/:caseId" element={<CreateApplicationPage />} />
       </Routes>
     </BrowserRouter>
   );

@@ -324,11 +324,15 @@ const FamilyDashboard = () => {
 
 
                         {/* APPLICATIONS */}
-                        <div className="bg-white rounded-xl border border-slate-200
-                        p-5 flex items-center gap-4 hover:shadow-md transition">
+                        <div
+                            onClick={() => navigate("/family/applications")}
+                            className="bg-white rounded-xl border border-slate-200
+    p-5 flex items-center gap-4 hover:shadow-md transition
+    cursor-pointer"
+                        >
 
                             <div className="w-12 h-12 rounded-lg bg-[#EEF5FF]
-                            flex items-center justify-center">
+    flex items-center justify-center">
                                 <ClipboardList
                                     size={24}
                                     className="text-[#1F4E79]"
@@ -339,13 +343,13 @@ const FamilyDashboard = () => {
                                 <h4 className="font-bold text-[#0B1F3A]">
                                     Applications
                                 </h4>
+
                                 <p className="text-sm text-gray-500">
                                     Track your applications
                                 </p>
                             </div>
 
                         </div>
-
 
                         {/* NOTIFICATIONS */}
                         <div className="bg-white rounded-xl border border-slate-200
