@@ -7,6 +7,9 @@ import {
   getOfficerApplications,
   getOfficerApplicationById,
   reviewApplication,
+  getApplicationDocumentRequirements,
+  linkExistingDocument,
+  getReusableDocuments,
 } from "../controllers/applicationController.js";
 
 import authMiddleware from "../middleware/authMiddleware.js";
@@ -45,12 +48,33 @@ router.get(
   getOfficerApplicationById
 );
 
+router.get(
+    "/:applicationId/requirements",
+    authMiddleware,
+    getApplicationDocumentRequirements
+);
+
+router.get(
+  "/:applicationId/documents/reusable",
+  authMiddleware,
+  roleMiddleware("family"),
+  getReusableDocuments
+);
+
 // Review application
 router.put(
   "/review/:applicationId",
   authMiddleware,
   roleMiddleware("officer", "admin"),
   reviewApplication
+);
+
+// Link an existing verified document
+router.post(
+  "/:applicationId/documents/link",
+  authMiddleware,
+  roleMiddleware("family"),
+  linkExistingDocument
 );
 
 // Submit a draft application

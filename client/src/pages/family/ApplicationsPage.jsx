@@ -107,11 +107,30 @@ const ApplicationsPage = () => {
     } catch (error) {
       console.error("Submit application error:", error);
 
-      setError(
+      const message =
         error.response?.data?.message ||
-          "Unable to submit application."
-      );
+        "Unable to submit application.";
+
+      const pendingDocuments =
+        error.response?.data?.pendingDocuments || [];
+
+      if (pendingDocuments.length > 0) {
+        setError(
+          `${message}\n\nPending or unverified documents:\n- ${pendingDocuments.join(
+            "\n- "
+          )}`
+        );
+      } else {
+        setError(message);
+      }
     }
+  };
+
+  // Open application-specific documents
+  const handleManageDocuments = (applicationId) => {
+    navigate(
+      `/family/applications/${applicationId}/documents`
+    );
   };
 
   const getStatusIcon = (status) => {
@@ -179,7 +198,6 @@ const ApplicationsPage = () => {
 
       {/* Main */}
       <main className="max-w-7xl mx-auto px-6 py-8">
-
         {/* Page Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
           <div>
@@ -215,7 +233,7 @@ const ApplicationsPage = () => {
 
         {/* Error */}
         {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+          <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg whitespace-pre-line">
             {error}
           </div>
         )}
@@ -258,18 +276,14 @@ const ApplicationsPage = () => {
         ) : (
           /* Application Cards */
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
             {applications.map((application) => (
               <div
                 key={application._id}
                 className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition"
               >
-
                 {/* Application Header */}
                 <div className="flex items-start justify-between gap-4">
-
                   <div className="flex items-start gap-3">
-
                     <div className="bg-blue-50 p-3 rounded-lg">
                       <FileText
                         size={24}
@@ -286,7 +300,6 @@ const ApplicationsPage = () => {
                         {application.applicationType}
                       </p>
                     </div>
-
                   </div>
 
                   {/* Status */}
@@ -298,7 +311,6 @@ const ApplicationsPage = () => {
                     {getStatusIcon(application.status)}
                     {application.status}
                   </span>
-
                 </div>
 
                 {/* Description */}
@@ -311,26 +323,22 @@ const ApplicationsPage = () => {
                 {/* Date */}
                 <div className="mt-5 pt-4 border-t border-gray-100 flex items-center justify-between text-sm">
                   <div className="text-gray-500">
-
                     {application.status === "Draft"
                       ? "Created"
                       : "Submitted"}
                     :{" "}
-
                     <span className="font-medium text-gray-700">
                       {new Date(
                         application.submittedAt ||
                           application.createdAt
                       ).toLocaleDateString()}
                     </span>
-
                   </div>
                 </div>
 
                 {/* Officer Remarks */}
                 {application.remarks && (
                   <div className="mt-4 bg-gray-50 rounded-lg p-4">
-
                     <p className="text-xs font-semibold text-gray-500 uppercase">
                       Officer Remarks
                     </p>
@@ -338,28 +346,49 @@ const ApplicationsPage = () => {
                     <p className="text-sm text-gray-700 mt-1">
                       {application.remarks}
                     </p>
-
                   </div>
                 )}
 
-                {/* Submit Draft Application */}
-                {application.status === "Draft" && (
+                {/* Application Actions */}
+                <div
+                  className={`mt-5 flex flex-col ${
+                    application.status === "Draft"
+                      ? "sm:flex-row"
+                      : ""
+                  } gap-3`}
+                >
+                  {/* Manage Documents */}
                   <button
                     onClick={() =>
-                      handleSubmitApplication(application._id)
+                      handleManageDocuments(application._id)
                     }
-                    className="mt-5 w-full bg-[#0B1F3A] text-white py-3 rounded-lg font-semibold hover:bg-[#16375F] transition"
+                    className={`px-4 py-3 border border-[#0B1F3A] text-[#0B1F3A] rounded-lg font-semibold text-sm hover:bg-slate-50 transition ${
+                      application.status === "Draft"
+                        ? "sm:w-1/2"
+                        : "w-full"
+                    }`}
                   >
-                    Submit Application
+                    Manage Documents
                   </button>
-                )}
 
+                  {/* Submit Draft Application */}
+                  {application.status === "Draft" && (
+                    <button
+                      onClick={() =>
+                        handleSubmitApplication(
+                          application._id
+                        )
+                      }
+                      className="sm:w-1/2 bg-[#0B1F3A] text-white py-3 rounded-lg font-semibold hover:bg-[#16375F] transition"
+                    >
+                      Submit Application
+                    </button>
+                  )}
+                </div>
               </div>
             ))}
-
           </div>
         )}
-
       </main>
     </div>
   );

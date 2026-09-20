@@ -19,6 +19,10 @@ const OfficerDashboard = () => {
     const [loadingCases, setLoadingCases] = useState(true);
     const [caseError, setCaseError] = useState("");
 
+    const [applications, setApplications] = useState([]);
+    const [loadingApplications, setLoadingApplications] = useState(true);
+    const [applicationError, setApplicationError] = useState("");
+
     const storedUser = localStorage.getItem("user");
     const user = storedUser ? JSON.parse(storedUser) : null;
 
@@ -88,6 +92,54 @@ const OfficerDashboard = () => {
         navigate("/login");
     };
 
+    useEffect(() => {
+        const fetchOfficerApplications = async () => {
+            try {
+                const token = localStorage.getItem("token");
+
+                if (!token) {
+                    navigate("/login");
+                    return;
+                }
+
+                const response = await axios.get(
+                    "http://localhost:5000/api/applications/officer",
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    }
+                );
+
+                setApplications(response.data.applications || []);
+                setApplicationError("");
+
+            } catch (error) {
+                console.error(
+                    "Fetch officer applications error:",
+                    error
+                );
+
+                if (error.response?.status === 401) {
+                    localStorage.removeItem("token");
+                    localStorage.removeItem("user");
+                    navigate("/login");
+                    return;
+                }
+
+                setApplicationError(
+                    error.response?.data?.message ||
+                    "Unable to load applications."
+                );
+
+            } finally {
+                setLoadingApplications(false);
+            }
+        };
+
+        fetchOfficerApplications();
+    }, [navigate]);
+
     // Dashboard statistics
     const totalCases = cases.length;
 
@@ -101,6 +153,22 @@ const OfficerDashboard = () => {
         (item) =>
             item.status === "Completed" ||
             item.status === "Closed"
+    ).length;
+
+    const submittedApplications = applications.filter(
+        (item) => item.status === "Submitted"
+    ).length;
+
+    const underReviewApplications = applications.filter(
+        (item) => item.status === "Under Review"
+    ).length;
+
+    const approvedApplications = applications.filter(
+        (item) => item.status === "Approved"
+    ).length;
+
+    const rejectedApplications = applications.filter(
+        (item) => item.status === "Rejected"
     ).length;
 
     return (
@@ -284,6 +352,125 @@ const OfficerDashboard = () => {
 
                 </section>
 
+                {/* APPLICATION MANAGEMENT */}
+                <section className="mb-12">
+
+                    <div className="bg-white rounded-2xl border border-slate-200
+    shadow-sm p-7">
+
+                        <div className="flex flex-col md:flex-row
+        md:items-center md:justify-between gap-5">
+
+                            <div>
+                                <div className="flex items-center gap-3">
+
+                                    <div className="w-12 h-12 rounded-xl bg-[#EEF5FF]
+                    flex items-center justify-center">
+
+                                        <FileText
+                                            size={25}
+                                            className="text-[#1F4E79]"
+                                        />
+
+                                    </div>
+
+                                    <div>
+                                        <h3 className="text-2xl font-bold text-[#0B1F3A]">
+                                            Applications
+                                        </h3>
+
+                                        <p className="text-gray-600 mt-1">
+                                            Review and manage family assistance applications.
+                                        </p>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                            <button
+                                onClick={() => navigate("/officer/applications")}
+                                className="flex items-center justify-center gap-2
+                bg-[#0B1F3A] text-white px-5 py-3 rounded-lg
+                font-semibold hover:bg-[#1F4E79] transition"
+                            >
+                                View Applications
+                                <ArrowRight size={18} />
+                            </button>
+
+                        </div>
+
+
+                        {loadingApplications ? (
+
+                            <div className="mt-6 text-gray-500">
+                                Loading applications...
+                            </div>
+
+                        ) : applicationError ? (
+
+                            <div className="mt-6 bg-red-50 border border-red-200
+            text-red-700 rounded-lg p-4">
+                                {applicationError}
+                            </div>
+
+                        ) : (
+
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-7">
+
+                                {/* SUBMITTED */}
+                                <div className="bg-blue-50 rounded-xl p-4">
+                                    <p className="text-sm text-blue-600 font-medium">
+                                        Submitted
+                                    </p>
+
+                                    <p className="text-2xl font-bold text-blue-800 mt-1">
+                                        {submittedApplications}
+                                    </p>
+                                </div>
+
+
+                                {/* UNDER REVIEW */}
+                                <div className="bg-yellow-50 rounded-xl p-4">
+                                    <p className="text-sm text-yellow-700 font-medium">
+                                        Under Review
+                                    </p>
+
+                                    <p className="text-2xl font-bold text-yellow-800 mt-1">
+                                        {underReviewApplications}
+                                    </p>
+                                </div>
+
+
+                                {/* APPROVED */}
+                                <div className="bg-green-50 rounded-xl p-4">
+                                    <p className="text-sm text-green-600 font-medium">
+                                        Approved
+                                    </p>
+
+                                    <p className="text-2xl font-bold text-green-800 mt-1">
+                                        {approvedApplications}
+                                    </p>
+                                </div>
+
+
+                                {/* REJECTED */}
+                                <div className="bg-red-50 rounded-xl p-4">
+                                    <p className="text-sm text-red-600 font-medium">
+                                        Rejected
+                                    </p>
+
+                                    <p className="text-2xl font-bold text-red-800 mt-1">
+                                        {rejectedApplications}
+                                    </p>
+                                </div>
+
+                            </div>
+
+                        )}
+
+                    </div>
+
+                </section>
 
                 {/* CASE LIST */}
                 <section>

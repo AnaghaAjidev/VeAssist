@@ -1,30 +1,25 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { FileText, ArrowLeft } from "lucide-react";
+import {
+    FileText,
+    ArrowLeft,
+    FolderOpen,
+    CheckCircle,
+    Clock,
+    XCircle,
+    File,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const DocumentsPage = () => {
     const navigate = useNavigate();
-    const uploadSectionRef = useRef(null);
-    const fileInputRef = useRef(null);
 
     const [cases, setCases] = useState([]);
     const [selectedCaseId, setSelectedCaseId] = useState("");
 
-    const [documentRequirements, setDocumentRequirements] = useState([]);
-    const [loadingRequirements, setLoadingRequirements] = useState(false);
-    const [requirementsError, setRequirementsError] = useState("");
-
-    const [uploadedDocuments, setUploadedDocuments] = useState([]);
-    const [loadingDocuments, setLoadingDocuments] = useState(false);
-    const [documentsError, setDocumentsError] = useState("");
-
-    const [showUploadForm, setShowUploadForm] = useState(false);
-    const [selectedDocumentType, setSelectedDocumentType] = useState("");
-    const [selectedFile, setSelectedFile] = useState(null);
-    const [selectedDocumentId, setSelectedDocumentId] = useState("");
-    const [uploading, setUploading] = useState(false);
-    const [uploadError, setUploadError] = useState("");
+    const [documents, setDocuments] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
 
     // Load family cases
     useEffect(() => {
@@ -46,23 +41,28 @@ const DocumentsPage = () => {
                     }
                 );
 
-                setCases(response.data.cases);
+                setCases(response.data.cases || []);
 
-                if (response.data.cases.length > 0) {
+                if (response.data.cases?.length > 0) {
                     setSelectedCaseId(
                         response.data.cases[0].caseId
                     );
                 }
             } catch (error) {
                 console.error("Load cases error:", error);
+
+                setError(
+                    error.response?.data?.message ||
+                    "Unable to load assistance cases."
+                );
             }
         };
 
         loadCases();
     }, [navigate]);
 
-    // Load required documents
-    const loadDocumentRequirements = async (caseId) => {
+    // Load documents for selected case
+    const loadDocuments = async (caseId) => {
         try {
             const token = localStorage.getItem("token");
 
@@ -71,48 +71,8 @@ const DocumentsPage = () => {
                 return;
             }
 
-            setLoadingRequirements(true);
-            setRequirementsError("");
-
-            const response = await axios.get(
-                `http://localhost:5000/api/documents/requirements/${caseId}`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            );
-
-            setDocumentRequirements(
-                response.data.requiredDocuments
-            );
-        } catch (error) {
-            console.error(
-                "Load document requirements error:",
-                error
-            );
-
-            setRequirementsError(
-                error.response?.data?.message ||
-                "Unable to load document requirements."
-            );
-        } finally {
-            setLoadingRequirements(false);
-        }
-    };
-
-    // Load uploaded documents
-    const loadUploadedDocuments = async (caseId) => {
-        try {
-            const token = localStorage.getItem("token");
-
-            if (!token) {
-                navigate("/login");
-                return;
-            }
-
-            setLoadingDocuments(true);
-            setDocumentsError("");
+            setLoading(true);
+            setError("");
 
             const response = await axios.get(
                 `http://localhost:5000/api/documents/${caseId}`,
@@ -123,154 +83,65 @@ const DocumentsPage = () => {
                 }
             );
 
-            setUploadedDocuments(response.data.documents);
+            setDocuments(response.data.documents || []);
         } catch (error) {
-            console.error(
-                "Load uploaded documents error:",
-                error
-            );
+            console.error("Load documents error:", error);
 
-            setDocumentsError(
+            setError(
                 error.response?.data?.message ||
-                "Unable to load uploaded documents."
+                "Unable to load document repository."
             );
         } finally {
-            setLoadingDocuments(false);
-        }
-    };
-
-    const handleUploadDocument = async () => {
-        try {
-            const token = localStorage.getItem("token");
-
-            if (!token) {
-                navigate("/login");
-                return;
-            }
-
-            if (!selectedCaseId) {
-                setUploadError("Please select an assistance case.");
-                return;
-            }
-
-            if (!selectedDocumentType) {
-                setUploadError("Please select a document type.");
-                return;
-            }
-
-            if (!selectedFile) {
-                setUploadError("Please select a file.");
-                return;
-            }
-
-            // Check file size
-            if (selectedFile.size > 5 * 1024 * 1024) {
-                setUploadError(
-                    "File size must be less than 5 MB."
-                );
-                return;
-            }
-
-            // Check file type
-            const allowedTypes = [
-                "application/pdf",
-                "image/jpeg",
-                "image/png",
-            ];
-
-            if (!allowedTypes.includes(selectedFile.type)) {
-                setUploadError(
-                    "Only PDF, JPG, and PNG files are allowed."
-                );
-                return;
-            }
-
-            setUploading(true);
-            setUploadError("");
-
-            // Create FormData
-            const formData = new FormData();
-
-            formData.append("caseId", selectedCaseId);
-            formData.append(
-                "documentType",
-                selectedDocumentType
-            );
-            formData.append("file", selectedFile);
-
-            // Send document to backend
-            if (selectedDocumentId) {
-                // Re-upload rejected document
-                formData.append(
-                    "documentId",
-                    selectedDocumentId
-                );
-
-                await axios.post(
-                    "http://localhost:5000/api/documents/reupload",
-                    formData,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                        },
-                    }
-                );
-            } else {
-                // Upload new document
-                await axios.post(
-                    "http://localhost:5000/api/documents/upload",
-                    formData,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                        },
-                    }
-                );
-            }
-
-            // Clear upload form
-            setSelectedFile(null);
-            setSelectedDocumentType("");
-            setSelectedDocumentId("");
-            setShowUploadForm(false);
-
-            if (fileInputRef.current) {
-                fileInputRef.current.value = "";
-            }
-
-            // Refresh document data
-            await loadDocumentRequirements(selectedCaseId);
-            await loadUploadedDocuments(selectedCaseId);
-
-        } catch (error) {
-            console.error(
-                "Upload document error:",
-                error
-            );
-
-            setUploadError(
-                error.response?.data?.message ||
-                "Unable to upload document."
-            );
-        } finally {
-            setUploading(false);
+            setLoading(false);
         }
     };
 
     // Load documents whenever case changes
     useEffect(() => {
         if (selectedCaseId) {
-            loadDocumentRequirements(selectedCaseId);
-            loadUploadedDocuments(selectedCaseId);
-
-            // Close upload form when changing case
-            setShowUploadForm(false);
-            setSelectedDocumentType("");
-            setSelectedDocumentId("");
-            setSelectedFile(null);
-            setUploadError("");
+            loadDocuments(selectedCaseId);
         }
     }, [selectedCaseId]);
+
+    // Status icon
+    const getStatusIcon = (status) => {
+        switch (status) {
+            case "Verified":
+                return <CheckCircle size={17} />;
+
+            case "Rejected":
+                return <XCircle size={17} />;
+
+            case "Under Review":
+                return <Clock size={17} />;
+
+            case "Pending":
+                return <Clock size={17} />;
+
+            default:
+                return <File size={17} />;
+        }
+    };
+
+    // Status style
+    const getStatusClass = (status) => {
+        switch (status) {
+            case "Verified":
+                return "bg-green-50 text-green-700";
+
+            case "Rejected":
+                return "bg-red-50 text-red-700";
+
+            case "Under Review":
+                return "bg-amber-50 text-amber-700";
+
+            case "Pending":
+                return "bg-slate-100 text-slate-600";
+
+            default:
+                return "bg-slate-100 text-slate-600";
+        }
+    };
 
     return (
         <div className="min-h-screen bg-[#F4F8FC]">
@@ -303,9 +174,10 @@ const DocumentsPage = () => {
 
                         <div
                             className="w-12 h-12 rounded-xl
-                            bg-[#0B1F3A] flex items-center justify-center"
+                            bg-[#0B1F3A]
+                            flex items-center justify-center"
                         >
-                            <FileText
+                            <FolderOpen
                                 size={25}
                                 className="text-[#D4AF37]"
                             />
@@ -313,12 +185,66 @@ const DocumentsPage = () => {
 
                         <div>
 
-                            <h1 className="text-3xl font-bold text-[#0B1F3A]">
-                                Documents
+                            <h1
+                                className="text-3xl font-bold
+                                text-[#0B1F3A]"
+                            >
+                                Document Repository
                             </h1>
 
                             <p className="text-gray-600 mt-1">
-                                Manage documents related to your assistance case.
+                                View and track all documents
+                                associated with your assistance case.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+                {/* INFORMATION BOX */}
+                <section
+                    className="bg-blue-50 border border-blue-200
+                    rounded-xl p-5 mb-8"
+                >
+
+                    <div className="flex items-start gap-3">
+
+                        <FileText
+                            size={20}
+                            className="text-[#1F4E79] mt-0.5"
+                        />
+
+                        <div>
+
+                            <p
+                                className="font-semibold
+                                text-[#0B1F3A]"
+                            >
+                                Your Central Document Repository
+                            </p>
+
+                            <p
+                                className="text-sm text-gray-600
+                                mt-1 leading-relaxed"
+                            >
+                                Documents uploaded through your
+                                assistance applications are stored
+                                here in one place. You can view their
+                                current verification status and open
+                                the uploaded document.
+                            </p>
+
+                            <p
+                                className="text-sm text-gray-600
+                                mt-2 leading-relaxed"
+                            >
+                                To upload or re-upload a document,
+                                open the relevant application from
+                                <span className="font-semibold">
+                                    {" "}My Applications
+                                </span>.
                             </p>
 
                         </div>
@@ -330,10 +256,14 @@ const DocumentsPage = () => {
                 {/* CASE SELECTION */}
                 <section
                     className="bg-white rounded-2xl
-                    border border-slate-200 shadow-sm p-6 mb-8"
+                    border border-slate-200
+                    shadow-sm p-6 mb-8"
                 >
 
-                    <h2 className="text-lg font-bold text-[#0B1F3A] mb-3">
+                    <h2
+                        className="text-lg font-bold
+                        text-[#0B1F3A] mb-3"
+                    >
                         Select Assistance Case
                     </h2>
 
@@ -344,7 +274,8 @@ const DocumentsPage = () => {
                         }
                         className="w-full border border-slate-300
                         rounded-lg px-4 py-3
-                        focus:outline-none focus:ring-2
+                        focus:outline-none
+                        focus:ring-2
                         focus:ring-[#1F4E79]"
                     >
 
@@ -366,433 +297,215 @@ const DocumentsPage = () => {
 
                 </section>
 
-                {/* REQUIRED DOCUMENTS */}
+                {/* DOCUMENT REPOSITORY */}
                 <section
                     className="bg-white rounded-2xl
-                    border border-slate-200 shadow-sm p-7"
+                    border border-slate-200
+                    shadow-sm p-7"
                 >
 
-                    <h2 className="text-2xl font-bold text-[#0B1F3A]">
-                        Required Documents
-                    </h2>
-
-                    <p className="text-gray-500 mt-1 mb-6">
-                        Documents required for your assistance case.
-                    </p>
-
-                    {loadingRequirements ? (
-
-                        <p className="text-gray-500">
-                            Loading required documents...
-                        </p>
-
-                    ) : requirementsError ? (
-
-                        <div
-                            className="bg-red-50 border border-red-200
-                            text-red-700 rounded-lg p-4"
-                        >
-                            {requirementsError}
-                        </div>
-
-                    ) : documentRequirements.length === 0 ? (
-
-                        <div
-                            className="border border-slate-200
-                            rounded-xl p-6 text-center"
-                        >
-                            <p className="text-gray-500">
-                                No document requirements available.
-                            </p>
-                        </div>
-
-                    ) : (
-
-                        <div className="space-y-4">
-
-                            {documentRequirements.map((document) => (
-
-                                <div
-                                    key={document.documentType}
-                                    className="border border-slate-200
-                                    rounded-xl p-5"
-                                >
-
-                                    <div
-                                        className="flex flex-col
-                                        md:flex-row md:items-center
-                                        md:justify-between gap-4"
-                                    >
-
-                                        <div>
-
-                                            <h3
-                                                className="font-bold
-                                                text-[#0B1F3A]"
-                                            >
-                                                {document.documentType}
-                                            </h3>
-
-                                            <p
-                                                className="text-sm
-                                                text-gray-500 mt-1"
-                                            >
-                                                {document.description}
-                                            </p>
-
-                                        </div>
-
-                                        <div className="flex items-center gap-3">
-
-                                            <span
-                                                className={`px-3 py-1
-                                                rounded-full text-sm
-                                                font-semibold
-                                                ${document.status === "Uploaded"
-                                                        ? "bg-green-50 text-green-700"
-                                                        : "bg-red-50 text-red-700"
-                                                    }`}
-                                            >
-                                                {document.status}
-                                            </span>
-
-                                            {document.status === "Missing" && (
-                                                <button
-                                                    onClick={() => {
-                                                        setSelectedDocumentType(
-                                                            document.documentType
-                                                        );
-
-                                                        setSelectedDocumentId("");
-
-                                                        setSelectedFile(null);
-                                                        setUploadError("");
-                                                        setShowUploadForm(true);
-
-                                                        setTimeout(() => {
-                                                            uploadSectionRef.current?.scrollIntoView({
-                                                                behavior: "smooth",
-                                                                block: "start",
-                                                            });
-                                                        }, 100);
-                                                    }}
-                                                    className="px-4 py-2 rounded-lg
-                                                    bg-[#0B1F3A] text-white
-                                                    text-sm font-semibold
-                                                    hover:bg-[#1F4E79]
-                                                    transition"
-                                                >
-                                                    Upload Document
-                                                </button>
-                                            )}
-
-                                        </div>
-
-                                    </div>
-
-                                </div>
-
-                            ))}
-
-                        </div>
-
-                    )}
-
-                </section>
-
-                {/* UPLOAD FORM */}
-                {showUploadForm && (
-                    <section
-                        ref={uploadSectionRef}
-                        className="bg-white rounded-2xl
-        border border-slate-200 shadow-sm
-        p-7 mt-8 scroll-mt-6"
+                    <div
+                        className="flex flex-col
+                        sm:flex-row sm:items-center
+                        sm:justify-between gap-3 mb-6"
                     >
 
-                        <div
-                            className="flex items-center
-                            justify-between mb-6"
-                        >
+                        <div>
 
-                            <div>
-
-                                <h2
-                                    className="text-2xl font-bold
-                                    text-[#0B1F3A]"
-                                >
-                                    Upload Document
-                                </h2>
-
-                                <p className="text-gray-500 mt-1">
-                                    Upload the required document for your assistance case.
-                                </p>
-
-                            </div>
-
-                            <button
-                                onClick={() => {
-                                    setShowUploadForm(false);
-                                    setSelectedFile(null);
-                                    setUploadError("");
-
-                                    if (fileInputRef.current) {
-                                        fileInputRef.current.value = "";
-                                    }
-                                }}
-                                className="text-gray-500
-                                hover:text-gray-800
-                                font-semibold"
+                            <h2
+                                className="text-2xl font-bold
+                                text-[#0B1F3A]"
                             >
-                                Cancel
-                            </button>
+                                My Documents
+                            </h2>
+
+                            <p className="text-gray-500 mt-1">
+                                All documents associated with
+                                this assistance case.
+                            </p>
 
                         </div>
-
-                        <div className="space-y-5">
-
-                            {/* DOCUMENT TYPE */}
-                            <div>
-
-                                <label
-                                    className="block text-sm
-                                    font-semibold text-gray-700 mb-2"
-                                >
-                                    Document Type
-                                </label>
-
-                                <input
-                                    type="text"
-                                    value={selectedDocumentType}
-                                    readOnly
-                                    className="w-full
-                                    border border-slate-300
-                                    rounded-lg px-4 py-3
-                                    bg-slate-50 text-gray-700"
-                                />
-
-                            </div>
-
-                            {/* FILE */}
-                            <div>
-
-                                <label
-                                    className="block text-sm
-                                    font-semibold text-gray-700 mb-2"
-                                >
-                                    Choose File
-                                </label>
-
-                                <input
-                                    ref={fileInputRef}
-                                    type="file"
-                                    accept=".pdf,.jpg,.jpeg,.png"
-                                    onChange={(e) => {
-                                        setSelectedFile(
-                                            e.target.files[0]
-                                        );
-                                        setUploadError("");
-                                    }}
-                                    className="w-full
-                                    border border-slate-300
-                                    rounded-lg px-4 py-3
-                                    text-sm"
-                                />
-
-                                <p
-                                    className="text-xs
-                                    text-gray-500 mt-2"
-                                >
-                                    Allowed formats: PDF, JPG, PNG.
-                                    Maximum size: 5 MB.
-                                </p>
-
-                            </div>
-
-                            {/* ERROR */}
-                            {uploadError && (
-                                <div
-                                    className="bg-red-50
-                                    border border-red-200
-                                    text-red-700 rounded-lg p-4"
-                                >
-                                    {uploadError}
-                                </div>
-                            )}
-
-                            {/* UPLOAD BUTTON */}
-                            <button
-                                onClick={handleUploadDocument}
-                                disabled={!selectedFile || uploading}
-                                className={`px-6 py-3 rounded-lg
-    font-semibold transition
-    ${!selectedFile || uploading
-                                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                                        : "bg-[#0B1F3A] text-white hover:bg-[#1F4E79]"
-                                    }`}
-                            >
-                                {uploading
-                                    ? "Uploading..."
-                                    : "Upload Document"}
-                            </button>
-
-                        </div>
-
-                    </section>
-                )}
-
-                {/* UPLOADED DOCUMENTS */}
-                <section
-                    className="bg-white rounded-2xl
-                    border border-slate-200 shadow-sm
-                    p-7 mt-8"
-                >
-
-                    <h2 className="text-2xl font-bold text-[#0B1F3A]">
-                        Uploaded Documents
-                    </h2>
-
-                    <p className="text-gray-500 mt-1 mb-6">
-                        Documents uploaded for this assistance case.
-                    </p>
-
-                    {loadingDocuments ? (
-
-                        <p className="text-gray-500">
-                            Loading uploaded documents...
-                        </p>
-
-                    ) : documentsError ? (
 
                         <div
-                            className="bg-red-50 border
-                            border-red-200 text-red-700
-                            rounded-lg p-4"
+                            className="text-sm text-gray-500"
                         >
-                            {documentsError}
+                            {documents.length}{" "}
+                            {documents.length === 1
+                                ? "document"
+                                : "documents"}
                         </div>
 
-                    ) : uploadedDocuments.length === 0 ? (
+                    </div>
+
+                    {/* ERROR */}
+                    {error && (
+                        <div
+                            className="bg-red-50
+                            border border-red-200
+                            text-red-700
+                            rounded-lg p-4 mb-6"
+                        >
+                            {error}
+                        </div>
+                    )}
+
+                    {/* LOADING */}
+                    {loading ? (
 
                         <div
                             className="border border-slate-200
-                            rounded-xl p-6 text-center"
+                            rounded-xl p-10 text-center"
                         >
                             <p className="text-gray-500">
-                                No documents have been uploaded yet.
+                                Loading document repository...
                             </p>
+                        </div>
+
+                    ) : documents.length === 0 ? (
+
+                        <div
+                            className="border border-slate-200
+                            rounded-xl p-10 text-center"
+                        >
+
+                            <FolderOpen
+                                size={42}
+                                className="mx-auto
+                                text-gray-400 mb-3"
+                            />
+
+                            <p
+                                className="text-gray-600
+                                font-medium"
+                            >
+                                No documents available.
+                            </p>
+
+                            <p
+                                className="text-sm text-gray-400
+                                mt-1"
+                            >
+                                Documents uploaded through your
+                                applications will appear here.
+                            </p>
+
                         </div>
 
                     ) : (
 
                         <div className="space-y-4">
 
-                            {uploadedDocuments.map((document) => (
+                            {documents.map((document) => (
 
                                 <div
                                     key={document._id}
-                                    className="border border-slate-200
+                                    className="border
+                                    border-slate-200
                                     rounded-xl p-5"
                                 >
 
                                     <div
                                         className="flex flex-col
-                                        md:flex-row md:items-center
-                                        md:justify-between gap-4"
+                                        lg:flex-row
+                                        lg:items-center
+                                        lg:justify-between
+                                        gap-5"
                                     >
 
-                                        <div>
+                                        {/* DOCUMENT INFORMATION */}
+                                        <div
+                                            className="flex
+                                            items-start gap-4"
+                                        >
 
-                                            <h3
-                                                className="font-bold
-                                                text-[#0B1F3A]"
+                                            <div
+                                                className="w-11 h-11
+                                                rounded-lg
+                                                bg-[#EAF2FB]
+                                                flex items-center
+                                                justify-center
+                                                flex-shrink-0"
                                             >
-                                                {document.documentType}
-                                            </h3>
 
-                                            <p
-                                                className="text-sm
-                                                text-gray-500 mt-1"
-                                            >
-                                                {document.fileName}
-                                            </p>
+                                                <FileText
+                                                    size={21}
+                                                    className="text-[#1F4E79]"
+                                                />
 
-                                            <p
-                                                className="text-xs
-                                                text-gray-400 mt-2"
-                                            >
-                                                Uploaded on{" "}
-                                                {new Date(
-                                                    document.uploadedAt
-                                                ).toLocaleDateString()}
-                                            </p>
+                                            </div>
+
+                                            <div>
+
+                                                <h3
+                                                    className="font-bold
+                                                    text-[#0B1F3A]"
+                                                >
+                                                    {
+                                                        document.documentType
+                                                    }
+                                                </h3>
+
+                                                <p
+                                                    className="text-sm
+                                                    text-gray-600 mt-1"
+                                                >
+                                                    {
+                                                        document.fileName
+                                                    }
+                                                </p>
+
+                                                <p
+                                                    className="text-xs
+                                                    text-gray-400 mt-2"
+                                                >
+                                                    Uploaded on{" "}
+                                                    {new Date(
+                                                        document.uploadedAt
+                                                    ).toLocaleDateString()}
+                                                </p>
+
+                                            </div>
 
                                         </div>
 
+                                        {/* STATUS + VIEW */}
                                         <div
-                                            className="flex items-center
-    gap-3"
+                                            className="flex
+                                            items-center
+                                            gap-3 flex-wrap"
                                         >
 
                                             <span
-                                                className={`px-3 py-1
-        rounded-full text-sm
-        font-semibold
-        ${document.status === "Verified"
-                                                        ? "bg-green-50 text-green-700"
-                                                        : document.status === "Rejected"
-                                                            ? "bg-red-50 text-red-700"
-                                                            : document.status === "Under Review"
-                                                                ? "bg-amber-50 text-amber-700"
-                                                                : "bg-slate-100 text-slate-600"
-                                                    }`}
+                                                className={`px-3 py-2
+                                                rounded-full
+                                                text-sm font-semibold
+                                                flex items-center gap-2
+                                                ${getStatusClass(
+                                                    document.status
+                                                )}`}
                                             >
+
+                                                {getStatusIcon(
+                                                    document.status
+                                                )}
+
                                                 {document.status}
+
                                             </span>
 
-                                            {document.status === "Rejected" && (
-                                                <button
-                                                    onClick={() => {
-                                                        setSelectedDocumentType(
-                                                            document.documentType
-                                                        );
-
-                                                        setSelectedDocumentId(
-                                                            document._id
-                                                        );
-
-                                                        setSelectedFile(null);
-                                                        setUploadError("");
-                                                        setShowUploadForm(true);
-
-                                                        setTimeout(() => {
-                                                            uploadSectionRef.current?.scrollIntoView({
-                                                                behavior: "smooth",
-                                                                block: "start",
-                                                            });
-                                                        }, 100);
-                                                    }}
-                                                    className="px-4 py-2 rounded-lg
-            border border-[#0B1F3A]
-            text-[#0B1F3A]
-            text-sm font-semibold
-            hover:bg-slate-50
-            transition"
-                                                >
-                                                    Re-upload
-                                                </button>
-                                            )}
-
                                             <a
-                                                href={document.fileUrl}
+                                                href={
+                                                    document.fileUrl
+                                                }
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="px-4 py-2
-        rounded-lg
-        bg-[#0B1F3A]
-        text-white
-        text-sm font-semibold
-        hover:bg-[#1F4E79]
-        transition"
+                                                rounded-lg
+                                                bg-[#0B1F3A]
+                                                text-white
+                                                text-sm font-semibold
+                                                hover:bg-[#1F4E79]
+                                                transition"
                                             >
                                                 View Document
                                             </a>

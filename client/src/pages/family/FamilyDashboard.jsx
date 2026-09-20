@@ -1,6 +1,16 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Anchor, GraduationCap, BriefcaseBusiness, FileText, ClipboardList, Bell, ArrowRight, ShieldCheck, LogOut, } from "lucide-react";
+import {
+    Anchor,
+    GraduationCap,
+    BriefcaseBusiness,
+    FileText,
+    ClipboardList,
+    Bell,
+    ArrowRight,
+    ShieldCheck,
+    LogOut,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import logo from "../../assets/logo.png";
 
@@ -12,8 +22,15 @@ const FamilyDashboard = () => {
     const [caseError, setCaseError] = useState("");
     const [selectedCase, setSelectedCase] = useState(null);
 
+    const [applicationCount, setApplicationCount] = useState(0);
+    const [pendingDocumentCount, setPendingDocumentCount] = useState(0);
+    const [loadingOverview, setLoadingOverview] = useState(true);
+
+    // ============================================================
+    // LOAD CASES + APPLICATION OVERVIEW
+    // ============================================================
     useEffect(() => {
-        const fetchCases = async () => {
+        const fetchDashboardData = async () => {
             try {
                 const token = localStorage.getItem("token");
 
@@ -22,7 +39,13 @@ const FamilyDashboard = () => {
                     return;
                 }
 
-                const response = await axios.get(
+                setLoadingCases(true);
+                setLoadingOverview(true);
+
+                // ------------------------------------------------
+                // Load family cases
+                // ------------------------------------------------
+                const casesResponse = await axios.get(
                     "http://localhost:5000/api/cases/my-cases",
                     {
                         headers: {
@@ -31,23 +54,119 @@ const FamilyDashboard = () => {
                     }
                 );
 
-                setCases(response.data.cases);
+                const familyCases =
+                    casesResponse.data.cases || [];
 
+                setCases(familyCases);
+                setCaseError("");
+
+                // ------------------------------------------------
+                // Calculate application/document overview
+                // ------------------------------------------------
+                let totalApplications = 0;
+                let totalPendingDocuments = 0;
+
+                for (const assistanceCase of familyCases) {
+                    try {
+                        const applicationsResponse =
+                            await axios.get(
+                                `http://localhost:5000/api/applications/my/${assistanceCase.caseId}`,
+                                {
+                                    headers: {
+                                        Authorization: `Bearer ${token}`,
+                                    },
+                                }
+                            );
+
+                        const applications =
+                            applicationsResponse.data
+                                .applications || [];
+
+                        totalApplications +=
+                            applications.length;
+
+                        // ----------------------------------------
+                        // Check documents for each application
+                        // ----------------------------------------
+                        for (const application of applications) {
+                            try {
+                                const requirementsResponse =
+                                    await axios.get(
+                                        `http://localhost:5000/api/applications/${application._id}/requirements`,
+                                        {
+                                            headers: {
+                                                Authorization: `Bearer ${token}`,
+                                            },
+                                        }
+                                    );
+
+                                const requirements =
+                                    requirementsResponse
+                                        .data
+                                        .requirements || [];
+
+                                /*
+                                 * Anything other than Verified is
+                                 * considered pending:
+                                 *
+                                 * Missing
+                                 * Pending
+                                 * Under Review
+                                 * Rejected
+                                 */
+                                const pendingDocuments =
+                                    requirements.filter(
+                                        (document) =>
+                                            document.status !==
+                                            "Verified"
+                                    );
+
+                                totalPendingDocuments +=
+                                    pendingDocuments.length;
+                            } catch (error) {
+                                console.error(
+                                    "Load application requirements error:",
+                                    error
+                                );
+                            }
+                        }
+                    } catch (error) {
+                        console.error(
+                            "Load applications error:",
+                            error
+                        );
+                    }
+                }
+
+                setApplicationCount(
+                    totalApplications
+                );
+
+                setPendingDocumentCount(
+                    totalPendingDocuments
+                );
             } catch (error) {
-                console.error("Fetch cases error:", error);
+                console.error(
+                    "Fetch dashboard data error:",
+                    error
+                );
 
                 setCaseError(
                     error.response?.data?.message ||
-                    "Unable to load assistance cases."
+                        "Unable to load assistance cases."
                 );
             } finally {
                 setLoadingCases(false);
+                setLoadingOverview(false);
             }
         };
 
-        fetchCases();
+        fetchDashboardData();
     }, [navigate]);
 
+    // ============================================================
+    // LOAD CASE DETAILS
+    // ============================================================
     const loadCaseDetails = async (caseId) => {
         try {
             const token = localStorage.getItem("token");
@@ -68,22 +187,35 @@ const FamilyDashboard = () => {
 
             setSelectedCase(response.data.case);
             setCaseError("");
-
         } catch (error) {
-            console.error("Load case details error:", error);
+            console.error(
+                "Load case details error:",
+                error
+            );
 
             setCaseError(
                 error.response?.data?.message ||
-                "Unable to load case details."
+                    "Unable to load case details."
             );
         }
     };
 
-    const storedUser = localStorage.getItem("user");
-    const user = storedUser ? JSON.parse(storedUser) : null;
+    // ============================================================
+    // USER
+    // ============================================================
+    const storedUser =
+        localStorage.getItem("user");
 
-    const userName = user?.name || "Family";
+    const user = storedUser
+        ? JSON.parse(storedUser)
+        : null;
 
+    const userName =
+        user?.name || "Family";
+
+    // ============================================================
+    // LOGOUT
+    // ============================================================
     const handleLogout = () => {
         localStorage.removeItem("token");
         localStorage.removeItem("user");
@@ -91,15 +223,22 @@ const FamilyDashboard = () => {
         navigate("/login");
     };
 
+    // ============================================================
+    // UI
+    // ============================================================
     return (
         <div className="min-h-screen bg-[#F4F8FC]">
 
-            {/* HEADER */}
+            {/* ==================================================
+                HEADER
+            ================================================== */}
             <header className="bg-[#0B1F3A] text-white shadow-md">
+
                 <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
 
-                    {/* Logo */}
+                    {/* LOGO */}
                     <div className="flex items-center gap-3">
+
                         <img
                             src={logo}
                             alt="VeAssist Logo"
@@ -107,24 +246,32 @@ const FamilyDashboard = () => {
                         />
 
                         <div>
+
                             <h1 className="text-2xl font-bold tracking-wide">
                                 VeAssist
                             </h1>
+
                             <p className="text-xs text-slate-300">
                                 Family Assistance Portal
                             </p>
+
                         </div>
+
                     </div>
 
-                    {/* User + Logout */}
+                    {/* USER + LOGOUT */}
                     <div className="flex items-center gap-5">
+
                         <div className="hidden sm:block text-right">
+
                             <p className="font-semibold">
                                 {userName}
                             </p>
+
                             <p className="text-xs text-slate-300">
                                 Family
                             </p>
+
                         </div>
 
                         <button
@@ -133,20 +280,30 @@ const FamilyDashboard = () => {
                             px-4 py-2 rounded-lg text-sm hover:bg-white
                             hover:text-[#0B1F3A] transition"
                         >
+
                             <LogOut size={17} />
+
                             Logout
+
                         </button>
+
                     </div>
 
                 </div>
+
             </header>
 
 
-            {/* MAIN CONTENT */}
+            {/* ==================================================
+                MAIN CONTENT
+            ================================================== */}
             <main className="max-w-7xl mx-auto px-6 py-10">
 
-                {/* WELCOME */}
+                {/* ==================================================
+                    WELCOME
+                ================================================== */}
                 <section className="mb-10">
+
                     <p className="text-[#D4AF37] font-semibold mb-2">
                         FAMILY DASHBOARD
                     </p>
@@ -158,13 +315,17 @@ const FamilyDashboard = () => {
                     <p className="text-gray-600 mt-3 text-lg">
                         Manage your assistance journey from one place.
                     </p>
+
                 </section>
 
 
-                {/* MAIN ASSISTANCE */}
+                {/* ==================================================
+                    YOUR ASSISTANCE
+                ================================================== */}
                 <section>
 
                     <div className="mb-6">
+
                         <h3 className="text-2xl font-bold text-[#0B1F3A]">
                             Your Assistance
                         </h3>
@@ -172,19 +333,31 @@ const FamilyDashboard = () => {
                         <p className="text-gray-600 mt-1">
                             Choose the assistance you need.
                         </p>
+
                     </div>
 
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-                        {/* DEATH ASSISTANCE */}
-                        <div className="bg-white rounded-2xl border border-slate-200
-                        shadow-sm hover:shadow-xl transition duration-300
-                        p-7 flex flex-col">
+                        {/* ==================================================
+                            DEATH ASSISTANCE
+                        ================================================== */}
+                        <div
+                            className="bg-white rounded-2xl border border-slate-200
+                            shadow-sm hover:shadow-xl transition duration-300
+                            p-7 flex flex-col"
+                        >
 
-                            <div className="w-14 h-14 rounded-xl bg-[#0B1F3A]
-                            flex items-center justify-center mb-6">
-                                <Anchor size={30} className="text-[#D4AF37]" />
+                            <div
+                                className="w-14 h-14 rounded-xl bg-[#0B1F3A]
+                                flex items-center justify-center mb-6"
+                            >
+
+                                <Anchor
+                                    size={30}
+                                    className="text-[#D4AF37]"
+                                />
+
                             </div>
 
                             <h4 className="text-xl font-bold text-[#0B1F3A]">
@@ -197,27 +370,44 @@ const FamilyDashboard = () => {
                             </p>
 
                             <button
-                                onClick={() => navigate("/family/death-assistance")}
-                                className="mt-6 flex items-center gap-2 text-[#1F4E79] font-semibold hover:text-[#D4AF37] transition"
+                                onClick={() =>
+                                    navigate(
+                                        "/family/death-assistance"
+                                    )
+                                }
+                                className="mt-6 flex items-center gap-2
+                                text-[#1F4E79] font-semibold
+                                hover:text-[#D4AF37] transition"
                             >
+
                                 View Assistance
+
                                 <ArrowRight size={18} />
+
                             </button>
 
                         </div>
 
 
-                        {/* SCHOLARSHIP ASSISTANCE */}
-                        <div className="bg-white rounded-2xl border border-slate-200
-                        shadow-sm hover:shadow-xl transition duration-300
-                        p-7 flex flex-col">
+                        {/* ==================================================
+                            SCHOLARSHIP ASSISTANCE
+                        ================================================== */}
+                        <div
+                            className="bg-white rounded-2xl border border-slate-200
+                            shadow-sm hover:shadow-xl transition duration-300
+                            p-7 flex flex-col"
+                        >
 
-                            <div className="w-14 h-14 rounded-xl bg-[#0B1F3A]
-                            flex items-center justify-center mb-6">
+                            <div
+                                className="w-14 h-14 rounded-xl bg-[#0B1F3A]
+                                flex items-center justify-center mb-6"
+                            >
+
                                 <GraduationCap
                                     size={30}
                                     className="text-[#D4AF37]"
                                 />
+
                             </div>
 
                             <h4 className="text-xl font-bold text-[#0B1F3A]">
@@ -232,27 +422,38 @@ const FamilyDashboard = () => {
 
                             <button
                                 className="mt-6 flex items-center gap-2
-                                text-[#1F4E79] font-semibold hover:text-[#D4AF37]
-                                transition"
+                                text-[#1F4E79] font-semibold
+                                hover:text-[#D4AF37] transition"
                             >
+
                                 Explore Assistance
+
                                 <ArrowRight size={18} />
+
                             </button>
 
                         </div>
 
 
-                        {/* WIDOW VOCATIONAL TRAINING */}
-                        <div className="bg-white rounded-2xl border border-slate-200
-                        shadow-sm hover:shadow-xl transition duration-300
-                        p-7 flex flex-col">
+                        {/* ==================================================
+                            WIDOW VOCATIONAL TRAINING
+                        ================================================== */}
+                        <div
+                            className="bg-white rounded-2xl border border-slate-200
+                            shadow-sm hover:shadow-xl transition duration-300
+                            p-7 flex flex-col"
+                        >
 
-                            <div className="w-14 h-14 rounded-xl bg-[#0B1F3A]
-                            flex items-center justify-center mb-6">
+                            <div
+                                className="w-14 h-14 rounded-xl bg-[#0B1F3A]
+                                flex items-center justify-center mb-6"
+                            >
+
                                 <BriefcaseBusiness
                                     size={30}
                                     className="text-[#D4AF37]"
                                 />
+
                             </div>
 
                             <h4 className="text-xl font-bold text-[#0B1F3A]">
@@ -267,23 +468,30 @@ const FamilyDashboard = () => {
 
                             <button
                                 className="mt-6 flex items-center gap-2
-                                text-[#1F4E79] font-semibold hover:text-[#D4AF37]
-                                transition"
+                                text-[#1F4E79] font-semibold
+                                hover:text-[#D4AF37] transition"
                             >
+
                                 Explore Assistance
+
                                 <ArrowRight size={18} />
+
                             </button>
 
                         </div>
 
                     </div>
+
                 </section>
 
 
-                {/* MY ASSISTANCE JOURNEY */}
+                {/* ==================================================
+                    MY ASSISTANCE JOURNEY
+                ================================================== */}
                 <section className="mt-12">
 
                     <div className="mb-6">
+
                         <h3 className="text-2xl font-bold text-[#0B1F3A]">
                             My Assistance Journey
                         </h3>
@@ -291,55 +499,77 @@ const FamilyDashboard = () => {
                         <p className="text-gray-600 mt-1">
                             Manage your documents, applications and updates.
                         </p>
+
                     </div>
 
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
 
-                        {/* DOCUMENTS */}
+                        {/* ==================================================
+                            DOCUMENTS
+                        ================================================== */}
                         <div
-                            onClick={() => navigate("/family/documents")}
+                            onClick={() =>
+                                navigate("/family/documents")
+                            }
                             className="bg-white rounded-xl border border-slate-200
-                            p-5 flex items-center gap-4 hover:shadow-md transition
-                            cursor-pointer">
+                            p-5 flex items-center gap-4
+                            hover:shadow-md transition cursor-pointer"
+                        >
 
-                            <div className="w-12 h-12 rounded-lg bg-[#EEF5FF]
-                            flex items-center justify-center">
+                            <div
+                                className="w-12 h-12 rounded-lg bg-[#EEF5FF]
+                                flex items-center justify-center"
+                            >
+
                                 <FileText
                                     size={24}
                                     className="text-[#1F4E79]"
                                 />
+
                             </div>
 
                             <div>
+
                                 <h4 className="font-bold text-[#0B1F3A]">
                                     Documents
                                 </h4>
+
                                 <p className="text-sm text-gray-500">
-                                    Manage your documents
+                                    View your document repository
                                 </p>
+
                             </div>
 
                         </div>
 
 
-                        {/* APPLICATIONS */}
+                        {/* ==================================================
+                            APPLICATIONS
+                        ================================================== */}
                         <div
-                            onClick={() => navigate("/family/applications")}
+                            onClick={() =>
+                                navigate("/family/applications")
+                            }
                             className="bg-white rounded-xl border border-slate-200
-    p-5 flex items-center gap-4 hover:shadow-md transition
-    cursor-pointer"
+                            p-5 flex items-center gap-4
+                            hover:shadow-md transition cursor-pointer"
                         >
 
-                            <div className="w-12 h-12 rounded-lg bg-[#EEF5FF]
-    flex items-center justify-center">
+                            <div
+                                className="w-12 h-12 rounded-lg bg-[#EEF5FF]
+                                flex items-center justify-center"
+                            >
+
                                 <ClipboardList
                                     size={24}
                                     className="text-[#1F4E79]"
                                 />
+
                             </div>
 
                             <div>
+
                                 <h4 className="font-bold text-[#0B1F3A]">
                                     Applications
                                 </h4>
@@ -347,29 +577,43 @@ const FamilyDashboard = () => {
                                 <p className="text-sm text-gray-500">
                                     Track your applications
                                 </p>
+
                             </div>
 
                         </div>
 
-                        {/* NOTIFICATIONS */}
-                        <div className="bg-white rounded-xl border border-slate-200
-                        p-5 flex items-center gap-4 hover:shadow-md transition">
 
-                            <div className="w-12 h-12 rounded-lg bg-[#EEF5FF]
-                            flex items-center justify-center">
+                        {/* ==================================================
+                            NOTIFICATIONS
+                        ================================================== */}
+                        <div
+                            className="bg-white rounded-xl border border-slate-200
+                            p-5 flex items-center gap-4
+                            hover:shadow-md transition"
+                        >
+
+                            <div
+                                className="w-12 h-12 rounded-lg bg-[#EEF5FF]
+                                flex items-center justify-center"
+                            >
+
                                 <Bell
                                     size={24}
                                     className="text-[#1F4E79]"
                                 />
+
                             </div>
 
                             <div>
+
                                 <h4 className="font-bold text-[#0B1F3A]">
                                     Notifications
                                 </h4>
+
                                 <p className="text-sm text-gray-500">
                                     View reminders and updates
                                 </p>
+
                             </div>
 
                         </div>
@@ -379,10 +623,13 @@ const FamilyDashboard = () => {
                 </section>
 
 
-                {/* OVERVIEW */}
+                {/* ==================================================
+                    ASSISTANCE OVERVIEW
+                ================================================== */}
                 <section className="mt-12">
 
                     <div className="mb-6">
+
                         <h3 className="text-2xl font-bold text-[#0B1F3A]">
                             Assistance Overview
                         </h3>
@@ -390,54 +637,90 @@ const FamilyDashboard = () => {
                         <p className="text-gray-600 mt-1">
                             Your current assistance activity.
                         </p>
+
                     </div>
 
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
 
-                        <div className="bg-white border border-slate-200
-                        rounded-xl p-6">
+                        {/* ACTIVE CASES */}
+                        <div
+                            className="bg-white border border-slate-200
+                            rounded-xl p-6"
+                        >
+
                             <p className="text-gray-500 text-sm">
                                 Active Cases
                             </p>
 
                             <p className="text-3xl font-bold text-[#0B1F3A] mt-2">
-                                {cases.filter((item) => item.status !== "Closed").length}
+
+                                {loadingCases
+                                    ? "..."
+                                    : cases.filter(
+                                          (item) =>
+                                              item.status !==
+                                              "Closed"
+                                      ).length}
+
                             </p>
+
                         </div>
 
 
-                        <div className="bg-white border border-slate-200
-                        rounded-xl p-6">
+                        {/* APPLICATIONS */}
+                        <div
+                            className="bg-white border border-slate-200
+                            rounded-xl p-6"
+                        >
+
                             <p className="text-gray-500 text-sm">
                                 Applications
                             </p>
 
                             <p className="text-3xl font-bold text-[#0B1F3A] mt-2">
-                                0
+
+                                {loadingOverview
+                                    ? "..."
+                                    : applicationCount}
+
                             </p>
+
                         </div>
 
 
-                        <div className="bg-white border border-slate-200
-                        rounded-xl p-6">
+                        {/* PENDING DOCUMENTS */}
+                        <div
+                            className="bg-white border border-slate-200
+                            rounded-xl p-6"
+                        >
+
                             <p className="text-gray-500 text-sm">
                                 Pending Documents
                             </p>
 
                             <p className="text-3xl font-bold text-[#0B1F3A] mt-2">
-                                0
+
+                                {loadingOverview
+                                    ? "..."
+                                    : pendingDocumentCount}
+
                             </p>
+
                         </div>
 
                     </div>
 
                 </section>
 
-                {/* ACTIVE ASSISTANCE CASE */}
+
+                {/* ==================================================
+                    MY ASSISTANCE CASE
+                ================================================== */}
                 <section className="mt-12">
 
                     <div className="mb-6">
+
                         <h3 className="text-2xl font-bold text-[#0B1F3A]">
                             My Assistance Case
                         </h3>
@@ -445,25 +728,42 @@ const FamilyDashboard = () => {
                         <p className="text-gray-600 mt-1">
                             View your current death assistance case and its progress.
                         </p>
+
                     </div>
 
+
+                    {/* LOADING */}
                     {loadingCases ? (
-                        <div className="bg-white rounded-2xl border border-slate-200
-        p-8 text-center">
+
+                        <div
+                            className="bg-white rounded-2xl
+                            border border-slate-200 p-8 text-center"
+                        >
 
                             <p className="text-gray-500">
                                 Loading your assistance case...
                             </p>
 
                         </div>
+
                     ) : caseError ? (
-                        <div className="bg-red-50 border border-red-200
-        text-red-700 rounded-xl p-5">
+
+                        <div
+                            className="bg-red-50 border border-red-200
+                            text-red-700 rounded-xl p-5"
+                        >
+
                             {caseError}
+
                         </div>
+
                     ) : cases.length === 0 ? (
-                        <div className="bg-white rounded-2xl border border-slate-200
-        p-8 text-center">
+
+                        /* NO CASE */
+                        <div
+                            className="bg-white rounded-2xl
+                            border border-slate-200 p-8 text-center"
+                        >
 
                             <h4 className="text-lg font-bold text-[#0B1F3A]">
                                 No Assistance Case Yet
@@ -476,44 +776,66 @@ const FamilyDashboard = () => {
 
                             <button
                                 onClick={() =>
-                                    navigate("/family/death-assistance")
+                                    navigate(
+                                        "/family/death-assistance"
+                                    )
                                 }
-                                className="mt-5 px-5 py-3 bg-[#0B1F3A]
-                text-white rounded-lg font-semibold
-                hover:bg-[#1F4E79] transition"
+                                className="mt-5 px-5 py-3
+                                bg-[#0B1F3A] text-white
+                                rounded-lg font-semibold
+                                hover:bg-[#1F4E79] transition"
                             >
+
                                 Create Assistance Case
+
                             </button>
 
                         </div>
+
                     ) : (
+
+                        /* CASES */
                         cases.map((item) => (
+
                             <div
                                 key={item._id}
                                 className="bg-white rounded-2xl border
-                border-slate-200 shadow-sm p-7"
+                                border-slate-200 shadow-sm p-7 mb-6"
                             >
 
-                                <div className="flex flex-col md:flex-row
-                md:items-center md:justify-between gap-5">
+                                {/* CASE HEADER */}
+                                <div
+                                    className="flex flex-col md:flex-row
+                                    md:items-center md:justify-between
+                                    gap-5"
+                                >
 
                                     <div>
+
                                         <p className="text-sm text-gray-500">
                                             Case ID
                                         </p>
 
-                                        <h4 className="text-2xl font-bold
-                        text-[#0B1F3A] mt-1">
+                                        <h4
+                                            className="text-2xl font-bold
+                                            text-[#0B1F3A] mt-1"
+                                        >
                                             {item.caseId}
                                         </h4>
 
                                         <p className="text-gray-600 mt-2">
                                             Veteran:{" "}
                                             <span className="font-semibold">
-                                                {item.veteranDetails?.name}
+                                                {
+                                                    item
+                                                        .veteranDetails
+                                                        ?.name
+                                                }
                                             </span>
                                         </p>
+
                                     </div>
+
 
                                     <div className="text-left md:text-right">
 
@@ -535,203 +857,309 @@ const FamilyDashboard = () => {
 
                                     <div className="flex justify-between mb-2">
 
-                                        <span className="text-sm font-semibold
-                        text-gray-600">
+                                        <span
+                                            className="text-sm font-semibold
+                                            text-gray-600"
+                                        >
                                             Case Progress
                                         </span>
 
-                                        <span className="text-sm font-bold
-                        text-[#0B1F3A]">
+                                        <span
+                                            className="text-sm font-bold
+                                            text-[#0B1F3A]"
+                                        >
                                             {item.progress}%
                                         </span>
 
                                     </div>
 
-                                    <div className="w-full h-3 bg-slate-200 rounded-full">
+
+                                    <div
+                                        className="w-full h-3
+                                        bg-slate-200 rounded-full"
+                                    >
 
                                         <div
                                             className="h-3 bg-[#D4AF37]
-                            rounded-full transition-all"
+                                            rounded-full transition-all"
                                             style={{
                                                 width: `${item.progress}%`,
                                             }}
                                         />
 
                                     </div>
+
+
                                     <div className="mt-6">
 
                                         <button
-                                            onClick={() => {
-                                                loadCaseDetails(item.caseId);
-                                            }}
-                                            className="flex items-center gap-2
-                                            text-[#1F4E79] font-semibold
-                                            hover:text-[#D4AF37] transition"
+                                            onClick={() =>
+                                                loadCaseDetails(
+                                                    item.caseId
+                                                )
+                                            }
+                                            className="flex items-center
+                                            gap-2 text-[#1F4E79]
+                                            font-semibold
+                                            hover:text-[#D4AF37]
+                                            transition"
                                         >
+
                                             View Tasks & Timeline
+
                                             <ArrowRight size={18} />
+
                                         </button>
 
                                     </div>
+
                                 </div>
 
                             </div>
+
                         ))
                     )}
 
+
+                    {/* ==================================================
+                        SELECTED CASE DETAILS
+                    ================================================== */}
                     {selectedCase && (
-                        <div className="mt-8 bg-white rounded-2xl border
-    border-slate-200 shadow-sm p-7">
+
+                        <div
+                            className="mt-8 bg-white rounded-2xl
+                            border border-slate-200
+                            shadow-sm p-7"
+                        >
 
                             {/* CASE HEADER */}
-                            <div className="flex flex-col md:flex-row
-        md:items-center md:justify-between gap-4">
+                            <div
+                                className="flex flex-col md:flex-row
+                                md:items-center
+                                md:justify-between gap-4"
+                            >
 
                                 <div>
+
                                     <p className="text-sm text-gray-500">
                                         Selected Case
                                     </p>
 
-                                    <h3 className="text-2xl font-bold text-[#0B1F3A] mt-1">
+                                    <h3
+                                        className="text-2xl font-bold
+                                        text-[#0B1F3A] mt-1"
+                                    >
                                         {selectedCase.caseId}
                                     </h3>
 
                                     <p className="text-gray-600 mt-1">
-                                        Veteran: {selectedCase.veteranDetails?.name}
+                                        Veteran:{" "}
+                                        {
+                                            selectedCase
+                                                .veteranDetails
+                                                ?.name
+                                        }
                                     </p>
+
                                 </div>
 
+
                                 <div>
-                                    <span className="inline-flex items-center
-                px-4 py-2 rounded-full bg-[#EEF5FF]
-                text-[#1F4E79] font-semibold">
 
+                                    <span
+                                        className="inline-flex
+                                        items-center px-4 py-2
+                                        rounded-full bg-[#EEF5FF]
+                                        text-[#1F4E79]
+                                        font-semibold"
+                                    >
                                         {selectedCase.status}
-
                                     </span>
+
                                 </div>
 
                             </div>
 
 
-                            {/* TASKS */}
+                            {/* ==================================================
+                                TASKS
+                            ================================================== */}
                             <div className="mt-10">
 
-                                <h4 className="text-xl font-bold text-[#0B1F3A]">
+                                <h4
+                                    className="text-xl font-bold
+                                    text-[#0B1F3A]"
+                                >
                                     Case Tasks
                                 </h4>
 
                                 <p className="text-gray-500 mt-1 mb-5">
-                                    Complete the required activities for your assistance case.
+                                    Complete the required activities for your
+                                    assistance case.
                                 </p>
+
 
                                 <div className="space-y-4">
 
-                                    {selectedCase.tasks?.map((task) => (
+                                    {selectedCase.tasks?.map(
+                                        (task) => (
 
-                                        <div
-                                            key={task._id}
-                                            className="border border-slate-200
-                        rounded-xl p-5"
-                                        >
-
-                                            <div className="flex flex-col md:flex-row
-                        md:items-center md:justify-between gap-4">
-
-                                                <div>
-
-                                                    <h5 className="font-bold text-[#0B1F3A]">
-                                                        {task.title}
-                                                    </h5>
-
-                                                    <p className="text-sm text-gray-500 mt-1">
-                                                        {task.description}
-                                                    </p>
-
-                                                </div>
+                                            <div
+                                                key={task._id}
+                                                className="border
+                                                border-slate-200
+                                                rounded-xl p-5"
+                                            >
 
                                                 <div
-                                                    className={`px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap
-        ${task.status === "Completed"
-                                                            ? "bg-green-50 text-green-700"
-                                                            : task.status === "In Progress"
+                                                    className="flex flex-col
+                                                    md:flex-row
+                                                    md:items-center
+                                                    md:justify-between
+                                                    gap-4"
+                                                >
+
+                                                    <div>
+
+                                                        <h5
+                                                            className="font-bold
+                                                            text-[#0B1F3A]"
+                                                        >
+                                                            {task.title}
+                                                        </h5>
+
+                                                        <p
+                                                            className="text-sm
+                                                            text-gray-500 mt-1"
+                                                        >
+                                                            {
+                                                                task.description
+                                                            }
+                                                        </p>
+
+                                                    </div>
+
+
+                                                    <div
+                                                        className={`px-4 py-2
+                                                        rounded-full
+                                                        text-sm font-semibold
+                                                        whitespace-nowrap
+                                                        ${
+                                                            task.status ===
+                                                            "Completed"
+                                                                ? "bg-green-50 text-green-700"
+                                                                : task.status ===
+                                                                  "In Progress"
                                                                 ? "bg-amber-50 text-amber-700"
                                                                 : "bg-slate-100 text-slate-600"
                                                         }`}
-                                                >
-                                                    {task.status}
+                                                    >
+                                                        {task.status}
+                                                    </div>
+
                                                 </div>
 
                                             </div>
 
-                                        </div>
-
-                                    ))}
+                                        )
+                                    )}
 
                                 </div>
 
                             </div>
 
 
-                            {/* TIMELINE */}
+                            {/* ==================================================
+                                TIMELINE
+                            ================================================== */}
                             <div className="mt-10">
 
-                                <h4 className="text-xl font-bold text-[#0B1F3A]">
+                                <h4
+                                    className="text-xl font-bold
+                                    text-[#0B1F3A]"
+                                >
                                     Case Timeline
                                 </h4>
 
                                 <p className="text-gray-500 mt-1 mb-6">
-                                    View important events and updates related to this case.
+                                    View important events and updates related
+                                    to this case.
                                 </p>
+
 
                                 <div className="space-y-5">
 
                                     {selectedCase.timeline
                                         ?.slice()
                                         .reverse()
-                                        .map((event, index) => (
+                                        .map(
+                                            (event, index) => (
 
-                                            <div
-                                                key={index}
-                                                className="border-l-2 border-[#D4AF37]
-                            pl-5"
-                                            >
+                                                <div
+                                                    key={index}
+                                                    className="border-l-2
+                                                    border-[#D4AF37]
+                                                    pl-5"
+                                                >
 
-                                                <h5 className="font-semibold text-[#0B1F3A]">
-                                                    {event.event}
-                                                </h5>
+                                                    <h5
+                                                        className="font-semibold
+                                                        text-[#0B1F3A]"
+                                                    >
+                                                        {event.event}
+                                                    </h5>
 
-                                                <p className="text-sm text-gray-500 mt-1">
-                                                    {event.description}
-                                                </p>
+                                                    <p
+                                                        className="text-sm
+                                                        text-gray-500 mt-1"
+                                                    >
+                                                        {
+                                                            event.description
+                                                        }
+                                                    </p>
 
-                                                <p className="text-xs text-gray-400 mt-1">
-                                                    {new Date(
-                                                        event.date
-                                                    ).toLocaleString()}
-                                                </p>
+                                                    <p
+                                                        className="text-xs
+                                                        text-gray-400 mt-1"
+                                                    >
+                                                        {new Date(
+                                                            event.date
+                                                        ).toLocaleString()}
+                                                    </p>
 
-                                            </div>
+                                                </div>
 
-                                        ))}
+                                            )
+                                        )}
 
                                 </div>
 
                             </div>
 
                         </div>
+
                     )}
 
                 </section>
 
-                {/* RECENT ACTIVITY */}
+
+                {/* ==================================================
+                    RECENT ACTIVITY
+                ================================================== */}
                 <section className="mt-12 mb-8">
 
-                    <div className="bg-white rounded-2xl border border-slate-200
-                    p-8 text-center">
+                    <div
+                        className="bg-white rounded-2xl
+                        border border-slate-200
+                        p-8 text-center"
+                    >
 
-                        <div className="w-14 h-14 mx-auto rounded-full
-                        bg-[#EEF5FF] flex items-center justify-center mb-4">
+                        <div
+                            className="w-14 h-14 mx-auto rounded-full
+                            bg-[#EEF5FF]
+                            flex items-center justify-center mb-4"
+                        >
 
                             <ShieldCheck
                                 size={28}
@@ -740,7 +1168,10 @@ const FamilyDashboard = () => {
 
                         </div>
 
-                        <h3 className="text-xl font-bold text-[#0B1F3A]">
+                        <h3
+                            className="text-xl font-bold
+                            text-[#0B1F3A]"
+                        >
                             No Recent Activity
                         </h3>
 

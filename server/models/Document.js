@@ -8,6 +8,12 @@ const documentSchema = new mongoose.Schema(
             required: true,
         },
 
+        applicationId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Application",
+            default: null,
+        },
+
         uploadedBy: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
@@ -16,14 +22,16 @@ const documentSchema = new mongoose.Schema(
 
         documentType: {
             type: String,
-            required: true,
             enum: [
                 "Death Certificate",
                 "Identity Proof",
                 "Bank Document",
                 "Service Document",
+                "Insurance Document",
+                "ECHS Card",
                 "Other",
             ],
+            required: true,
         },
 
         fileName: {

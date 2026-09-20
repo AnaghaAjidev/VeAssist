@@ -221,6 +221,22 @@ Additional Details: ${details}
 
                 </div>
 
+                {/* APPLICATION SUBMISSION REQUIREMENT */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+
+                    <p className="text-sm font-semibold text-[#1F4E79]">
+                        Application Submission Requirement
+                    </p>
+
+                    <p className="text-sm text-gray-600 mt-1 leading-relaxed">
+                        You can prepare your application as a draft.
+                        Submission will be available only after the required
+                        supporting documents for your assistance case have been
+                        verified by the Welfare Officer.
+                    </p>
+
+                </div>
+
                 {/* Form */}
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 md:p-8">
 

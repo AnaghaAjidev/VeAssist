@@ -1,5 +1,9 @@
 import Application from "../models/Application.js";
 import AssistanceCase from "../models/AssistanceCase.js";
+import ApplicationDocument from "../models/ApplicationDocument.js";
+import Document from "../models/Document.js";
+import applicationDocumentRequirements from "../config/applicationDocumentRequirements.js";
+import documentRequirements from "../config/documentRequirements.js";
 
 // Create a new application
 export const createApplication = async (req, res) => {
@@ -89,11 +93,7 @@ export const submitApplication = async (req, res) => {
   try {
     const { applicationId } = req.params;
 
-    // Find the application belonging to the logged-in family
-    const application = await Application.findOne({
-      _id: applicationId,
-      submittedBy: req.user.userId,
-    });
+    const application = await Application.findById(applicationId);
 
     if (!application) {
       return res.status(404).json({
@@ -101,27 +101,106 @@ export const submitApplication = async (req, res) => {
       });
     }
 
-    // Only Draft applications can be submitted
+    // Only the family member who created the application can submit it
+    if (application.submittedBy.toString() !== req.user.userId) {
+      return res.status(403).json({
+        message: "You are not authorized to submit this application.",
+      });
+    }
+
+    // Application can only be submitted from Draft status
     if (application.status !== "Draft") {
       return res.status(400).json({
         message: "Only draft applications can be submitted.",
       });
     }
 
+    // Get the assistance case
+    const assistanceCase = await AssistanceCase.findById(
+      application.caseId
+    );
+
+    if (!assistanceCase) {
+      return res.status(404).json({
+        message: "Assistance case not found.",
+      });
+    }
+
+    // Get requirements specifically for this application type
+    const requiredDocuments =
+      applicationDocumentRequirements[application.applicationType] || [];
+
+    /*
+     * Documents can be associated with an application in two ways:
+     *
+     * 1. Uploaded directly for this application
+     * 2. Reused from the central Documents section
+     *    through ApplicationDocument
+     */
+
+    // Directly uploaded documents
+    const directDocuments = await Document.find({
+      caseId: assistanceCase._id,
+      applicationId: application._id,
+    });
+
+    // Reused/linked documents
+    const linkedDocuments = await ApplicationDocument.find({
+      applicationId: application._id,
+    }).populate("documentId");
+
+    // Combine both sources
+    const applicationDocuments = [];
+
+    directDocuments.forEach((document) => {
+      applicationDocuments.push(document);
+    });
+
+    linkedDocuments.forEach((link) => {
+      if (link.documentId) {
+        applicationDocuments.push(link.documentId);
+      }
+    });
+
+    // Check every required document
+    const pendingDocuments = requiredDocuments
+      .filter((requiredDocument) => {
+        const matchingDocument = applicationDocuments.find(
+          (document) =>
+            document.documentType === requiredDocument.documentType
+        );
+
+        return (
+          !matchingDocument ||
+          matchingDocument.status !== "Verified"
+        );
+      })
+      .map((document) => document.documentType);
+
+    // Do not allow submission until every required document is verified
+    if (pendingDocuments.length > 0) {
+      return res.status(400).json({
+        message:
+          "Application cannot be submitted until all required documents are verified.",
+        pendingDocuments,
+      });
+    }
+
+    // Submit application
     application.status = "Submitted";
     application.submittedAt = new Date();
 
     await application.save();
 
-    res.status(200).json({
+    return res.status(200).json({
       message: "Application submitted successfully.",
       application,
     });
   } catch (error) {
     console.error("Submit application error:", error);
 
-    res.status(500).json({
-      message: "Unable to submit application.",
+    return res.status(500).json({
+      message: "Server error while submitting application.",
     });
   }
 };
@@ -131,8 +210,15 @@ export const getOfficerApplications = async (req, res) => {
   try {
     const applications = await Application.find({
       status: {
-        $in: ["Submitted", "Under Review", "Approved", "Rejected"],
-      },
+  $in: [
+    "Submitted",
+    "Under Review",
+    "Forwarded to Authority",
+    "Under Authority Review",
+    "Approved",
+    "Rejected",
+  ],
+},
     })
       .populate("submittedBy", "name email")
       .populate({
@@ -161,8 +247,12 @@ export const getOfficerApplicationById = async (req, res) => {
   try {
     const { applicationId } = req.params;
 
+    // Find application and populate family + case details
     const application = await Application.findById(applicationId)
-      .populate("submittedBy", "name email")
+      .populate(
+        "submittedBy",
+        "name email"
+      )
       .populate({
         path: "caseId",
         populate: {
@@ -177,28 +267,173 @@ export const getOfficerApplicationById = async (req, res) => {
       });
     }
 
-    res.status(200).json({
-      application,
-    });
-  } catch (error) {
-    console.error("Get officer application error:", error);
+    /*
+      Get document requirements based on the
+      specific application type.
 
-    res.status(500).json({
-      message: "Unable to retrieve application.",
+      Example:
+      Pension Assistance  -> Pension requirements
+      Insurance Assistance -> Insurance requirements
+      ECHS Assistance     -> ECHS requirements
+    */
+    const requirements =
+      applicationDocumentRequirements[
+        application.applicationType
+      ] || [];
+
+    /*
+      Get documents uploaded specifically
+      for this application.
+    */
+    const directDocuments = await Document.find({
+      caseId: application.caseId._id,
+      applicationId: application._id,
+    }).sort({
+      uploadedAt: -1,
+    });
+
+    /*
+      Get documents reused from the central
+      Document Repository through ApplicationDocument.
+    */
+    const linkedDocuments = await ApplicationDocument.find({
+      applicationId: application._id,
+    })
+      .populate("documentId")
+      .sort({
+        linkedAt: -1,
+      });
+
+    /*
+      Combine direct documents and linked documents.
+
+      A document may appear through both paths,
+      so use a Map to avoid duplicates.
+    */
+    const documentMap = new Map();
+
+    directDocuments.forEach((document) => {
+      documentMap.set(
+        document._id.toString(),
+        document
+      );
+    });
+
+    linkedDocuments.forEach((link) => {
+      if (link.documentId) {
+        documentMap.set(
+          link.documentId._id.toString(),
+          link.documentId
+        );
+      }
+    });
+
+    const allDocuments = Array.from(
+      documentMap.values()
+    );
+
+    /*
+      Match the application's required document
+      types with the available documents.
+    */
+    const supportingDocuments = requirements.map(
+      (requiredDocument) => {
+
+        const matchingDocument =
+          allDocuments.find(
+            (document) =>
+              document.documentType ===
+              requiredDocument.documentType
+          );
+
+        if (!matchingDocument) {
+          return {
+            documentType:
+              requiredDocument.documentType,
+
+            description:
+              requiredDocument.description,
+
+            status: "Missing",
+
+            remarks: "",
+
+            fileName: "",
+
+            fileUrl: "",
+
+            documentId: null,
+
+            uploadedAt: null,
+          };
+        }
+
+        return {
+          documentType:
+            requiredDocument.documentType,
+
+          description:
+            requiredDocument.description,
+
+          status:
+            matchingDocument.status,
+
+          remarks:
+            matchingDocument.remarks || "",
+
+          fileName:
+            matchingDocument.fileName || "",
+
+          fileUrl:
+            matchingDocument.fileUrl || "",
+
+          documentId:
+            matchingDocument._id,
+
+          uploadedAt:
+            matchingDocument.uploadedAt || null,
+        };
+      }
+    );
+
+    /*
+      Return the complete application.
+
+      Because application contains:
+      - authorityDepartment
+      - forwardedAt
+      - authorityRemarks
+
+      these fields will automatically be
+      available to the Officer frontend.
+    */
+    return res.status(200).json({
+      application,
+      supportingDocuments,
+    });
+
+  } catch (error) {
+    console.error(
+      "Get officer application error:",
+      error
+    );
+
+    return res.status(500).json({
+      message:
+        "Unable to retrieve application details.",
     });
   }
 };
 
-// Review an application by welfare officer
+// Review / forward an application by Welfare Officer
 export const reviewApplication = async (req, res) => {
   try {
     const { applicationId } = req.params;
     const { status, remarks } = req.body;
 
-    // Validate status
     const allowedStatuses = [
       "Under Review",
-      "Approved",
+      "Forwarded to Authority",
       "Rejected",
     ];
 
@@ -208,7 +443,193 @@ export const reviewApplication = async (req, res) => {
       });
     }
 
-    // Find application
+    const application = await Application.findById(
+      applicationId
+    );
+
+    if (!application) {
+      return res.status(404).json({
+        message: "Application not found.",
+      });
+    }
+
+    /*
+      Officer can only review applications that were
+      submitted by the family.
+    */
+    if (
+      application.status !== "Submitted" &&
+      application.status !== "Under Review"
+    ) {
+      return res.status(400).json({
+        message:
+          "This application cannot be reviewed in its current status.",
+      });
+    }
+
+    /*
+      Officer rejects the application during preliminary review.
+    */
+    if (status === "Rejected") {
+      application.status = "Rejected";
+      application.remarks = remarks || "";
+
+      await application.save();
+
+      return res.status(200).json({
+        message:
+          "Application rejected by Welfare Officer.",
+        application,
+      });
+    }
+
+    /*
+      Officer can mark the application as Under Review.
+    */
+    if (status === "Under Review") {
+      application.status = "Under Review";
+      application.remarks = remarks || "";
+
+      await application.save();
+
+      return res.status(200).json({
+        message:
+          "Application placed under Welfare Officer review.",
+        application,
+      });
+    }
+
+    /*
+      Forwarding to Authority requires all required
+      application documents to be verified.
+    */
+
+    const requiredDocuments =
+      applicationDocumentRequirements[
+        application.applicationType
+      ] || [];
+
+    const directDocuments = await Document.find({
+      caseId: application.caseId,
+      applicationId: application._id,
+    });
+
+    const linkedDocuments = await ApplicationDocument.find({
+      applicationId: application._id,
+    }).populate("documentId");
+
+    /*
+      Combine directly uploaded and reused documents.
+    */
+    const documentMap = new Map();
+
+    directDocuments.forEach((document) => {
+      documentMap.set(
+        document._id.toString(),
+        document
+      );
+    });
+
+    linkedDocuments.forEach((link) => {
+      if (link.documentId) {
+        documentMap.set(
+          link.documentId._id.toString(),
+          link.documentId
+        );
+      }
+    });
+
+    const allDocuments = Array.from(
+      documentMap.values()
+    );
+
+    const pendingDocuments = requiredDocuments
+      .filter((requiredDocument) => {
+        const matchingDocument = allDocuments.find(
+          (document) =>
+            document.documentType ===
+            requiredDocument.documentType
+        );
+
+        return (
+          !matchingDocument ||
+          matchingDocument.status !== "Verified"
+        );
+      })
+      .map(
+        (requiredDocument) =>
+          requiredDocument.documentType
+      );
+
+    if (pendingDocuments.length > 0) {
+      return res.status(400).json({
+        message:
+          "Application cannot be forwarded until all required documents are verified.",
+        pendingDocuments,
+      });
+    }
+
+    /*
+      Automatically determine the relevant Authority.
+    */
+    let authorityDepartment = "";
+
+    switch (application.applicationType) {
+      case "Pension Assistance":
+        authorityDepartment = "Pension Department";
+        break;
+
+      case "Insurance Assistance":
+        authorityDepartment =
+          "Insurance Department";
+        break;
+
+      case "ECHS Assistance":
+        authorityDepartment = "ECHS Department";
+        break;
+
+      default:
+        return res.status(400).json({
+          message:
+            "Unable to determine the relevant authority.",
+        });
+    }
+
+    application.status =
+      "Forwarded to Authority";
+
+    application.authorityDepartment =
+      authorityDepartment;
+
+    application.remarks = remarks || "";
+
+    application.forwardedAt = new Date();
+
+    await application.save();
+
+    return res.status(200).json({
+      message:
+        "Application forwarded to the relevant Authority successfully.",
+      application,
+    });
+  } catch (error) {
+    console.error(
+      "Review application error:",
+      error
+    );
+
+    return res.status(500).json({
+      message:
+        "Unable to review application.",
+    });
+  }
+};
+
+export const getApplicationDocumentRequirements = async (req, res) => {
+  try {
+    const { applicationId } = req.params;
+
+    // Find the application
     const application = await Application.findById(applicationId);
 
     if (!application) {
@@ -217,30 +638,291 @@ export const reviewApplication = async (req, res) => {
       });
     }
 
-    // Only submitted/reviewed applications can be reviewed
-    if (
-      application.status !== "Submitted" &&
-      application.status !== "Under Review"
-    ) {
-      return res.status(400).json({
-        message: "This application cannot be reviewed in its current status.",
+    // Make sure the logged-in family user owns this application
+    if (application.submittedBy.toString() !== req.user.userId) {
+      return res.status(403).json({
+        message: "You are not authorized to access this application.",
       });
     }
 
-    application.status = status;
-    application.remarks = remarks || "";
+    // Find the assistance case
+    const assistanceCase = await AssistanceCase.findById(
+      application.caseId
+    ).select("caseId");
 
-    await application.save();
+    if (!assistanceCase) {
+      return res.status(404).json({
+        message: "Assistance case not found.",
+      });
+    }
 
-    res.status(200).json({
-      message: "Application reviewed successfully.",
-      application,
+    // Get requirements based on application type
+    const requirements =
+      applicationDocumentRequirements[application.applicationType] || [];
+
+    /*
+      1. Get documents uploaded specifically for this application.
+      These documents have applicationId stored in the Document model.
+    */
+    const directDocuments = await Document.find({
+      caseId: application.caseId,
+      applicationId: application._id,
+    }).sort({ uploadedAt: -1 });
+
+    /*
+      2. Get documents linked through ApplicationDocument.
+      These can be reused by multiple applications.
+    */
+    const linkedDocuments = await ApplicationDocument.find({
+      applicationId: application._id,
+    })
+      .populate("documentId")
+      .sort({ linkedAt: -1 });
+
+    /*
+      Combine both sources.
+
+      A document can appear in both places, so use a Map
+      to avoid duplicates.
+    */
+    const documentMap = new Map();
+
+    directDocuments.forEach((document) => {
+      documentMap.set(document._id.toString(), document);
+    });
+
+    linkedDocuments.forEach((link) => {
+      if (link.documentId) {
+        documentMap.set(
+          link.documentId._id.toString(),
+          link.documentId
+        );
+      }
+    });
+
+    const allDocuments = Array.from(documentMap.values());
+
+    /*
+      Match the application's required document types
+      with the available documents.
+    */
+    const result = requirements.map((requirement) => {
+      const matchingDocument = allDocuments.find(
+        (document) =>
+          document.documentType === requirement.documentType
+      );
+
+      if (!matchingDocument) {
+        return {
+          documentType: requirement.documentType,
+          description: requirement.description,
+          status: "Missing",
+          documentId: null,
+          fileName: null,
+          fileUrl: null,
+          remarks: "",
+          uploadedAt: null,
+        };
+      }
+
+      return {
+        documentType: requirement.documentType,
+        description: requirement.description,
+        status: matchingDocument.status,
+        documentId: matchingDocument._id,
+        fileName: matchingDocument.fileName,
+        fileUrl: matchingDocument.fileUrl,
+        remarks: matchingDocument.remarks || "",
+        uploadedAt: matchingDocument.uploadedAt,
+      };
+    });
+
+    return res.status(200).json({
+      applicationId: application._id,
+      applicationType: application.applicationType,
+      caseId: assistanceCase.caseId,
+      requirements: result,
     });
   } catch (error) {
-    console.error("Review application error:", error);
+    console.error(
+      "Get application document requirements error:",
+      error
+    );
 
-    res.status(500).json({
-      message: "Unable to review application.",
+    return res.status(500).json({
+      message:
+        "Server error while fetching application document requirements.",
+    });
+  }
+};
+
+export const linkExistingDocument = async (req, res) => {
+  try {
+    const { applicationId } = req.params;
+    const { documentId } = req.body;
+
+    if (!documentId) {
+      return res.status(400).json({
+        message: "Document ID is required.",
+      });
+    }
+
+    // Find the application and make sure it belongs to the logged-in family user
+    const application = await Application.findOne({
+      _id: applicationId,
+      submittedBy: req.user.userId,
+    });
+
+    if (!application) {
+      return res.status(404).json({
+        message: "Application not found.",
+      });
+    }
+
+    // Find the existing document
+    const document = await Document.findById(documentId);
+
+    if (!document) {
+      return res.status(404).json({
+        message: "Document not found.",
+      });
+    }
+
+    // Document must belong to the same case
+    if (document.caseId.toString() !== application.caseId.toString()) {
+      return res.status(400).json({
+        message: "This document does not belong to the application case.",
+      });
+    }
+
+    // Only verified documents can be reused
+    if (document.status !== "Verified") {
+      return res.status(400).json({
+        message: "Only verified documents can be linked to an application.",
+      });
+    }
+
+    // Check whether this document type is required for this application
+    const requiredDocuments =
+      applicationDocumentRequirements[application.applicationType] || [];
+
+    const isRequired = requiredDocuments.some(
+      (requirement) =>
+        requirement.documentType === document.documentType
+    );
+
+    if (!isRequired) {
+      return res.status(400).json({
+        message: `${document.documentType} is not required for this application.`,
+      });
+    }
+
+    // Prevent duplicate linking
+    const existingLink = await ApplicationDocument.findOne({
+      applicationId: application._id,
+      documentId: document._id,
+    });
+
+    if (existingLink) {
+      return res.status(409).json({
+        message: "This document is already linked to the application.",
+      });
+    }
+
+    // Create the association
+    const applicationDocument = await ApplicationDocument.create({
+      applicationId: application._id,
+      documentId: document._id,
+      linkedBy: req.user.userId,
+    });
+
+    return res.status(201).json({
+      message: "Existing document linked to application successfully.",
+      applicationDocument,
+    });
+  } catch (error) {
+    console.error("Link existing document error:", error);
+
+    return res.status(500).json({
+      message: "Server error while linking document.",
+    });
+  }
+};
+
+export const getReusableDocuments = async (req, res) => {
+  try {
+    const { applicationId } = req.params;
+
+    // Find the application
+    const application = await Application.findById(applicationId);
+
+    if (!application) {
+      return res.status(404).json({
+        message: "Application not found.",
+      });
+    }
+
+    // Make sure the application belongs to the logged-in family user
+    if (application.submittedBy.toString() !== req.user.userId) {
+      return res.status(403).json({
+        message: "You are not authorized to access this application.",
+      });
+    }
+
+    // Get the document types required for this application
+    const requirements =
+      applicationDocumentRequirements[application.applicationType] || [];
+
+    const requiredDocumentTypes = requirements.map(
+      (requirement) => requirement.documentType
+    );
+
+    /*
+      Find verified documents belonging to the same case.
+
+      Only verified documents are eligible for reuse.
+    */
+    const documents = await Document.find({
+      caseId: application.caseId,
+      uploadedBy: req.user.userId,
+      status: "Verified",
+      documentType: { $in: requiredDocumentTypes },
+    }).sort({ uploadedAt: -1 });
+
+    /*
+      Check which documents are already linked
+      to this application.
+    */
+    const existingLinks = await ApplicationDocument.find({
+      applicationId: application._id,
+    });
+
+    const linkedDocumentIds = new Set(
+      existingLinks.map((link) => link.documentId.toString())
+    );
+
+    /*
+      Return only documents that are not already
+      linked to this application.
+    */
+    const reusableDocuments = documents.filter(
+      (document) =>
+        !linkedDocumentIds.has(document._id.toString())
+    );
+
+    return res.status(200).json({
+      applicationId: application._id,
+      applicationType: application.applicationType,
+      documents: reusableDocuments,
+    });
+  } catch (error) {
+    console.error(
+      "Get reusable documents error:",
+      error
+    );
+
+    return res.status(500).json({
+      message: "Server error while fetching reusable documents.",
     });
   }
 };
