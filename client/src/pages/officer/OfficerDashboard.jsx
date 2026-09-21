@@ -5,9 +5,9 @@ import {
     FileText,
     ClipboardCheck,
     Clock,
-    Eye,
     LogOut,
     ArrowRight,
+    RefreshCw,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import logo from "../../assets/logo.png";
@@ -23,68 +23,183 @@ const OfficerDashboard = () => {
     const [loadingApplications, setLoadingApplications] = useState(true);
     const [applicationError, setApplicationError] = useState("");
 
+    const [refreshing, setRefreshing] = useState(false);
+
     const storedUser = localStorage.getItem("user");
     const user = storedUser ? JSON.parse(storedUser) : null;
 
     const userName = user?.name || "Welfare Officer";
 
-    useEffect(() => {
-        const fetchOfficerCases = async () => {
-            try {
-                const token = localStorage.getItem("token");
+    // =========================================================
+    // FETCH OFFICER CASES
+    // =========================================================
+    const fetchOfficerCases = async () => {
+        const token = localStorage.getItem("token");
 
-                if (!token) {
-                    navigate("/login");
-                    return;
+        if (!token) {
+            navigate("/login");
+            return;
+        }
+
+        try {
+            const response = await axios.get(
+                "http://localhost:5000/api/cases/officer/cases",
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                    params: {
+                        _t: Date.now(),
+                    },
                 }
+            );
 
-                if (user?.role !== "officer" && user?.role !== "admin") {
-                    navigate("/login");
-                    return;
-                }
+            setCases(response.data.cases || []);
+            setCaseError("");
+        } catch (error) {
+            console.error("Fetch officer cases error:", error);
 
-                const response = await axios.get(
-                    "http://localhost:5000/api/cases/officer/cases",
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                        },
-                    }
-                );
-
-                setCases(response.data.cases);
-                setCaseError("");
-
-            } catch (error) {
-                console.error("Fetch officer cases error:", error);
-
-                if (error.response?.status === 401) {
-                    localStorage.removeItem("token");
-                    localStorage.removeItem("user");
-                    navigate("/login");
-                    return;
-                }
-
-                if (error.response?.status === 403) {
-                    setCaseError(
-                        "You are not authorized to access the officer dashboard."
-                    );
-                    return;
-                }
-
-                setCaseError(
-                    error.response?.data?.message ||
-                    "Unable to load assistance cases."
-                );
-
-            } finally {
-                setLoadingCases(false);
+            if (error.response?.status === 401) {
+                localStorage.removeItem("token");
+                localStorage.removeItem("user");
+                navigate("/login");
+                return;
             }
-        };
 
-        fetchOfficerCases();
-    }, [navigate]);
+            if (error.response?.status === 403) {
+                setCaseError(
+                    "You are not authorized to access the officer dashboard."
+                );
+                return;
+            }
 
+            setCaseError(
+                error.response?.data?.message ||
+                    "Unable to load assistance cases."
+            );
+        }
+    };
+
+    // =========================================================
+    // FETCH OFFICER APPLICATIONS
+    // =========================================================
+    const fetchOfficerApplications = async () => {
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+            navigate("/login");
+            return;
+        }
+
+        try {
+            const response = await axios.get(
+                "http://localhost:5000/api/applications/officer",
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                    params: {
+                        _t: Date.now(),
+                    },
+                }
+            );
+
+            setApplications(response.data.applications || []);
+            setApplicationError("");
+        } catch (error) {
+            console.error(
+                "Fetch officer applications error:",
+                error
+            );
+
+            if (error.response?.status === 401) {
+                localStorage.removeItem("token");
+                localStorage.removeItem("user");
+                navigate("/login");
+                return;
+            }
+
+            if (error.response?.status === 403) {
+                setApplicationError(
+                    "You are not authorized to access officer applications."
+                );
+                return;
+            }
+
+            setApplicationError(
+                error.response?.data?.message ||
+                    "Unable to load applications."
+            );
+        }
+    };
+
+    // =========================================================
+    // LOAD DASHBOARD
+    // =========================================================
+    const loadDashboard = async (showLoading = true) => {
+        if (showLoading) {
+            setLoadingCases(true);
+            setLoadingApplications(true);
+        }
+
+        setCaseError("");
+        setApplicationError("");
+
+        try {
+            await Promise.all([
+                fetchOfficerCases(),
+                fetchOfficerApplications(),
+            ]);
+        } catch (error) {
+            console.error("Dashboard loading error:", error);
+        } finally {
+            if (showLoading) {
+                setLoadingCases(false);
+                setLoadingApplications(false);
+            }
+        }
+    };
+
+    // =========================================================
+    // INITIAL LOAD
+    // =========================================================
+    useEffect(() => {
+        loadDashboard(true);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // =========================================================
+    // REFRESH DASHBOARD
+    // =========================================================
+    const handleRefresh = async () => {
+        if (refreshing) return;
+
+        try {
+            setRefreshing(true);
+
+            // Show loading state while refreshing
+            setLoadingCases(true);
+            setLoadingApplications(true);
+
+            setCaseError("");
+            setApplicationError("");
+
+            await Promise.all([
+                fetchOfficerCases(),
+                fetchOfficerApplications(),
+            ]);
+        } catch (error) {
+            console.error("Dashboard refresh error:", error);
+        } finally {
+            setLoadingCases(false);
+            setLoadingApplications(false);
+            setRefreshing(false);
+        }
+    };
+
+    // =========================================================
+    // LOGOUT
+    // =========================================================
     const handleLogout = () => {
         localStorage.removeItem("token");
         localStorage.removeItem("user");
@@ -92,55 +207,9 @@ const OfficerDashboard = () => {
         navigate("/login");
     };
 
-    useEffect(() => {
-        const fetchOfficerApplications = async () => {
-            try {
-                const token = localStorage.getItem("token");
-
-                if (!token) {
-                    navigate("/login");
-                    return;
-                }
-
-                const response = await axios.get(
-                    "http://localhost:5000/api/applications/officer",
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                        },
-                    }
-                );
-
-                setApplications(response.data.applications || []);
-                setApplicationError("");
-
-            } catch (error) {
-                console.error(
-                    "Fetch officer applications error:",
-                    error
-                );
-
-                if (error.response?.status === 401) {
-                    localStorage.removeItem("token");
-                    localStorage.removeItem("user");
-                    navigate("/login");
-                    return;
-                }
-
-                setApplicationError(
-                    error.response?.data?.message ||
-                    "Unable to load applications."
-                );
-
-            } finally {
-                setLoadingApplications(false);
-            }
-        };
-
-        fetchOfficerApplications();
-    }, [navigate]);
-
-    // Dashboard statistics
+    // =========================================================
+    // DASHBOARD STATISTICS
+    // =========================================================
     const totalCases = cases.length;
 
     const pendingReviewCases = cases.filter(
@@ -174,7 +243,9 @@ const OfficerDashboard = () => {
     return (
         <div className="min-h-screen bg-[#F4F8FC]">
 
-            {/* HEADER */}
+            {/* =====================================================
+                HEADER
+            ====================================================== */}
             <header className="bg-[#0B1F3A] text-white shadow-md">
                 <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
 
@@ -196,14 +267,12 @@ const OfficerDashboard = () => {
                                 Welfare Officer Portal
                             </p>
                         </div>
-
                     </div>
 
                     {/* User + Logout */}
                     <div className="flex items-center gap-5">
 
                         <div className="hidden sm:block text-right">
-
                             <p className="font-semibold">
                                 {userName}
                             </p>
@@ -211,54 +280,83 @@ const OfficerDashboard = () => {
                             <p className="text-xs text-slate-300">
                                 Welfare Officer
                             </p>
-
                         </div>
 
                         <button
                             onClick={handleLogout}
-                            className="flex items-center gap-2 border border-slate-400
-                            px-4 py-2 rounded-lg text-sm hover:bg-white
-                            hover:text-[#0B1F3A] transition"
+                            className="flex items-center gap-2 border border-slate-400 px-4 py-2 rounded-lg text-sm hover:bg-white hover:text-[#0B1F3A] transition"
                         >
                             <LogOut size={17} />
                             Logout
                         </button>
 
                     </div>
-
                 </div>
             </header>
 
-
-            {/* MAIN CONTENT */}
+            {/* =====================================================
+                MAIN CONTENT
+            ====================================================== */}
             <main className="max-w-7xl mx-auto px-6 py-10">
 
-                {/* WELCOME */}
+                {/* =================================================
+                    DASHBOARD TITLE
+                ================================================== */}
                 <section className="mb-10">
 
-                    <p className="text-[#D4AF37] font-semibold mb-2">
-                        WELFARE OFFICER DASHBOARD
-                    </p>
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
 
-                    <h2 className="text-3xl md:text-4xl font-bold text-[#0B1F3A]">
-                        Welcome back, {userName}
-                    </h2>
+                        <div>
 
-                    <p className="text-gray-600 mt-3 text-lg">
-                        Review and manage family assistance cases from one place.
-                    </p>
+                            <p className="text-[#D4AF37] font-semibold mb-2">
+                                WELFARE OFFICER DASHBOARD
+                            </p>
 
+                            <h2 className="text-3xl md:text-4xl font-bold text-[#0B1F3A]">
+                                Case Management
+                            </h2>
+
+                            <p className="text-gray-600 mt-3 text-lg">
+                                Review and manage family assistance cases
+                                from one place.
+                            </p>
+
+                        </div>
+
+                        {/* =================================================
+                            REFRESH BUTTON
+                        ================================================== */}
+                        <button
+                            onClick={handleRefresh}
+                            disabled={refreshing}
+                            className="flex items-center justify-center gap-2 border border-[#1F4E79] text-[#1F4E79] px-5 py-3 rounded-lg font-semibold hover:bg-[#EEF5FF] transition disabled:opacity-60 disabled:cursor-not-allowed"
+                        >
+                            <RefreshCw
+                                size={18}
+                                className={
+                                    refreshing
+                                        ? "animate-spin"
+                                        : ""
+                                }
+                            />
+
+                            {refreshing
+                                ? "Refreshing..."
+                                : "Refresh"}
+                        </button>
+
+                    </div>
                 </section>
 
-
-                {/* OVERVIEW CARDS */}
+                {/* =================================================
+                    OVERVIEW CARDS
+                ================================================== */}
                 <section className="mb-12">
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
                         {/* TOTAL CASES */}
-                        <div className="bg-white rounded-2xl border border-slate-200
-                        shadow-sm p-6">
+                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
 
                             <div className="flex items-center justify-between">
 
@@ -272,8 +370,7 @@ const OfficerDashboard = () => {
                                     </p>
                                 </div>
 
-                                <div className="w-12 h-12 rounded-xl bg-[#EEF5FF]
-                                flex items-center justify-center">
+                                <div className="w-12 h-12 rounded-xl bg-[#EEF5FF] flex items-center justify-center">
 
                                     <Users
                                         size={25}
@@ -283,13 +380,10 @@ const OfficerDashboard = () => {
                                 </div>
 
                             </div>
-
                         </div>
 
-
                         {/* PENDING REVIEW */}
-                        <div className="bg-white rounded-2xl border border-slate-200
-                        shadow-sm p-6">
+                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
 
                             <div className="flex items-center justify-between">
 
@@ -303,8 +397,7 @@ const OfficerDashboard = () => {
                                     </p>
                                 </div>
 
-                                <div className="w-12 h-12 rounded-xl bg-amber-50
-                                flex items-center justify-center">
+                                <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center">
 
                                     <Clock
                                         size={25}
@@ -314,13 +407,10 @@ const OfficerDashboard = () => {
                                 </div>
 
                             </div>
-
                         </div>
 
-
                         {/* COMPLETED */}
-                        <div className="bg-white rounded-2xl border border-slate-200
-                        shadow-sm p-6">
+                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
 
                             <div className="flex items-center justify-between">
 
@@ -334,8 +424,7 @@ const OfficerDashboard = () => {
                                     </p>
                                 </div>
 
-                                <div className="w-12 h-12 rounded-xl bg-green-50
-                                flex items-center justify-center">
+                                <div className="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center">
 
                                     <ClipboardCheck
                                         size={25}
@@ -345,27 +434,25 @@ const OfficerDashboard = () => {
                                 </div>
 
                             </div>
-
                         </div>
 
                     </div>
-
                 </section>
 
-                {/* APPLICATION MANAGEMENT */}
+                {/* =================================================
+                    APPLICATION MANAGEMENT
+                ================================================== */}
                 <section className="mb-12">
 
-                    <div className="bg-white rounded-2xl border border-slate-200
-    shadow-sm p-7">
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-7">
 
-                        <div className="flex flex-col md:flex-row
-        md:items-center md:justify-between gap-5">
+                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
 
                             <div>
+
                                 <div className="flex items-center gap-3">
 
-                                    <div className="w-12 h-12 rounded-xl bg-[#EEF5FF]
-                    flex items-center justify-center">
+                                    <div className="w-12 h-12 rounded-xl bg-[#EEF5FF] flex items-center justify-center">
 
                                         <FileText
                                             size={25}
@@ -375,30 +462,35 @@ const OfficerDashboard = () => {
                                     </div>
 
                                     <div>
+
                                         <h3 className="text-2xl font-bold text-[#0B1F3A]">
                                             Applications
                                         </h3>
 
                                         <p className="text-gray-600 mt-1">
-                                            Review and manage family assistance applications.
+                                            Review and manage family
+                                            assistance applications.
                                         </p>
+
                                     </div>
 
                                 </div>
+
                             </div>
 
                             <button
-                                onClick={() => navigate("/officer/applications")}
-                                className="flex items-center justify-center gap-2
-                bg-[#0B1F3A] text-white px-5 py-3 rounded-lg
-                font-semibold hover:bg-[#1F4E79] transition"
+                                onClick={() =>
+                                    navigate(
+                                        "/officer/applications"
+                                    )
+                                }
+                                className="flex items-center justify-center gap-2 bg-[#0B1F3A] text-white px-5 py-3 rounded-lg font-semibold hover:bg-[#1F4E79] transition"
                             >
                                 View Applications
                                 <ArrowRight size={18} />
                             </button>
 
                         </div>
-
 
                         {loadingApplications ? (
 
@@ -408,8 +500,7 @@ const OfficerDashboard = () => {
 
                         ) : applicationError ? (
 
-                            <div className="mt-6 bg-red-50 border border-red-200
-            text-red-700 rounded-lg p-4">
+                            <div className="mt-6 bg-red-50 border border-red-200 text-red-700 rounded-lg p-4">
                                 {applicationError}
                             </div>
 
@@ -419,6 +510,7 @@ const OfficerDashboard = () => {
 
                                 {/* SUBMITTED */}
                                 <div className="bg-blue-50 rounded-xl p-4">
+
                                     <p className="text-sm text-blue-600 font-medium">
                                         Submitted
                                     </p>
@@ -426,11 +518,12 @@ const OfficerDashboard = () => {
                                     <p className="text-2xl font-bold text-blue-800 mt-1">
                                         {submittedApplications}
                                     </p>
-                                </div>
 
+                                </div>
 
                                 {/* UNDER REVIEW */}
                                 <div className="bg-yellow-50 rounded-xl p-4">
+
                                     <p className="text-sm text-yellow-700 font-medium">
                                         Under Review
                                     </p>
@@ -438,11 +531,12 @@ const OfficerDashboard = () => {
                                     <p className="text-2xl font-bold text-yellow-800 mt-1">
                                         {underReviewApplications}
                                     </p>
-                                </div>
 
+                                </div>
 
                                 {/* APPROVED */}
                                 <div className="bg-green-50 rounded-xl p-4">
+
                                     <p className="text-sm text-green-600 font-medium">
                                         Approved
                                     </p>
@@ -450,11 +544,12 @@ const OfficerDashboard = () => {
                                     <p className="text-2xl font-bold text-green-800 mt-1">
                                         {approvedApplications}
                                     </p>
-                                </div>
 
+                                </div>
 
                                 {/* REJECTED */}
                                 <div className="bg-red-50 rounded-xl p-4">
+
                                     <p className="text-sm text-red-600 font-medium">
                                         Rejected
                                     </p>
@@ -462,17 +557,18 @@ const OfficerDashboard = () => {
                                     <p className="text-2xl font-bold text-red-800 mt-1">
                                         {rejectedApplications}
                                     </p>
+
                                 </div>
 
                             </div>
-
                         )}
 
                     </div>
-
                 </section>
 
-                {/* CASE LIST */}
+                {/* =================================================
+                    CASE LIST
+                ================================================== */}
                 <section>
 
                     <div className="mb-6">
@@ -487,11 +583,9 @@ const OfficerDashboard = () => {
 
                     </div>
 
-
                     {loadingCases ? (
 
-                        <div className="bg-white rounded-2xl border border-slate-200
-                        p-10 text-center">
+                        <div className="bg-white rounded-2xl border border-slate-200 p-10 text-center">
 
                             <p className="text-gray-500">
                                 Loading assistance cases...
@@ -501,15 +595,13 @@ const OfficerDashboard = () => {
 
                     ) : caseError ? (
 
-                        <div className="bg-red-50 border border-red-200
-                        text-red-700 rounded-xl p-5">
+                        <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-5">
                             {caseError}
                         </div>
 
                     ) : cases.length === 0 ? (
 
-                        <div className="bg-white rounded-2xl border border-slate-200
-                        p-10 text-center">
+                        <div className="bg-white rounded-2xl border border-slate-200 p-10 text-center">
 
                             <FileText
                                 size={42}
@@ -521,7 +613,8 @@ const OfficerDashboard = () => {
                             </h4>
 
                             <p className="text-gray-500 mt-2">
-                                No family assistance cases are currently available.
+                                No family assistance cases are
+                                currently available.
                             </p>
 
                         </div>
@@ -534,14 +627,11 @@ const OfficerDashboard = () => {
 
                                 <div
                                     key={item._id}
-                                    className="bg-white rounded-2xl border
-                                    border-slate-200 shadow-sm p-7
-                                    hover:shadow-md transition"
+                                    className="bg-white rounded-2xl border border-slate-200 shadow-sm p-7 hover:shadow-md transition"
                                 >
 
                                     {/* CASE HEADER */}
-                                    <div className="flex flex-col md:flex-row
-                                    md:items-center md:justify-between gap-5">
+                                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
 
                                         <div>
 
@@ -549,27 +639,27 @@ const OfficerDashboard = () => {
                                                 Case ID
                                             </p>
 
-                                            <h4 className="text-2xl font-bold
-                                            text-[#0B1F3A] mt-1">
+                                            <h4 className="text-2xl font-bold text-[#0B1F3A] mt-1">
                                                 {item.caseId}
                                             </h4>
 
                                             <p className="text-gray-600 mt-2">
                                                 Veteran:{" "}
                                                 <span className="font-semibold">
-                                                    {item.veteranDetails?.name || "Not available"}
+                                                    {item.veteranDetails?.name ||
+                                                        "Not available"}
                                                 </span>
                                             </p>
 
                                             <p className="text-gray-600 mt-1">
                                                 Family:{" "}
                                                 <span className="font-semibold">
-                                                    {item.familyUser?.name || "Not available"}
+                                                    {item.familyUser?.name ||
+                                                        "Not available"}
                                                 </span>
                                             </p>
 
                                         </div>
-
 
                                         {/* STATUS */}
                                         <div className="text-left md:text-right">
@@ -578,9 +668,7 @@ const OfficerDashboard = () => {
                                                 Case Status
                                             </p>
 
-                                            <span className="inline-flex items-center
-                                            px-4 py-2 mt-2 rounded-full bg-[#EEF5FF]
-                                            text-[#1F4E79] font-semibold">
+                                            <span className="inline-flex items-center px-4 py-2 mt-2 rounded-full bg-[#EEF5FF] text-[#1F4E79] font-semibold">
                                                 {item.status}
                                             </span>
 
@@ -588,20 +676,17 @@ const OfficerDashboard = () => {
 
                                     </div>
 
-
                                     {/* PROGRESS */}
                                     <div className="mt-7">
 
                                         <div className="flex justify-between mb-2">
 
-                                            <span className="text-sm font-semibold
-                                            text-gray-600">
+                                            <span className="text-sm font-semibold text-gray-600">
                                                 Case Progress
                                             </span>
 
-                                            <span className="text-sm font-bold
-                                            text-[#0B1F3A]">
-                                                {item.progress}%
+                                            <span className="text-sm font-bold text-[#0B1F3A]">
+                                                {item.progress || 0}%
                                             </span>
 
                                         </div>
@@ -609,17 +694,21 @@ const OfficerDashboard = () => {
                                         <div className="w-full h-3 bg-slate-200 rounded-full">
 
                                             <div
-                                                className="h-3 bg-[#D4AF37]
-                                                rounded-full transition-all"
+                                                className="h-3 bg-[#D4AF37] rounded-full transition-all"
                                                 style={{
-                                                    width: `${item.progress}%`,
+                                                    width: `${Math.min(
+                                                        Math.max(
+                                                            item.progress || 0,
+                                                            0
+                                                        ),
+                                                        100
+                                                    )}%`,
                                                 }}
                                             />
 
                                         </div>
 
                                     </div>
-
 
                                     {/* VIEW CASE */}
                                     <div className="mt-6">
@@ -630,9 +719,7 @@ const OfficerDashboard = () => {
                                                     `/officer/cases/${item.caseId}`
                                                 )
                                             }
-                                            className="flex items-center gap-2
-                                            text-[#1F4E79] font-semibold
-                                            hover:text-[#D4AF37] transition"
+                                            className="flex items-center gap-2 text-[#1F4E79] font-semibold hover:text-[#D4AF37] transition"
                                         >
                                             View Case
                                             <ArrowRight size={18} />
@@ -651,7 +738,6 @@ const OfficerDashboard = () => {
                 </section>
 
             </main>
-
         </div>
     );
 };

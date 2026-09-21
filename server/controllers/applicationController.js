@@ -242,6 +242,235 @@ export const getOfficerApplications = async (req, res) => {
   }
 };
 
+// Get applications for the logged-in Authority
+export const getAuthorityApplications = async (req, res) => {
+  try {
+    // Authority department comes from the verified JWT
+    const authorityDepartment = req.user.department;
+
+    if (!authorityDepartment) {
+      return res.status(400).json({
+        message: "Authority department is not assigned.",
+      });
+    }
+
+    // Make sure the logged-in user is actually an Authority
+    if (req.user.role !== "authority") {
+      return res.status(403).json({
+        message: "You are not authorized to access Authority applications.",
+      });
+    }
+
+    // Get only applications forwarded to this Authority's department
+    const applications = await Application.find({
+      authorityDepartment,
+      status: {
+        $in: [
+          "Forwarded to Authority",
+          "Under Authority Review",
+          "Approved",
+          "Rejected",
+        ],
+      },
+    })
+      .populate("submittedBy", "name email")
+      .populate({
+        path: "caseId",
+        populate: {
+          path: "familyUser",
+          select: "name email",
+        },
+      })
+      .sort({ forwardedAt: -1, createdAt: -1 });
+
+    return res.status(200).json({
+      department: authorityDepartment,
+      applications,
+    });
+  } catch (error) {
+    console.error(
+      "Get authority applications error:",
+      error
+    );
+
+    return res.status(500).json({
+      message: "Unable to retrieve Authority applications.",
+    });
+  }
+};
+
+// Get a single application for the logged-in Authority
+export const getAuthorityApplicationById = async (req, res) => {
+  try {
+    const { applicationId } = req.params;
+
+    // Make sure the logged-in user is actually an Authority
+    if (req.user.role !== "authority") {
+      return res.status(403).json({
+        message:
+          "You are not authorized to access Authority application details.",
+      });
+    }
+
+    const authorityDepartment = req.user.department;
+
+    if (!authorityDepartment) {
+      return res.status(400).json({
+        message: "Authority department is not assigned.",
+      });
+    }
+
+    // Find the application only if it belongs to
+    // the logged-in Authority's department
+    const application = await Application.findOne({
+      _id: applicationId,
+      authorityDepartment,
+      status: {
+        $in: [
+          "Forwarded to Authority",
+          "Under Authority Review",
+          "Approved",
+          "Rejected",
+        ],
+      },
+    })
+      .populate("submittedBy", "name email")
+      .populate({
+        path: "caseId",
+        populate: {
+          path: "familyUser",
+          select: "name email",
+        },
+      });
+
+    if (!application) {
+      return res.status(404).json({
+        message:
+          "Application not found or you are not authorized to access it.",
+      });
+    }
+
+    // Get application-specific document requirements
+    const requirements =
+      applicationDocumentRequirements[
+        application.applicationType
+      ] || [];
+
+    // Get documents uploaded directly for this application
+    const directDocuments = await Document.find({
+      caseId: application.caseId._id,
+      applicationId: application._id,
+    }).sort({
+      uploadedAt: -1,
+    });
+
+    // Get documents reused from the central repository
+    const linkedDocuments = await ApplicationDocument.find({
+      applicationId: application._id,
+    })
+      .populate("documentId")
+      .sort({
+        linkedAt: -1,
+      });
+
+    // Combine direct and linked documents
+    const documentMap = new Map();
+
+    directDocuments.forEach((document) => {
+      documentMap.set(
+        document._id.toString(),
+        document
+      );
+    });
+
+    linkedDocuments.forEach((link) => {
+      if (link.documentId) {
+        documentMap.set(
+          link.documentId._id.toString(),
+          link.documentId
+        );
+      }
+    });
+
+    const allDocuments = Array.from(
+      documentMap.values()
+    );
+
+    // Match each required document with its actual document
+    const supportingDocuments = requirements.map(
+      (requiredDocument) => {
+        const matchingDocument = allDocuments.find(
+          (document) =>
+            document.documentType ===
+            requiredDocument.documentType
+        );
+
+        if (!matchingDocument) {
+          return {
+            documentType:
+              requiredDocument.documentType,
+
+            description:
+              requiredDocument.description,
+
+            status: "Missing",
+
+            remarks: "",
+
+            fileName: "",
+
+            fileUrl: "",
+
+            documentId: null,
+
+            uploadedAt: null,
+          };
+        }
+
+        return {
+          documentType:
+            requiredDocument.documentType,
+
+          description:
+            requiredDocument.description,
+
+          status: matchingDocument.status,
+
+          remarks:
+            matchingDocument.remarks || "",
+
+          fileName:
+            matchingDocument.fileName || "",
+
+          fileUrl:
+            matchingDocument.fileUrl || "",
+
+          documentId:
+            matchingDocument._id,
+
+          uploadedAt:
+            matchingDocument.uploadedAt || null,
+        };
+      }
+    );
+
+    return res.status(200).json({
+      application,
+      supportingDocuments,
+    });
+  } catch (error) {
+    console.error(
+      "Get authority application error:",
+      error
+    );
+
+    return res.status(500).json({
+      message:
+        "Unable to retrieve Authority application details.",
+    });
+  }
+};
+
 // Get a single application for welfare officer
 export const getOfficerApplicationById = async (req, res) => {
   try {
@@ -621,6 +850,135 @@ export const reviewApplication = async (req, res) => {
     return res.status(500).json({
       message:
         "Unable to review application.",
+    });
+  }
+};
+
+// Review an application by the relevant Authority
+export const reviewAuthorityApplication = async (req, res) => {
+  try {
+    const { applicationId } = req.params;
+    const { status, remarks } = req.body;
+
+    // Only Authority users can use this controller
+    if (req.user.role !== "authority") {
+      return res.status(403).json({
+        message:
+          "You are not authorized to review Authority applications.",
+      });
+    }
+
+    // Authority must have a department
+    const authorityDepartment = req.user.department;
+
+    if (!authorityDepartment) {
+      return res.status(400).json({
+        message: "Authority department is not assigned.",
+      });
+    }
+
+    // Allowed Authority actions
+    const allowedStatuses = [
+      "Under Authority Review",
+      "Approved",
+      "Rejected",
+    ];
+
+    if (!status || !allowedStatuses.includes(status)) {
+      return res.status(400).json({
+        message: "Invalid Authority application status.",
+      });
+    }
+
+    // Find application
+    const application = await Application.findById(
+      applicationId
+    );
+
+    if (!application) {
+      return res.status(404).json({
+        message: "Application not found.",
+      });
+    }
+
+    // IMPORTANT:
+    // Authority can only access applications belonging
+    // to its own department.
+    if (
+      application.authorityDepartment !==
+      authorityDepartment
+    ) {
+      return res.status(404).json({
+        message:
+          "Application not found or you are not authorized to access it.",
+      });
+    }
+
+    // Authority review can start only after
+    // the Welfare Officer forwards the application.
+    if (
+      application.status !== "Forwarded to Authority" &&
+      application.status !== "Under Authority Review"
+    ) {
+      return res.status(400).json({
+        message:
+          "This application cannot be reviewed in its current status.",
+      });
+    }
+
+    // Under Authority Review
+    if (status === "Under Authority Review") {
+      application.status = "Under Authority Review";
+      application.authorityRemarks = remarks || "";
+      application.authorityReviewedAt = new Date();
+
+      await application.save();
+
+      return res.status(200).json({
+        message:
+          "Application placed under Authority review.",
+        application,
+      });
+    }
+
+    // Approved
+    if (status === "Approved") {
+      application.status = "Approved";
+      application.authorityRemarks = remarks || "";
+      application.authorityReviewedAt = new Date();
+
+      await application.save();
+
+      return res.status(200).json({
+        message:
+          "Application approved by Authority.",
+        application,
+      });
+    }
+
+    // Rejected
+    if (status === "Rejected") {
+      application.status = "Rejected";
+      application.authorityRemarks = remarks || "";
+      application.authorityReviewedAt = new Date();
+
+      await application.save();
+
+      return res.status(200).json({
+        message:
+          "Application rejected by Authority.",
+        application,
+      });
+    }
+  } catch (error) {
+    console.error(
+      "Authority review application error:",
+      error
+    );
+
+    return res.status(500).json({
+      message:
+        "Unable to review Authority application.",
     });
   }
 };

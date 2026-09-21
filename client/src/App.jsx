@@ -16,6 +16,8 @@ import CreateApplicationPage from "./pages/family/CreateApplicationPage";
 import OfficerApplications from "./pages/officer/OfficerApplications";
 import OfficerApplicationDetails from "./pages/officer/OfficerApplicationDetails";
 import ApplicationDocumentsPage from "./pages/family/ApplicationDocumentsPage";
+import AuthorityDashboard from "./pages/authority/AuthorityDashboard";
+import AuthorityApplicationDetails from "./pages/authority/AuthorityApplicationDetails";
 
 function App() {
   return (
@@ -37,6 +39,8 @@ function App() {
         <Route path="/family/applications/:applicationId/documents" element={<ApplicationDocumentsPage />} />
         <Route path="/officer/applications" element={<OfficerApplications />} />
         <Route path="/officer/applications/:applicationId" element={<OfficerApplicationDetails />} />
+        <Route path="/authority/dashboard" element={<AuthorityDashboard />} />
+        <Route path="/authority/applications/:applicationId" element={<AuthorityApplicationDetails />} />
       </Routes>
     </BrowserRouter>
   );

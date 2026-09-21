@@ -6,7 +6,10 @@ import {
   submitApplication,
   getOfficerApplications,
   getOfficerApplicationById,
+  getAuthorityApplications,
+  getAuthorityApplicationById,
   reviewApplication,
+  reviewAuthorityApplication,
   getApplicationDocumentRequirements,
   linkExistingDocument,
   getReusableDocuments,
@@ -41,6 +44,7 @@ router.get(
   getOfficerApplications
 );
 
+// Get a single application for welfare officer
 router.get(
   "/officer/:applicationId",
   authMiddleware,
@@ -48,12 +52,38 @@ router.get(
   getOfficerApplicationById
 );
 
+// Get applications for Authority
 router.get(
-    "/:applicationId/requirements",
-    authMiddleware,
-    getApplicationDocumentRequirements
+  "/authority",
+  authMiddleware,
+  roleMiddleware("authority"),
+  getAuthorityApplications
 );
 
+// Get a single application for Authority
+router.get(
+  "/authority/:applicationId",
+  authMiddleware,
+  roleMiddleware("authority"),
+  getAuthorityApplicationById
+);
+
+// Review an application by Authority
+router.put(
+  "/authority/review/:applicationId",
+  authMiddleware,
+  roleMiddleware("authority"),
+  reviewAuthorityApplication
+);
+
+// Get application document requirements
+router.get(
+  "/:applicationId/requirements",
+  authMiddleware,
+  getApplicationDocumentRequirements
+);
+
+// Get reusable documents
 router.get(
   "/:applicationId/documents/reusable",
   authMiddleware,
@@ -61,7 +91,7 @@ router.get(
   getReusableDocuments
 );
 
-// Review application
+// Review application by Welfare Officer
 router.put(
   "/review/:applicationId",
   authMiddleware,

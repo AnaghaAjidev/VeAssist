@@ -170,15 +170,17 @@ export const updateCaseTask = async (req, res) => {
             "Completed",
         ];
 
-        if (!allowedStatuses.includes(status)) {
+        if (!status || !allowedStatuses.includes(status)) {
             return res.status(400).json({
                 message: "Invalid task status.",
             });
         }
 
+        // ---------------------------------------------------------
+        // Find the case
+        // ---------------------------------------------------------
         const assistanceCase = await AssistanceCase.findOne({
             caseId,
-            familyUser: req.user.userId,
         });
 
         if (!assistanceCase) {
@@ -187,6 +189,9 @@ export const updateCaseTask = async (req, res) => {
             });
         }
 
+        // ---------------------------------------------------------
+        // Find the task
+        // ---------------------------------------------------------
         const task = assistanceCase.tasks.id(taskId);
 
         if (!task) {
@@ -195,8 +200,9 @@ export const updateCaseTask = async (req, res) => {
             });
         }
 
-        const previousStatus = task.status;
-
+        // ---------------------------------------------------------
+        // Update task status
+        // ---------------------------------------------------------
         task.status = status;
 
         if (status === "Completed") {
@@ -205,54 +211,58 @@ export const updateCaseTask = async (req, res) => {
             task.completedAt = null;
         }
 
-        // Calculate progress
+        // ---------------------------------------------------------
+        // Calculate case progress
+        // ---------------------------------------------------------
         const totalTasks = assistanceCase.tasks.length;
 
         const completedTasks = assistanceCase.tasks.filter(
             (item) => item.status === "Completed"
         ).length;
 
-        const progress = Math.round(
-            (completedTasks / totalTasks) * 100
-        );
+        const progress =
+            totalTasks > 0
+                ? Math.round(
+                      (completedTasks / totalTasks) * 100
+                  )
+                : 0;
 
         assistanceCase.progress = progress;
 
+        // ---------------------------------------------------------
         // Update overall case status
+        // ---------------------------------------------------------
         if (progress === 100) {
             assistanceCase.status = "Completed";
-        } else if (progress > 0) {
+        } else if (
+            assistanceCase.status === "Created" ||
+            assistanceCase.status === "Documents Pending"
+        ) {
             assistanceCase.status = "In Progress";
-        } else {
-            assistanceCase.status = "Created";
         }
 
+        // ---------------------------------------------------------
         // Add timeline event
-        if (previousStatus !== status) {
-            assistanceCase.timeline.push({
-                event: `Task Updated: ${task.title}`,
-                description: `Task status changed from ${previousStatus} to ${status}.`,
-                date: new Date(),
-            });
-        }
+        // ---------------------------------------------------------
+        assistanceCase.timeline.push({
+            event: "Task Updated",
+            description: `${task.title} marked as ${status}.`,
+            date: new Date(),
+        });
 
         await assistanceCase.save();
 
-        res.status(200).json({
-            message: "Task updated successfully.",
-            case: {
-                caseId: assistanceCase.caseId,
-                status: assistanceCase.status,
-                progress: assistanceCase.progress,
-                tasks: assistanceCase.tasks,
-                timeline: assistanceCase.timeline,
-            },
+        return res.status(200).json({
+            message: "Case task updated successfully.",
+            case: assistanceCase,
         });
-
     } catch (error) {
-        console.error("Update task error:", error);
+        console.error(
+            "Update case task error:",
+            error
+        );
 
-        res.status(500).json({
+        return res.status(500).json({
             message: "Unable to update case task.",
         });
     }
