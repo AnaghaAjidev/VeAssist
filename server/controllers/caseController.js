@@ -1,4 +1,5 @@
 import AssistanceCase from "../models/AssistanceCase.js";
+import { createNotification } from "../services/notificationService.js";
 
 // CREATE DEATH ASSISTANCE CASE
 export const createCase = async (req, res) => {
@@ -159,6 +160,7 @@ export const getCaseById = async (req, res) => {
 };
 
 // UPDATE CASE TASK
+// UPDATE CASE TASK
 export const updateCaseTask = async (req, res) => {
     try {
         const { caseId, taskId } = req.params;
@@ -179,6 +181,7 @@ export const updateCaseTask = async (req, res) => {
         // ---------------------------------------------------------
         // Find the case
         // ---------------------------------------------------------
+
         const assistanceCase = await AssistanceCase.findOne({
             caseId,
         });
@@ -192,6 +195,7 @@ export const updateCaseTask = async (req, res) => {
         // ---------------------------------------------------------
         // Find the task
         // ---------------------------------------------------------
+
         const task = assistanceCase.tasks.id(taskId);
 
         if (!task) {
@@ -203,6 +207,7 @@ export const updateCaseTask = async (req, res) => {
         // ---------------------------------------------------------
         // Update task status
         // ---------------------------------------------------------
+
         task.status = status;
 
         if (status === "Completed") {
@@ -214,6 +219,7 @@ export const updateCaseTask = async (req, res) => {
         // ---------------------------------------------------------
         // Calculate case progress
         // ---------------------------------------------------------
+
         const totalTasks = assistanceCase.tasks.length;
 
         const completedTasks = assistanceCase.tasks.filter(
@@ -232,6 +238,7 @@ export const updateCaseTask = async (req, res) => {
         // ---------------------------------------------------------
         // Update overall case status
         // ---------------------------------------------------------
+
         if (progress === 100) {
             assistanceCase.status = "Completed";
         } else if (
@@ -244,6 +251,7 @@ export const updateCaseTask = async (req, res) => {
         // ---------------------------------------------------------
         // Add timeline event
         // ---------------------------------------------------------
+
         assistanceCase.timeline.push({
             event: "Task Updated",
             description: `${task.title} marked as ${status}.`,
@@ -252,10 +260,41 @@ export const updateCaseTask = async (req, res) => {
 
         await assistanceCase.save();
 
+        // ---------------------------------------------------------
+        // TASK UPDATE NOTIFICATION
+        // Notify the family about the task status change
+        // ---------------------------------------------------------
+
+        try {
+            await createNotification({
+                recipient: assistanceCase.familyUser,
+
+                title: "Task Updated",
+
+                message:
+                    `Task "${task.title}" for Case ` +
+                    `${assistanceCase.caseId} has been marked as ${status}.`,
+
+                type: "Task Update",
+
+                relatedCase: assistanceCase._id,
+            });
+        } catch (notificationError) {
+            console.error(
+                "Task notification error:",
+                notificationError
+            );
+        }
+
+        // ---------------------------------------------------------
+        // Response
+        // ---------------------------------------------------------
+
         return res.status(200).json({
             message: "Case task updated successfully.",
             case: assistanceCase,
         });
+
     } catch (error) {
         console.error(
             "Update case task error:",

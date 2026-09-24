@@ -4,6 +4,10 @@ import ApplicationDocument from "../models/ApplicationDocument.js";
 import Document from "../models/Document.js";
 import applicationDocumentRequirements from "../config/applicationDocumentRequirements.js";
 import documentRequirements from "../config/documentRequirements.js";
+import User from "../models/User.js";
+import {
+  createNotifications,
+} from "../services/notificationService.js";
 
 // Create a new application
 export const createApplication = async (req, res) => {
@@ -192,6 +196,43 @@ export const submitApplication = async (req, res) => {
 
     await application.save();
 
+
+    // ==========================================
+    // NOTIFY WELFARE OFFICERS
+    // ==========================================
+
+    try {
+      const officers = await User.find({
+        role: "officer",
+      }).select("_id");
+
+      const officerIds = officers.map(
+        (officer) => officer._id
+      );
+
+      await createNotifications({
+        recipients: officerIds,
+
+        title: "New Application Submitted",
+
+        message:
+          `A new ${application.applicationType} application ` +
+          `has been submitted for Case ${assistanceCase.caseId}.`,
+
+        type: "Application Update",
+
+        relatedCase: assistanceCase._id,
+
+        relatedApplication: application._id,
+      });
+    } catch (notificationError) {
+      console.error(
+        "Application notification error:",
+        notificationError
+      );
+    }
+
+
     return res.status(200).json({
       message: "Application submitted successfully.",
       application,
@@ -210,15 +251,15 @@ export const getOfficerApplications = async (req, res) => {
   try {
     const applications = await Application.find({
       status: {
-  $in: [
-    "Submitted",
-    "Under Review",
-    "Forwarded to Authority",
-    "Under Authority Review",
-    "Approved",
-    "Rejected",
-  ],
-},
+        $in: [
+          "Submitted",
+          "Under Review",
+          "Forwarded to Authority",
+          "Under Authority Review",
+          "Approved",
+          "Rejected",
+        ],
+      },
     })
       .populate("submittedBy", "name email")
       .populate({
@@ -353,7 +394,7 @@ export const getAuthorityApplicationById = async (req, res) => {
     // Get application-specific document requirements
     const requirements =
       applicationDocumentRequirements[
-        application.applicationType
+      application.applicationType
       ] || [];
 
     // Get documents uploaded directly for this application
@@ -507,7 +548,7 @@ export const getOfficerApplicationById = async (req, res) => {
     */
     const requirements =
       applicationDocumentRequirements[
-        application.applicationType
+      application.applicationType
       ] || [];
 
     /*
@@ -682,6 +723,16 @@ export const reviewApplication = async (req, res) => {
       });
     }
 
+    const assistanceCase = await AssistanceCase.findById(
+      application.caseId
+    );
+
+    if (!assistanceCase) {
+      return res.status(404).json({
+        message: "Assistance case not found.",
+      });
+    }
+
     /*
       Officer can only review applications that were
       submitted by the family.
@@ -735,7 +786,7 @@ export const reviewApplication = async (req, res) => {
 
     const requiredDocuments =
       applicationDocumentRequirements[
-        application.applicationType
+      application.applicationType
       ] || [];
 
     const directDocuments = await Document.find({
@@ -836,11 +887,51 @@ export const reviewApplication = async (req, res) => {
 
     await application.save();
 
+
+    // ==========================================
+    // NOTIFY RELEVANT AUTHORITY
+    // ==========================================
+
+    try {
+      const authorities = await User.find({
+        role: "authority",
+        department: authorityDepartment,
+      }).select("_id");
+
+      const authorityIds = authorities.map(
+        (authority) => authority._id
+      );
+
+      await createNotifications({
+        recipients: authorityIds,
+
+        title: "New Application Forwarded",
+
+        message:
+          `A ${application.applicationType} application ` +
+          `for Case ${assistanceCase.caseId} has been ` +
+          `forwarded to your department for review.`,
+
+        type: "Authority Update",
+
+        relatedCase: assistanceCase._id,
+
+        relatedApplication: application._id,
+      });
+    } catch (notificationError) {
+      console.error(
+        "Authority notification error:",
+        notificationError
+      );
+    }
+
+
     return res.status(200).json({
       message:
         "Application forwarded to the relevant Authority successfully.",
       application,
     });
+
   } catch (error) {
     console.error(
       "Review application error:",
@@ -854,6 +945,7 @@ export const reviewApplication = async (req, res) => {
   }
 };
 
+// Review an application by the relevant Authority
 // Review an application by the relevant Authority
 export const reviewAuthorityApplication = async (req, res) => {
   try {
@@ -901,9 +993,8 @@ export const reviewAuthorityApplication = async (req, res) => {
       });
     }
 
-    // IMPORTANT:
-    // Authority can only access applications belonging
-    // to its own department.
+    // Authority can only access applications
+    // belonging to its own department
     if (
       application.authorityDepartment !==
       authorityDepartment
@@ -915,7 +1006,7 @@ export const reviewAuthorityApplication = async (req, res) => {
     }
 
     // Authority review can start only after
-    // the Welfare Officer forwards the application.
+    // the Welfare Officer forwards the application
     if (
       application.status !== "Forwarded to Authority" &&
       application.status !== "Under Authority Review"
@@ -926,13 +1017,79 @@ export const reviewAuthorityApplication = async (req, res) => {
       });
     }
 
-    // Under Authority Review
+    // Get the assistance case
+    const assistanceCase = await AssistanceCase.findById(
+      application.caseId
+    );
+
+    if (!assistanceCase) {
+      return res.status(404).json({
+        message: "Assistance case not found.",
+      });
+    }
+
+    // ==========================================
+    // UNDER AUTHORITY REVIEW
+    // ==========================================
+
     if (status === "Under Authority Review") {
       application.status = "Under Authority Review";
       application.authorityRemarks = remarks || "";
       application.authorityReviewedAt = new Date();
 
       await application.save();
+
+      // Notify Family + Welfare Officer
+      try {
+        await createNotifications({
+          recipients: [
+            application.submittedBy,
+          ],
+
+          title: "Application Under Authority Review",
+
+          message:
+            `Your ${application.applicationType} application ` +
+            `for Case ${assistanceCase.caseId} is now under ` +
+            `review by the ${authorityDepartment}.`,
+
+          type: "Authority Update",
+
+          relatedCase: assistanceCase._id,
+
+          relatedApplication: application._id,
+        });
+
+        const officers = await User.find({
+          role: "officer",
+        }).select("_id");
+
+        const officerIds = officers.map(
+          (officer) => officer._id
+        );
+
+        await createNotifications({
+          recipients: officerIds,
+
+          title: "Application Under Authority Review",
+
+          message:
+            `The ${application.applicationType} application ` +
+            `for Case ${assistanceCase.caseId} is now under ` +
+            `review by the ${authorityDepartment}.`,
+
+          type: "Authority Update",
+
+          relatedCase: assistanceCase._id,
+
+          relatedApplication: application._id,
+        });
+      } catch (notificationError) {
+        console.error(
+          "Authority review notification error:",
+          notificationError
+        );
+      }
 
       return res.status(200).json({
         message:
@@ -941,13 +1098,68 @@ export const reviewAuthorityApplication = async (req, res) => {
       });
     }
 
-    // Approved
+    // ==========================================
+    // APPROVED
+    // ==========================================
+
     if (status === "Approved") {
       application.status = "Approved";
       application.authorityRemarks = remarks || "";
       application.authorityReviewedAt = new Date();
 
       await application.save();
+
+      // Notify Family + Welfare Officer
+      try {
+        await createNotifications({
+          recipients: [
+            application.submittedBy,
+          ],
+
+          title: "Application Approved",
+
+          message:
+            `Your ${application.applicationType} application ` +
+            `for Case ${assistanceCase.caseId} has been ` +
+            `approved by the ${authorityDepartment}.`,
+
+          type: "Authority Update",
+
+          relatedCase: assistanceCase._id,
+
+          relatedApplication: application._id,
+        });
+
+        const officers = await User.find({
+          role: "officer",
+        }).select("_id");
+
+        const officerIds = officers.map(
+          (officer) => officer._id
+        );
+
+        await createNotifications({
+          recipients: officerIds,
+
+          title: "Application Approved",
+
+          message:
+            `The ${application.applicationType} application ` +
+            `for Case ${assistanceCase.caseId} has been ` +
+            `approved by the ${authorityDepartment}.`,
+
+          type: "Authority Update",
+
+          relatedCase: assistanceCase._id,
+
+          relatedApplication: application._id,
+        });
+      } catch (notificationError) {
+        console.error(
+          "Authority approval notification error:",
+          notificationError
+        );
+      }
 
       return res.status(200).json({
         message:
@@ -956,13 +1168,69 @@ export const reviewAuthorityApplication = async (req, res) => {
       });
     }
 
-    // Rejected
+    // ==========================================
+    // REJECTED
+    // ==========================================
+
     if (status === "Rejected") {
       application.status = "Rejected";
       application.authorityRemarks = remarks || "";
       application.authorityReviewedAt = new Date();
 
       await application.save();
+
+      // Notify Family + Welfare Officer
+      try {
+        await createNotifications({
+          recipients: [
+            application.submittedBy,
+          ],
+
+          title: "Application Rejected",
+
+          message:
+            `Your ${application.applicationType} application ` +
+            `for Case ${assistanceCase.caseId} has been ` +
+            `rejected by the ${authorityDepartment}. ` +
+            `Please review the Authority remarks.`,
+
+          type: "Authority Update",
+
+          relatedCase: assistanceCase._id,
+
+          relatedApplication: application._id,
+        });
+
+        const officers = await User.find({
+          role: "officer",
+        }).select("_id");
+
+        const officerIds = officers.map(
+          (officer) => officer._id
+        );
+
+        await createNotifications({
+          recipients: officerIds,
+
+          title: "Application Rejected",
+
+          message:
+            `The ${application.applicationType} application ` +
+            `for Case ${assistanceCase.caseId} has been ` +
+            `rejected by the ${authorityDepartment}.`,
+
+          type: "Authority Update",
+
+          relatedCase: assistanceCase._id,
+
+          relatedApplication: application._id,
+        });
+      } catch (notificationError) {
+        console.error(
+          "Authority rejection notification error:",
+          notificationError
+        );
+      }
 
       return res.status(200).json({
         message:

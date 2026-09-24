@@ -5,6 +5,7 @@ import AssistanceCase from "../models/AssistanceCase.js";
 import documentRequirements from "../config/documentRequirements.js";
 import Application from "../models/Application.js";
 import applicationDocumentRequirements from "../config/applicationDocumentRequirements.js";
+import { createNotification } from "../services/notificationService.js";
 
 
 // ======================================================
@@ -527,24 +528,26 @@ export const reviewDocument = async (req, res) => {
         const { documentId } = req.params;
         const { status, remarks } = req.body;
 
-
+        // --------------------------------------------------
         // Allowed review statuses
+        // --------------------------------------------------
+
         const allowedStatuses = [
             "Under Review",
             "Verified",
             "Rejected",
         ];
 
-
         if (!allowedStatuses.includes(status)) {
             return res.status(400).json({
-                message:
-                    "Invalid document status.",
+                message: "Invalid document status.",
             });
         }
 
-
+        // --------------------------------------------------
         // Find document
+        // --------------------------------------------------
+
         const document =
             await Document.findById(documentId);
 
@@ -555,13 +558,92 @@ export const reviewDocument = async (req, res) => {
             });
         }
 
+        // --------------------------------------------------
+        // Find related assistance case
+        // --------------------------------------------------
 
+        const assistanceCase =
+            await AssistanceCase.findById(
+                document.caseId
+            );
+
+        if (!assistanceCase) {
+            return res.status(404).json({
+                message:
+                    "Assistance case not found.",
+            });
+        }
+
+        // --------------------------------------------------
         // Update review
+        // --------------------------------------------------
+
         document.status = status;
         document.remarks = remarks || "";
 
         await document.save();
 
+        // --------------------------------------------------
+        // DOCUMENT UPDATE NOTIFICATION
+        // Notify the family when document is verified/rejected
+        // --------------------------------------------------
+
+        if (
+            status === "Verified" ||
+            status === "Rejected"
+        ) {
+            try {
+                let title;
+                let message;
+
+                if (status === "Verified") {
+                    title = "Document Verified";
+
+                    message =
+                        `Your ${document.documentType} ` +
+                        `for Case ${assistanceCase.caseId} ` +
+                        `has been verified by the Welfare Officer.`;
+                } else {
+                    title = "Document Rejected";
+
+                    message =
+                        `Your ${document.documentType} ` +
+                        `for Case ${assistanceCase.caseId} ` +
+                        `has been rejected by the Welfare Officer.`;
+
+                    if (remarks) {
+                        message +=
+                            ` Remarks: ${remarks}`;
+                    }
+                }
+
+                await createNotification({
+                    recipient:
+                        assistanceCase.familyUser,
+
+                    title,
+
+                    message,
+
+                    type: "Document Update",
+
+                    relatedCase:
+                        assistanceCase._id,
+
+                    relatedApplication:
+                        document.applicationId || null,
+                });
+            } catch (notificationError) {
+                console.error(
+                    "Document notification error:",
+                    notificationError
+                );
+            }
+        }
+
+        // --------------------------------------------------
+        // Response
+        // --------------------------------------------------
 
         return res.status(200).json({
             message:
