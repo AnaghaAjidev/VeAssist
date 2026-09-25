@@ -56,7 +56,7 @@ const NotificationsPage = () => {
 
             setError(
                 error.response?.data?.message ||
-                    "Unable to load notifications."
+                "Unable to load notifications."
             );
         } finally {
             setLoading(false);
@@ -87,9 +87,9 @@ const NotificationsPage = () => {
                     (notification) =>
                         notification._id === notificationId
                             ? {
-                                  ...notification,
-                                  isRead: true,
-                              }
+                                ...notification,
+                                isRead: true,
+                            }
                             : notification
                 )
             );
@@ -216,7 +216,7 @@ const NotificationsPage = () => {
             Math.floor(
                 (now.getTime() -
                     notificationDate.getTime()) /
-                    1000
+                1000
             );
 
         if (difference < 60) {
@@ -429,11 +429,10 @@ const NotificationsPage = () => {
                                     border
                                     p-5
                                     transition
-                                    ${
-                                        notification.isRead
+                                    ${notification.isRead
                                             ? "border-slate-200"
                                             : "border-[#D4AF37] shadow-sm"
-                                    }`}
+                                        }`}
                                 >
 
                                     <div className="flex gap-4">
@@ -445,11 +444,10 @@ const NotificationsPage = () => {
                                             flex items-center
                                             justify-center
                                             flex-shrink-0
-                                            ${
-                                                notification.isRead
+                                            ${notification.isRead
                                                     ? "bg-slate-100"
                                                     : "bg-[#EEF5FF]"
-                                            }`}
+                                                }`}
                                         >
                                             {getNotificationIcon(
                                                 notification.type
@@ -477,11 +475,10 @@ const NotificationsPage = () => {
 
                                                         <h3
                                                             className={`text-lg
-                                                            ${
-                                                                notification.isRead
+                                                            ${notification.isRead
                                                                     ? "font-semibold text-gray-700"
                                                                     : "font-bold text-[#0B1F3A]"
-                                                            }`}
+                                                                }`}
                                                         >
                                                             {
                                                                 notification.title

@@ -76,7 +76,7 @@ const OfficerDashboard = () => {
 
             setCaseError(
                 error.response?.data?.message ||
-                    "Unable to load assistance cases."
+                "Unable to load assistance cases."
             );
         }
     };
@@ -129,7 +129,7 @@ const OfficerDashboard = () => {
 
             setApplicationError(
                 error.response?.data?.message ||
-                    "Unable to load applications."
+                "Unable to load applications."
             );
         }
     };

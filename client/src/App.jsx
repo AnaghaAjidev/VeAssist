@@ -26,45 +26,45 @@ import AuthorityApplicationDetails from "./pages/authority/AuthorityApplicationD
 import NotificationsPage from "./pages/notifications/NotificationsPage";
 
 function App() {
-    return (
-        <BrowserRouter>
-            <ScrollToTop />
+  return (
+    <BrowserRouter>
+      <ScrollToTop />
 
-            <Routes>
+      <Routes>
 
-                {/* PUBLIC */}
-                <Route path="/" element={<HomePage />} />
-                <Route path="/about" element={<AboutPage />} />
+        {/* PUBLIC */}
+        <Route path="/" element={<HomePage />} />
+        <Route path="/about" element={<AboutPage />} />
 
-                {/* AUTH */}
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
-                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        {/* AUTH */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
-                {/* NOTIFICATIONS */}
-                <Route path="/notifications" element={<NotificationsPage />} />
+        {/* NOTIFICATIONS */}
+        <Route path="/notifications" element={<NotificationsPage />} />
 
-                {/* FAMILY */}
-                <Route path="/family/dashboard" element={<FamilyDashboard />} />
-                <Route path="/family/documents" element={<DocumentsPage />} />
-                <Route path="/family/death-assistance" element={<DeathAssistancePage />} />
-                <Route path="/family/applications" element={<ApplicationsPage />} />
-                <Route path="/family/applications/new/:caseId" element={<CreateApplicationPage />} />
-                <Route path="/family/applications/:applicationId/documents" element={<ApplicationDocumentsPage />} />
+        {/* FAMILY */}
+        <Route path="/family/dashboard" element={<FamilyDashboard />} />
+        <Route path="/family/documents" element={<DocumentsPage />} />
+        <Route path="/family/death-assistance" element={<DeathAssistancePage />} />
+        <Route path="/family/applications" element={<ApplicationsPage />} />
+        <Route path="/family/applications/new/:caseId" element={<CreateApplicationPage />} />
+        <Route path="/family/applications/:applicationId/documents" element={<ApplicationDocumentsPage />} />
 
-                {/* OFFICER */}
-                <Route path="/officer/dashboard" element={<OfficerDashboard />} />
-                <Route path="/officer/cases/:caseId" element={<OfficerCaseDetails />} />
-                <Route path="/officer/applications" element={<OfficerApplications />} />
-                <Route path="/officer/applications/:applicationId" element={<OfficerApplicationDetails />} />
+        {/* OFFICER */}
+        <Route path="/officer/dashboard" element={<OfficerDashboard />} />
+        <Route path="/officer/cases/:caseId" element={<OfficerCaseDetails />} />
+        <Route path="/officer/applications" element={<OfficerApplications />} />
+        <Route path="/officer/applications/:applicationId" element={<OfficerApplicationDetails />} />
 
-                {/* AUTHORITY */}
-                <Route path="/authority/dashboard" element={<AuthorityDashboard />} />
-                <Route path="/authority/applications/:applicationId" element={<AuthorityApplicationDetails />} />
+        {/* AUTHORITY */}
+        <Route path="/authority/dashboard" element={<AuthorityDashboard />} />
+        <Route path="/authority/applications/:applicationId" element={<AuthorityApplicationDetails />} />
 
-            </Routes>
-        </BrowserRouter>
-    );
+      </Routes>
+    </BrowserRouter>
+  );
 }
 
 export default App;

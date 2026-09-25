@@ -202,7 +202,7 @@ export const getCaseCommunications = async (
         if (
             req.user.role === "family" &&
             assistanceCase.familyUser.toString() !==
-                req.user.userId
+            req.user.userId
         ) {
             return res.status(403).json({
                 message:

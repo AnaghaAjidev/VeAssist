@@ -116,7 +116,7 @@ const OfficerCaseDetails = () => {
 
             setCommunicationError(
                 error.response?.data?.message ||
-                    "Unable to load case communications."
+                "Unable to load case communications."
             );
         } finally {
             setLoadingCommunications(false);
@@ -182,7 +182,7 @@ const OfficerCaseDetails = () => {
 
             setCommunicationError(
                 error.response?.data?.message ||
-                    "Unable to send the message."
+                "Unable to send the message."
             );
             setCommunicationSuccess("");
         } finally {
@@ -245,7 +245,7 @@ const OfficerCaseDetails = () => {
 
             setCaseError(
                 error.response?.data?.message ||
-                    "Unable to load case details."
+                "Unable to load case details."
             );
         } finally {
             setLoadingCase(false);
@@ -296,7 +296,7 @@ const OfficerCaseDetails = () => {
 
             setDocumentsError(
                 error.response?.data?.message ||
-                    "Unable to load case documents."
+                "Unable to load case documents."
             );
         } finally {
             setLoadingDocuments(false);
@@ -392,7 +392,7 @@ const OfficerCaseDetails = () => {
 
             setTaskError(
                 error.response?.data?.message ||
-                    "Unable to update task status."
+                "Unable to update task status."
             );
 
             setTaskSuccess("");
@@ -474,7 +474,7 @@ const OfficerCaseDetails = () => {
             setDocuments((previousDocuments) =>
                 previousDocuments.map((document) =>
                     document._id ===
-                    reviewingDocument._id
+                        reviewingDocument._id
                         ? response.data.document
                         : document
                 )
@@ -490,7 +490,7 @@ const OfficerCaseDetails = () => {
 
             setReviewError(
                 error.response?.data?.message ||
-                    "Unable to update document review."
+                "Unable to update document review."
             );
 
         } finally {
@@ -1093,17 +1093,17 @@ const OfficerCaseDetails = () => {
                                                     document.documentType
                                                 ] && (
 
-                                                    <p className="text-sm text-gray-600 mt-1">
+                                                        <p className="text-sm text-gray-600 mt-1">
 
-                                                        {
-                                                            documentDescriptions[
+                                                            {
+                                                                documentDescriptions[
                                                                 document.documentType
-                                                            ]
-                                                        }
+                                                                ]
+                                                            }
 
-                                                    </p>
+                                                        </p>
 
-                                                )}
+                                                    )}
 
                                                 <p className="text-sm text-gray-500 mt-2">
                                                     {
@@ -1282,7 +1282,7 @@ const OfficerCaseDetails = () => {
 
                                     const selectedStatus =
                                         taskStatuses[
-                                            task._id
+                                        task._id
                                         ] ||
                                         task.status;
 
@@ -1305,7 +1305,7 @@ const OfficerCaseDetails = () => {
                                                     <div className="w-12 h-12 rounded-xl bg-[#EEF5FF] flex items-center justify-center shrink-0">
 
                                                         {task.status ===
-                                                        "Completed" ? (
+                                                            "Completed" ? (
 
                                                             <CheckCircle
                                                                 size={24}
@@ -1338,15 +1338,14 @@ const OfficerCaseDetails = () => {
                                                         </p>
 
                                                         <span
-                                                            className={`inline-flex mt-3 px-3 py-1 rounded-full text-xs font-semibold ${
-                                                                task.status ===
-                                                                "Completed"
+                                                            className={`inline-flex mt-3 px-3 py-1 rounded-full text-xs font-semibold ${task.status ===
+                                                                    "Completed"
                                                                     ? "bg-green-50 text-green-700"
                                                                     : task.status ===
-                                                                      "In Progress"
-                                                                    ? "bg-amber-50 text-amber-700"
-                                                                    : "bg-slate-100 text-slate-600"
-                                                            }`}
+                                                                        "In Progress"
+                                                                        ? "bg-amber-50 text-amber-700"
+                                                                        : "bg-slate-100 text-slate-600"
+                                                                }`}
                                                         >
                                                             Current Status:{" "}
                                                             {
@@ -1404,7 +1403,7 @@ const OfficerCaseDetails = () => {
                                                         disabled={
                                                             isUpdating ||
                                                             selectedStatus ===
-                                                                task.status
+                                                            task.status
                                                         }
                                                         className="flex items-center justify-center gap-2 bg-[#0B1F3A] text-white px-4 py-3 rounded-lg font-semibold hover:bg-[#1F4E79] transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                                                     >
