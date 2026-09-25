@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import logo from "../../assets/logo.png";
+import NotificationBell from "../../components/common/NotificationBell";
 
 const AuthorityDashboard = () => {
     const navigate = useNavigate();
@@ -55,7 +56,6 @@ const AuthorityDashboard = () => {
 
             setApplications(response.data.applications || []);
             setDepartment(response.data.department || "");
-
         } catch (error) {
             console.error(
                 "Fetch Authority applications error:",
@@ -80,7 +80,6 @@ const AuthorityDashboard = () => {
                 error.response?.data?.message ||
                 "Unable to load Authority applications."
             );
-
         } finally {
             setLoading(false);
         }
@@ -155,8 +154,7 @@ const AuthorityDashboard = () => {
             {/* HEADER */}
             <header className="bg-[#0B1F3A] text-white shadow-md">
 
-                <div className="max-w-7xl mx-auto px-6 py-4
-                flex items-center justify-between">
+                <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
 
                     {/* LOGO */}
                     <div className="flex items-center gap-3">
@@ -182,8 +180,10 @@ const AuthorityDashboard = () => {
                     </div>
 
 
-                    {/* USER + LOGOUT */}
+                    {/* USER + NOTIFICATIONS + LOGOUT */}
                     <div className="flex items-center gap-5">
+
+                        <NotificationBell />
 
                         <div className="hidden sm:block text-right">
 
@@ -199,12 +199,7 @@ const AuthorityDashboard = () => {
 
                         <button
                             onClick={handleLogout}
-                            className="flex items-center gap-2
-                            border border-slate-400
-                            px-4 py-2 rounded-lg text-sm
-                            hover:bg-white
-                            hover:text-[#0B1F3A]
-                            transition"
+                            className="flex items-center gap-2 border border-slate-400 px-4 py-2 rounded-lg text-sm hover:bg-white hover:text-[#0B1F3A] transition"
                         >
                             <LogOut size={17} />
                             Logout
@@ -241,17 +236,13 @@ const AuthorityDashboard = () => {
                 {/* DEPARTMENT INFORMATION */}
                 <section className="mb-10">
 
-                    <div className="bg-white rounded-2xl border
-                    border-slate-200 shadow-sm p-7">
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-7">
 
-                        <div className="flex flex-col md:flex-row
-                        md:items-center md:justify-between gap-5">
+                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
 
                             <div className="flex items-center gap-4">
 
-                                <div className="w-14 h-14 rounded-xl
-                                bg-[#EEF5FF]
-                                flex items-center justify-center">
+                                <div className="w-14 h-14 rounded-xl bg-[#EEF5FF] flex items-center justify-center">
 
                                     <Building2
                                         size={28}
@@ -266,8 +257,7 @@ const AuthorityDashboard = () => {
                                         Authority Department
                                     </p>
 
-                                    <h3 className="text-2xl font-bold
-                                    text-[#0B1F3A] mt-1">
+                                    <h3 className="text-2xl font-bold text-[#0B1F3A] mt-1">
                                         {department || "Department"}
                                     </h3>
 
@@ -275,18 +265,14 @@ const AuthorityDashboard = () => {
 
                             </div>
 
+
                             {/* REFRESH */}
                             <button
                                 onClick={fetchAuthorityApplications}
                                 disabled={loading}
-                                className="flex items-center justify-center
-                                gap-2 border border-[#1F4E79]
-                                text-[#1F4E79]
-                                px-5 py-3 rounded-lg
-                                font-semibold
-                                hover:bg-[#EEF5FF]
-                                transition disabled:opacity-60"
+                                className="flex items-center justify-center gap-2 border border-[#1F4E79] text-[#1F4E79] px-5 py-3 rounded-lg font-semibold hover:bg-[#EEF5FF] transition disabled:opacity-60"
                             >
+
                                 <RefreshCw
                                     size={18}
                                     className={
@@ -297,6 +283,7 @@ const AuthorityDashboard = () => {
                                 />
 
                                 Refresh
+
                             </button>
 
                         </div>
@@ -309,13 +296,10 @@ const AuthorityDashboard = () => {
                 {/* OVERVIEW CARDS */}
                 <section className="mb-12">
 
-                    <div className="grid grid-cols-1 md:grid-cols-2
-                    lg:grid-cols-4 gap-6">
-
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 
                         {/* FORWARDED */}
-                        <div className="bg-white rounded-2xl
-                        border border-slate-200 shadow-sm p-6">
+                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
 
                             <div className="flex items-center justify-between">
 
@@ -325,16 +309,13 @@ const AuthorityDashboard = () => {
                                         Forwarded
                                     </p>
 
-                                    <p className="text-3xl font-bold
-                                    text-[#0B1F3A] mt-2">
+                                    <p className="text-3xl font-bold text-[#0B1F3A] mt-2">
                                         {forwardedApplications}
                                     </p>
 
                                 </div>
 
-                                <div className="w-12 h-12 rounded-xl
-                                bg-[#EEF5FF]
-                                flex items-center justify-center">
+                                <div className="w-12 h-12 rounded-xl bg-[#EEF5FF] flex items-center justify-center">
 
                                     <FileText
                                         size={25}
@@ -349,8 +330,7 @@ const AuthorityDashboard = () => {
 
 
                         {/* UNDER AUTHORITY REVIEW */}
-                        <div className="bg-white rounded-2xl
-                        border border-slate-200 shadow-sm p-6">
+                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
 
                             <div className="flex items-center justify-between">
 
@@ -360,16 +340,13 @@ const AuthorityDashboard = () => {
                                         Under Authority Review
                                     </p>
 
-                                    <p className="text-3xl font-bold
-                                    text-[#0B1F3A] mt-2">
+                                    <p className="text-3xl font-bold text-[#0B1F3A] mt-2">
                                         {underReviewApplications}
                                     </p>
 
                                 </div>
 
-                                <div className="w-12 h-12 rounded-xl
-                                bg-yellow-50
-                                flex items-center justify-center">
+                                <div className="w-12 h-12 rounded-xl bg-yellow-50 flex items-center justify-center">
 
                                     <Clock
                                         size={25}
@@ -384,8 +361,7 @@ const AuthorityDashboard = () => {
 
 
                         {/* APPROVED */}
-                        <div className="bg-white rounded-2xl
-                        border border-slate-200 shadow-sm p-6">
+                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
 
                             <div className="flex items-center justify-between">
 
@@ -395,16 +371,13 @@ const AuthorityDashboard = () => {
                                         Approved
                                     </p>
 
-                                    <p className="text-3xl font-bold
-                                    text-[#0B1F3A] mt-2">
+                                    <p className="text-3xl font-bold text-[#0B1F3A] mt-2">
                                         {approvedApplications}
                                     </p>
 
                                 </div>
 
-                                <div className="w-12 h-12 rounded-xl
-                                bg-green-50
-                                flex items-center justify-center">
+                                <div className="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center">
 
                                     <CheckCircle
                                         size={25}
@@ -419,8 +392,7 @@ const AuthorityDashboard = () => {
 
 
                         {/* REJECTED */}
-                        <div className="bg-white rounded-2xl
-                        border border-slate-200 shadow-sm p-6">
+                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
 
                             <div className="flex items-center justify-between">
 
@@ -430,16 +402,13 @@ const AuthorityDashboard = () => {
                                         Rejected
                                     </p>
 
-                                    <p className="text-3xl font-bold
-                                    text-[#0B1F3A] mt-2">
+                                    <p className="text-3xl font-bold text-[#0B1F3A] mt-2">
                                         {rejectedApplications}
                                     </p>
 
                                 </div>
 
-                                <div className="w-12 h-12 rounded-xl
-                                bg-red-50
-                                flex items-center justify-center">
+                                <div className="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center">
 
                                     <XCircle
                                         size={25}
@@ -462,8 +431,7 @@ const AuthorityDashboard = () => {
 
                     <div className="mb-6">
 
-                        <h3 className="text-2xl font-bold
-                        text-[#0B1F3A]">
+                        <h3 className="text-2xl font-bold text-[#0B1F3A]">
                             Department Applications
                         </h3>
 
@@ -480,15 +448,11 @@ const AuthorityDashboard = () => {
                     {/* LOADING */}
                     {loading ? (
 
-                        <div className="bg-white rounded-2xl
-                        border border-slate-200
-                        p-10 text-center shadow-sm">
+                        <div className="bg-white rounded-2xl border border-slate-200 p-10 text-center shadow-sm">
 
                             <RefreshCw
                                 size={35}
-                                className="mx-auto
-                                text-[#1F4E79]
-                                animate-spin"
+                                className="mx-auto text-[#1F4E79] animate-spin"
                             />
 
                             <p className="text-gray-500 mt-4">
@@ -500,9 +464,7 @@ const AuthorityDashboard = () => {
                     ) : error ? (
 
                         /* ERROR */
-                        <div className="bg-red-50
-                        border border-red-200
-                        text-red-700 rounded-xl p-5">
+                        <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-5">
 
                             {error}
 
@@ -511,23 +473,19 @@ const AuthorityDashboard = () => {
                     ) : applications.length === 0 ? (
 
                         /* EMPTY */
-                        <div className="bg-white rounded-2xl
-                        border border-slate-200
-                        p-10 text-center shadow-sm">
+                        <div className="bg-white rounded-2xl border border-slate-200 p-10 text-center shadow-sm">
 
                             <FileText
                                 size={42}
                                 className="mx-auto text-gray-400"
                             />
 
-                            <h4 className="text-lg font-bold
-                            text-[#0B1F3A] mt-4">
+                            <h4 className="text-lg font-bold text-[#0B1F3A] mt-4">
                                 No Applications
                             </h4>
 
                             <p className="text-gray-500 mt-2">
-                                No applications are currently
-                                forwarded to your department.
+                                No applications are currently forwarded to your department.
                             </p>
 
                         </div>
@@ -541,26 +499,16 @@ const AuthorityDashboard = () => {
 
                                 <div
                                     key={application._id}
-                                    className="bg-white rounded-2xl
-                                    border border-slate-200
-                                    shadow-sm p-7
-                                    hover:shadow-md transition"
+                                    className="bg-white rounded-2xl border border-slate-200 shadow-sm p-7 hover:shadow-md transition"
                                 >
 
-                                    <div className="flex flex-col
-                                    lg:flex-row
-                                    lg:items-center
-                                    lg:justify-between gap-6">
+                                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
 
 
                                         {/* APPLICATION INFO */}
-                                        <div className="flex items-start
-                                        gap-4">
+                                        <div className="flex items-start gap-4">
 
-                                            <div className="w-12 h-12
-                                            rounded-xl bg-[#EEF5FF]
-                                            flex items-center
-                                            justify-center flex-shrink-0">
+                                            <div className="w-12 h-12 rounded-xl bg-[#EEF5FF] flex items-center justify-center flex-shrink-0">
 
                                                 <FileText
                                                     size={24}
@@ -572,19 +520,15 @@ const AuthorityDashboard = () => {
 
                                             <div>
 
-                                                <p className="text-sm
-                                                text-gray-500">
+                                                <p className="text-sm text-gray-500">
                                                     Application
                                                 </p>
 
-                                                <h4 className="text-xl
-                                                font-bold
-                                                text-[#0B1F3A] mt-1">
+                                                <h4 className="text-xl font-bold text-[#0B1F3A] mt-1">
                                                     {application.title}
                                                 </h4>
 
-                                                <p className="text-gray-600
-                                                mt-1">
+                                                <p className="text-gray-600 mt-1">
                                                     {application.applicationType}
                                                 </p>
 
@@ -596,13 +540,11 @@ const AuthorityDashboard = () => {
                                         {/* FAMILY */}
                                         <div>
 
-                                            <p className="text-sm
-                                            text-gray-500">
+                                            <p className="text-sm text-gray-500">
                                                 Family
                                             </p>
 
-                                            <p className="font-semibold
-                                            text-[#0B1F3A] mt-1">
+                                            <p className="font-semibold text-[#0B1F3A] mt-1">
                                                 {getFamilyName(application)}
                                             </p>
 
@@ -612,13 +554,11 @@ const AuthorityDashboard = () => {
                                         {/* CASE */}
                                         <div>
 
-                                            <p className="text-sm
-                                            text-gray-500">
+                                            <p className="text-sm text-gray-500">
                                                 Case ID
                                             </p>
 
-                                            <p className="font-semibold
-                                            text-[#1F4E79] mt-1">
+                                            <p className="font-semibold text-[#1F4E79] mt-1">
                                                 {getCaseId(application)}
                                             </p>
 
@@ -628,17 +568,12 @@ const AuthorityDashboard = () => {
                                         {/* STATUS */}
                                         <div>
 
-                                            <p className="text-sm
-                                            text-gray-500">
+                                            <p className="text-sm text-gray-500">
                                                 Status
                                             </p>
 
                                             <span
-                                                className={`inline-flex
-                                                px-4 py-2 mt-1
-                                                rounded-full
-                                                text-sm font-semibold
-                                                ${getStatusClass(
+                                                className={`inline-flex px-4 py-2 mt-1 rounded-full text-sm font-semibold ${getStatusClass(
                                                     application.status
                                                 )}`}
                                             >
@@ -657,18 +592,13 @@ const AuthorityDashboard = () => {
                                                         `/authority/applications/${application._id}`
                                                     )
                                                 }
-                                                className="flex
-                                                items-center gap-2
-                                                bg-[#0B1F3A]
-                                                text-white
-                                                px-5 py-3 rounded-lg
-                                                font-semibold
-                                                hover:bg-[#1F4E79]
-                                                transition"
+                                                className="flex items-center gap-2 bg-[#0B1F3A] text-white px-5 py-3 rounded-lg font-semibold hover:bg-[#1F4E79] transition"
                                             >
+
                                                 <Eye size={18} />
                                                 View
                                                 <ArrowRight size={17} />
+
                                             </button>
 
                                         </div>

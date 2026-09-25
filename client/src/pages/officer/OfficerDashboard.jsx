@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import logo from "../../assets/logo.png";
+import NotificationBell from "../../components/common/NotificationBell";
 
 const OfficerDashboard = () => {
     const navigate = useNavigate();
@@ -177,7 +178,6 @@ const OfficerDashboard = () => {
         try {
             setRefreshing(true);
 
-            // Show loading state while refreshing
             setLoadingCases(true);
             setLoadingApplications(true);
 
@@ -269,8 +269,10 @@ const OfficerDashboard = () => {
                         </div>
                     </div>
 
-                    {/* User + Logout */}
+                    {/* User + Notifications + Logout */}
                     <div className="flex items-center gap-5">
+
+                        <NotificationBell />
 
                         <div className="hidden sm:block text-right">
                             <p className="font-semibold">

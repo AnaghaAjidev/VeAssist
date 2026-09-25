@@ -11,6 +11,8 @@ import {
     LogOut,
     Save,
     RefreshCw,
+    MessageCircle,
+    Send,
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import logo from "../../assets/logo.png";
@@ -45,6 +47,17 @@ const OfficerCaseDetails = () => {
     const [reviewLoading, setReviewLoading] = useState(false);
     const [reviewError, setReviewError] = useState("");
 
+    // =========================================================
+    // CASE COMMUNICATION STATES
+    // =========================================================
+    const [communications, setCommunications] = useState([]);
+    const [loadingCommunications, setLoadingCommunications] = useState(false);
+    const [communicationSubject, setCommunicationSubject] = useState("");
+    const [communicationMessage, setCommunicationMessage] = useState("");
+    const [sendingCommunication, setSendingCommunication] = useState(false);
+    const [communicationError, setCommunicationError] = useState("");
+    const [communicationSuccess, setCommunicationSuccess] = useState("");
+
     const storedUser = localStorage.getItem("user");
     const user = storedUser ? JSON.parse(storedUser) : null;
 
@@ -65,6 +78,116 @@ const OfficerCaseDetails = () => {
 
         "Service Document":
             "Relevant service or pension-related document of the veteran.",
+    };
+
+    // =========================================================
+    // FETCH CASE COMMUNICATIONS
+    // =========================================================
+    const fetchCommunications = async (selectedCaseId) => {
+        try {
+            setLoadingCommunications(true);
+
+            const token = localStorage.getItem("token");
+
+            if (!token) {
+                navigate("/login");
+                return;
+            }
+
+            const response = await axios.get(
+                `http://localhost:5000/api/communications/${selectedCaseId}`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                    params: {
+                        _t: Date.now(),
+                    },
+                }
+            );
+
+            setCommunications(response.data.communications || []);
+            setCommunicationError("");
+        } catch (error) {
+            console.error(
+                "Fetch case communications error:",
+                error
+            );
+
+            setCommunicationError(
+                error.response?.data?.message ||
+                    "Unable to load case communications."
+            );
+        } finally {
+            setLoadingCommunications(false);
+        }
+    };
+
+    // =========================================================
+    // SEND CASE COMMUNICATION
+    // =========================================================
+    const handleSendCommunication = async (e) => {
+        e.preventDefault();
+
+        if (!communicationSubject.trim()) {
+            setCommunicationError("Please enter a subject.");
+            setCommunicationSuccess("");
+            return;
+        }
+
+        if (!communicationMessage.trim()) {
+            setCommunicationError("Please enter a message.");
+            setCommunicationSuccess("");
+            return;
+        }
+
+        try {
+            setSendingCommunication(true);
+            setCommunicationError("");
+            setCommunicationSuccess("");
+
+            const token = localStorage.getItem("token");
+
+            if (!token) {
+                navigate("/login");
+                return;
+            }
+
+            await axios.post(
+                "http://localhost:5000/api/communications",
+                {
+                    caseId: assistanceCase.caseId,
+                    subject: communicationSubject.trim(),
+                    message: communicationMessage.trim(),
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+
+            setCommunicationSubject("");
+            setCommunicationMessage("");
+            setCommunicationSuccess(
+                "Your message has been sent to the family."
+            );
+
+            await fetchCommunications(assistanceCase.caseId);
+        } catch (error) {
+            console.error(
+                "Send case communication error:",
+                error
+            );
+
+            setCommunicationError(
+                error.response?.data?.message ||
+                    "Unable to send the message."
+            );
+            setCommunicationSuccess("");
+        } finally {
+            setSendingCommunication(false);
+        }
     };
 
     // =========================================================
@@ -105,6 +228,14 @@ const OfficerCaseDetails = () => {
 
             setTaskStatuses(statusMap);
             setCaseError("");
+
+            // Reset communication form when the case is loaded/refreshed.
+            setCommunicationSubject("");
+            setCommunicationMessage("");
+            setCommunicationError("");
+            setCommunicationSuccess("");
+
+            await fetchCommunications(caseData.caseId);
 
         } catch (error) {
             console.error(
@@ -1317,6 +1448,196 @@ const OfficerCaseDetails = () => {
 
                     )}
 
+                </section>
+
+                {/* =================================================
+                    CASE COMMUNICATION
+                ================================================== */}
+                <section className="mt-10">
+                    <div className="mb-6">
+                        <div className="flex items-center gap-3">
+                            <div className="w-11 h-11 rounded-xl bg-[#EEF5FF] flex items-center justify-center">
+                                <MessageCircle
+                                    size={23}
+                                    className="text-[#1F4E79]"
+                                />
+                            </div>
+
+                            <div>
+                                <h3 className="text-2xl font-bold text-[#0B1F3A]">
+                                    Case Communication
+                                </h3>
+
+                                <p className="text-gray-600 mt-1">
+                                    Communicate directly with the family regarding this assistance case.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {communicationSuccess && (
+                        <div className="mb-5 bg-green-50 border border-green-200 text-green-700 rounded-xl px-5 py-4 flex items-center gap-3">
+                            <CheckCircle size={20} />
+
+                            <p className="font-medium">
+                                {communicationSuccess}
+                            </p>
+                        </div>
+                    )}
+
+                    {communicationError && (
+                        <div className="mb-5 bg-red-50 border border-red-200 text-red-700 rounded-xl px-5 py-4 flex items-center gap-3">
+                            <XCircle size={20} />
+
+                            <p className="font-medium">
+                                {communicationError}
+                            </p>
+                        </div>
+                    )}
+
+                    {/* PREVIOUS MESSAGES */}
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                        <div className="flex items-center gap-2 mb-5">
+                            <MessageCircle
+                                size={20}
+                                className="text-[#1F4E79]"
+                            />
+
+                            <h4 className="text-lg font-bold text-[#0B1F3A]">
+                                Previous Messages
+                            </h4>
+                        </div>
+
+                        {loadingCommunications ? (
+                            <p className="text-gray-500">
+                                Loading messages...
+                            </p>
+                        ) : communications.length === 0 ? (
+                            <div className="text-center py-8">
+                                <MessageCircle
+                                    size={38}
+                                    className="mx-auto text-gray-400"
+                                />
+
+                                <p className="text-gray-500 mt-3">
+                                    No messages have been exchanged for this case yet.
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                {communications.map((communication) => (
+                                    <div
+                                        key={communication._id}
+                                        className="border border-slate-200 rounded-xl p-5 bg-slate-50"
+                                    >
+                                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                                            <div>
+                                                <p className="font-bold text-[#0B1F3A]">
+                                                    {communication.subject}
+                                                </p>
+
+                                                <p className="text-sm text-gray-500 mt-1">
+                                                    From:{" "}
+                                                    <span className="font-semibold text-gray-700">
+                                                        {communication.sender?.name ||
+                                                            "User"}
+                                                    </span>
+                                                </p>
+                                            </div>
+
+                                            <p className="text-xs text-gray-400">
+                                                {new Date(
+                                                    communication.createdAt
+                                                ).toLocaleString()}
+                                            </p>
+                                        </div>
+
+                                        <p className="text-sm text-gray-700 mt-4 whitespace-pre-wrap">
+                                            {communication.message}
+                                        </p>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* SEND MESSAGE */}
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mt-6">
+                        <div className="flex items-center gap-2 mb-5">
+                            <Send
+                                size={20}
+                                className="text-[#1F4E79]"
+                            />
+
+                            <h4 className="text-lg font-bold text-[#0B1F3A]">
+                                Send a Message to Family
+                            </h4>
+                        </div>
+
+                        <form
+                            onSubmit={handleSendCommunication}
+                            className="space-y-5"
+                        >
+                            <div>
+                                <label className="block text-sm font-semibold text-[#0B1F3A] mb-2">
+                                    Subject
+                                </label>
+
+                                <input
+                                    type="text"
+                                    value={communicationSubject}
+                                    onChange={(e) =>
+                                        setCommunicationSubject(
+                                            e.target.value
+                                        )
+                                    }
+                                    placeholder="Enter message subject"
+                                    className="w-full border border-slate-300 rounded-xl px-4 py-3 outline-none focus:border-[#1F4E79] focus:ring-2 focus:ring-[#1F4E79]/20"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-semibold text-[#0B1F3A] mb-2">
+                                    Message
+                                </label>
+
+                                <textarea
+                                    value={communicationMessage}
+                                    onChange={(e) =>
+                                        setCommunicationMessage(
+                                            e.target.value
+                                        )
+                                    }
+                                    rows="5"
+                                    placeholder="Enter your message to the family..."
+                                    className="w-full border border-slate-300 rounded-xl px-4 py-3 outline-none focus:border-[#1F4E79] focus:ring-2 focus:ring-[#1F4E79]/20"
+                                />
+                            </div>
+
+                            <div className="flex justify-end">
+                                <button
+                                    type="submit"
+                                    disabled={sendingCommunication}
+                                    className="flex items-center justify-center gap-2 bg-[#0B1F3A] text-white px-5 py-3 rounded-lg font-semibold hover:bg-[#1F4E79] transition disabled:opacity-60 disabled:cursor-not-allowed"
+                                >
+                                    {sendingCommunication ? (
+                                        <>
+                                            <RefreshCw
+                                                size={17}
+                                                className="animate-spin"
+                                            />
+                                            Sending...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Send size={17} />
+                                            Send Message
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </section>
 
                 {/* =================================================
