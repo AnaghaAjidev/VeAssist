@@ -288,18 +288,18 @@ function ScholarshipAssistancePage() {
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-stretch">
 
-    {scholarships.map((scholarship) => {
+                            {scholarships.map((scholarship) => {
 
-        const application = myApplications.find(
-            (item) =>
-                item.scholarship?._id === scholarship._id ||
-                item.scholarship === scholarship._id
-        );
+                                const application = myApplications.find(
+                                    (item) =>
+                                        item.scholarship?._id === scholarship._id ||
+                                        item.scholarship === scholarship._id
+                                );
 
-        return (
-            <div
-                key={scholarship._id}
-                className="bg-white rounded-2xl
+                                return (
+                                    <div
+                                        key={scholarship._id}
+                                        className="bg-white rounded-2xl
                 border border-slate-200
                 shadow-sm
                 hover:shadow-md
@@ -308,98 +308,98 @@ function ScholarshipAssistancePage() {
                 flex flex-col
                 h-full
                 min-h-[365px]"
-            >
+                                    >
 
-                {/* TOP ROW */}
+                                        {/* TOP ROW */}
 
-                <div className="flex items-center justify-between">
+                                        <div className="flex items-center justify-between">
 
-                    <div
-                        className="w-12 h-12 rounded-xl
+                                            <div
+                                                className="w-12 h-12 rounded-xl
                         bg-[#0B1F3A]
                         flex items-center justify-center"
-                    >
-                        <BookOpen
-                            size={24}
-                            className="text-[#D4AF37]"
-                        />
-                    </div>
+                                            >
+                                                <BookOpen
+                                                    size={24}
+                                                    className="text-[#D4AF37]"
+                                                />
+                                            </div>
 
-                    <span
-                        className="bg-slate-100
+                                            <span
+                                                className="bg-slate-100
                         text-[#1F4E79]
                         px-4 py-2
                         rounded-full
                         text-sm
                         font-medium"
-                    >
-                        Scholarship
-                    </span>
+                                            >
+                                                Scholarship
+                                            </span>
 
-                </div>
+                                        </div>
 
-                {/* TITLE */}
+                                        {/* TITLE */}
 
-                <h3
-                    className="text-xl font-bold
+                                        <h3
+                                            className="text-xl font-bold
                     text-[#0B1F3A]
                     mt-5"
-                >
-                    {scholarship.title}
-                </h3>
+                                        >
+                                            {scholarship.title}
+                                        </h3>
 
-                {/* DESCRIPTION */}
+                                        {/* DESCRIPTION */}
 
-                <p
-                    className="text-[#40566F]
+                                        <p
+                                            className="text-[#40566F]
                     text-base
                     leading-relaxed
                     mt-2"
-                >
-                    {scholarship.description}
-                </p>
+                                        >
+                                            {scholarship.description}
+                                        </p>
 
-                {/* PROVIDER */}
+                                        {/* PROVIDER */}
 
-                <p className="text-[#6B7C93] mt-4">
+                                        <p className="text-[#6B7C93] mt-4">
 
-                    Provider:{" "}
+                                            Provider:{" "}
 
-                    <span className="font-semibold text-[#40566F]">
-                        {scholarship.provider}
-                    </span>
+                                            <span className="font-semibold text-[#40566F]">
+                                                {scholarship.provider}
+                                            </span>
 
-                </p>
+                                        </p>
 
-                {/* DEADLINE */}
+                                        {/* DEADLINE */}
 
-                {scholarship.applicationDeadline && (
-                    <div
-                        className="flex items-center gap-3
+                                        {scholarship.applicationDeadline && (
+                                            <div
+                                                className="flex items-center gap-3
                         text-[#40566F]
                         mt-3"
-                    >
+                                            >
 
-                        <CalendarDays
-                            size={20}
-                            className="text-[#52677F]"
-                        />
+                                                <CalendarDays
+                                                    size={20}
+                                                    className="text-[#52677F]"
+                                                />
 
-                        <span>
-                            Deadline:{" "}
-                            {new Date(
-                                scholarship.applicationDeadline
-                            ).toLocaleDateString("en-GB")}
-                        </span>
+                                                <span>
+                                                    Deadline:{" "}
+                                                    {new Date(
+                                                        scholarship.applicationDeadline
+                                                    ).toLocaleDateString("en-GB")}
+                                                </span>
 
-                    </div>
-                )}
+                                            </div>
+                                        )}
 
-                {/* APPLICATION STATUS */}
+                                        {/* APPLICATION STATUS */}
 
-                {application && (
-                    <div
-                        className="inline-flex items-center
+                                        {application && (
+                                            <div
+                                                className="inline-flex items-center
                         gap-2
                         mt-3
                         px-4 py-2.5
@@ -408,22 +408,22 @@ function ScholarshipAssistancePage() {
                         text-blue-700
                         rounded-lg
                         font-medium"
-                    >
+                                            >
 
-                        <Clock3 size={18} />
+                                                <Clock3 size={18} />
 
-                        Status: {application.status}
+                                                Status: {application.status}
 
-                    </div>
-                )}
+                                            </div>
+                                        )}
 
-                {/* BUTTON */}
+                                        {/* BUTTON */}
 
-                <button
-                    onClick={() =>
-                        selectScholarship(scholarship)
-                    }
-                    className="w-full
+                                        <button
+                                            onClick={() =>
+                                                selectScholarship(scholarship)
+                                            }
+                                            className="w-full
                     mt-auto
                     pt-4
                     bg-[#245985]
@@ -434,15 +434,15 @@ function ScholarshipAssistancePage() {
                     py-3
                     rounded-xl
                     transition"
-                >
-                    View Details & Check Eligibility
-                </button>
+                                        >
+                                            View Details & Check Eligibility
+                                        </button>
 
-            </div>
-        );
-    })}
+                                    </div>
+                                );
+                            })}
 
-</div>
+                        </div>
                     )}
 
                 </section>
@@ -600,11 +600,10 @@ function ScholarshipAssistancePage() {
                         {/* ELIGIBILITY RESULT */}
 
                         {eligibility && (
-                            <div className={`mt-6 p-5 rounded-lg border ${
-                                eligibility.eligible
+                            <div className={`mt-6 p-5 rounded-lg border ${eligibility.eligible
                                     ? "bg-green-50 border-green-200"
                                     : "bg-red-50 border-red-200"
-                            }`}>
+                                }`}>
 
                                 <h3 className="font-bold">
                                     {eligibility.eligible

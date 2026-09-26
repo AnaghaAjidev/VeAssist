@@ -298,18 +298,18 @@ function WidowVocationalTrainingPage() {
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-stretch">
 
-    {programs.map((program) => {
+                            {programs.map((program) => {
 
-        const application = myApplications.find(
-            (item) =>
-                item.scholarship?._id === program._id ||
-                item.scholarship === program._id
-        );
+                                const application = myApplications.find(
+                                    (item) =>
+                                        item.scholarship?._id === program._id ||
+                                        item.scholarship === program._id
+                                );
 
-        return (
-            <div
-                key={program._id}
-                className="bg-white rounded-2xl
+                                return (
+                                    <div
+                                        key={program._id}
+                                        className="bg-white rounded-2xl
                 border border-slate-200
                 shadow-sm
                 hover:shadow-md
@@ -318,98 +318,98 @@ function WidowVocationalTrainingPage() {
                 flex flex-col
                 h-full
                 min-h-[365px]"
-            >
+                                    >
 
-                {/* TOP ROW */}
+                                        {/* TOP ROW */}
 
-                <div className="flex items-center justify-between">
+                                        <div className="flex items-center justify-between">
 
-                    <div
-                        className="w-12 h-12 rounded-xl
+                                            <div
+                                                className="w-12 h-12 rounded-xl
                         bg-[#0B1F3A]
                         flex items-center justify-center"
-                    >
-                        <BriefcaseBusiness
-                            size={24}
-                            className="text-[#D4AF37]"
-                        />
-                    </div>
+                                            >
+                                                <BriefcaseBusiness
+                                                    size={24}
+                                                    className="text-[#D4AF37]"
+                                                />
+                                            </div>
 
-                    <span
-                        className="bg-slate-100
+                                            <span
+                                                className="bg-slate-100
                         text-[#1F4E79]
                         px-4 py-2
                         rounded-full
                         text-sm
                         font-medium"
-                    >
-                        Vocational Training
-                    </span>
+                                            >
+                                                Vocational Training
+                                            </span>
 
-                </div>
+                                        </div>
 
-                {/* TITLE */}
+                                        {/* TITLE */}
 
-                <h3
-                    className="text-xl font-bold
+                                        <h3
+                                            className="text-xl font-bold
                     text-[#0B1F3A]
                     mt-5"
-                >
-                    {program.title}
-                </h3>
+                                        >
+                                            {program.title}
+                                        </h3>
 
-                {/* DESCRIPTION */}
+                                        {/* DESCRIPTION */}
 
-                <p
-                    className="text-[#40566F]
+                                        <p
+                                            className="text-[#40566F]
                     text-base
                     leading-relaxed
                     mt-2"
-                >
-                    {program.description}
-                </p>
+                                        >
+                                            {program.description}
+                                        </p>
 
-                {/* PROVIDER */}
+                                        {/* PROVIDER */}
 
-                <p className="text-[#6B7C93] mt-4">
+                                        <p className="text-[#6B7C93] mt-4">
 
-                    Provider:{" "}
+                                            Provider:{" "}
 
-                    <span className="font-semibold text-[#40566F]">
-                        {program.provider}
-                    </span>
+                                            <span className="font-semibold text-[#40566F]">
+                                                {program.provider}
+                                            </span>
 
-                </p>
+                                        </p>
 
-                {/* DEADLINE */}
+                                        {/* DEADLINE */}
 
-                {program.applicationDeadline && (
-                    <div
-                        className="flex items-center gap-3
+                                        {program.applicationDeadline && (
+                                            <div
+                                                className="flex items-center gap-3
                         text-[#40566F]
                         mt-3"
-                    >
+                                            >
 
-                        <CalendarDays
-                            size={20}
-                            className="text-[#52677F]"
-                        />
+                                                <CalendarDays
+                                                    size={20}
+                                                    className="text-[#52677F]"
+                                                />
 
-                        <span>
-                            Deadline:{" "}
-                            {new Date(
-                                program.applicationDeadline
-                            ).toLocaleDateString("en-GB")}
-                        </span>
+                                                <span>
+                                                    Deadline:{" "}
+                                                    {new Date(
+                                                        program.applicationDeadline
+                                                    ).toLocaleDateString("en-GB")}
+                                                </span>
 
-                    </div>
-                )}
+                                            </div>
+                                        )}
 
-                {/* APPLICATION STATUS */}
+                                        {/* APPLICATION STATUS */}
 
-                {application && (
-                    <div
-                        className="inline-flex items-center
+                                        {application && (
+                                            <div
+                                                className="inline-flex items-center
                         gap-2
                         mt-3
                         px-4 py-2.5
@@ -418,22 +418,22 @@ function WidowVocationalTrainingPage() {
                         text-blue-700
                         rounded-lg
                         font-medium"
-                    >
+                                            >
 
-                        <Clock3 size={18} />
+                                                <Clock3 size={18} />
 
-                        Status: {application.status}
+                                                Status: {application.status}
 
-                    </div>
-                )}
+                                            </div>
+                                        )}
 
-                {/* BUTTON */}
+                                        {/* BUTTON */}
 
-                <button
-                    onClick={() =>
-                        selectProgram(program)
-                    }
-                    className="w-full
+                                        <button
+                                            onClick={() =>
+                                                selectProgram(program)
+                                            }
+                                            className="w-full
                     mt-auto
                     pt-4
                     bg-[#245985]
@@ -444,15 +444,15 @@ function WidowVocationalTrainingPage() {
                     py-3
                     rounded-xl
                     transition"
-                >
-                    View Details & Check Eligibility
-                </button>
+                                        >
+                                            View Details & Check Eligibility
+                                        </button>
 
-            </div>
-        );
-    })}
+                                    </div>
+                                );
+                            })}
 
-</div>
+                        </div>
                     )}
 
                 </section>
@@ -614,11 +614,10 @@ function WidowVocationalTrainingPage() {
                         {/* RESULT */}
 
                         {eligibility && (
-                            <div className={`mt-6 p-5 rounded-lg border ${
-                                eligibility.eligible
+                            <div className={`mt-6 p-5 rounded-lg border ${eligibility.eligible
                                     ? "bg-green-50 border-green-200"
                                     : "bg-red-50 border-red-200"
-                            }`}>
+                                }`}>
 
                                 <h3 className="font-bold">
                                     {eligibility.eligible

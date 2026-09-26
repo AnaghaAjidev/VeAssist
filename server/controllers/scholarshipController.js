@@ -180,7 +180,7 @@ export const checkScholarshipEligibility = async (
         if (
             scholarship.applicationDeadline &&
             new Date() >
-                new Date(scholarship.applicationDeadline)
+            new Date(scholarship.applicationDeadline)
         ) {
             reasons.push(
                 "The application deadline has passed."
@@ -251,7 +251,7 @@ export const applyForScholarship = async (
         if (
             scholarship.applicationDeadline &&
             new Date() >
-                new Date(scholarship.applicationDeadline)
+            new Date(scholarship.applicationDeadline)
         ) {
             return res.status(400).json({
                 message:
@@ -377,7 +377,7 @@ export const applyForScholarship = async (
                 institution,
                 marks:
                     marks !== undefined &&
-                    marks !== null
+                        marks !== null
                         ? Number(marks)
                         : null,
             };
@@ -413,7 +413,7 @@ export const applyForScholarship = async (
                         institution,
                         marks:
                             marks !== undefined &&
-                            marks !== null
+                                marks !== null
                                 ? Number(marks)
                                 : null,
                     },
@@ -484,7 +484,7 @@ export const getAuthorityScholarshipApplications =
             if (
                 req.user.role === "authority" &&
                 req.user.department !==
-                    "Welfare Assistance Department"
+                "Welfare Assistance Department"
             ) {
                 return res.status(403).json({
                     message:
@@ -541,7 +541,7 @@ export const getAuthorityScholarshipApplicationById =
             if (
                 req.user.role === "authority" &&
                 req.user.department !==
-                    "Welfare Assistance Department"
+                "Welfare Assistance Department"
             ) {
                 return res.status(403).json({
                     message:
@@ -598,7 +598,7 @@ export const reviewScholarshipApplication =
             if (
                 req.user.role === "authority" &&
                 req.user.department !==
-                    "Welfare Assistance Department"
+                "Welfare Assistance Department"
             ) {
                 return res.status(403).json({
                     message:
@@ -666,10 +666,9 @@ export const reviewScholarshipApplication =
                     title:
                         "Scholarship / Training Application Update",
                     message:
-                        `${application.scholarship.title} (${application.applicationId}) status updated to ${status}. ${
-                            authorityRemarks
-                                ? `Remarks: ${authorityRemarks}`
-                                : ""
+                        `${application.scholarship.title} (${application.applicationId}) status updated to ${status}. ${authorityRemarks
+                            ? `Remarks: ${authorityRemarks}`
+                            : ""
                         }`,
                     type: "Application Update",
                 });
@@ -709,7 +708,7 @@ export const createScholarship = async (req, res) => {
         if (
             req.user.role === "authority" &&
             req.user.department !==
-                "Welfare Assistance Department"
+            "Welfare Assistance Department"
         ) {
             return res.status(403).json({
                 message:
@@ -778,8 +777,8 @@ export const createScholarship = async (req, res) => {
 
             minimumMarks:
                 minimumMarks !== undefined &&
-                minimumMarks !== null &&
-                minimumMarks !== ""
+                    minimumMarks !== null &&
+                    minimumMarks !== ""
                     ? Number(minimumMarks)
                     : null,
 
@@ -851,7 +850,7 @@ export const getAuthorityScholarships = async (
         if (
             req.user.role === "authority" &&
             req.user.department !==
-                "Welfare Assistance Department"
+            "Welfare Assistance Department"
         ) {
             return res.status(403).json({
                 message:
@@ -895,7 +894,7 @@ export const updateScholarship = async (
         if (
             req.user.role === "authority" &&
             req.user.department !==
-                "Welfare Assistance Department"
+            "Welfare Assistance Department"
         ) {
             return res.status(403).json({
                 message:
