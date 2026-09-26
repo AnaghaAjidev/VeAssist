@@ -14,6 +14,9 @@ import DeathAssistancePage from "./pages/family/DeathAssistancePage";
 import ApplicationsPage from "./pages/family/ApplicationsPage";
 import CreateApplicationPage from "./pages/family/CreateApplicationPage";
 import ApplicationDocumentsPage from "./pages/family/ApplicationDocumentsPage";
+import WelfareAssistancePage from "./pages/family/WelfareAssistancePage";
+import ScholarshipAssistancePage from "./pages/family/ScholarshipAssistancePage";
+import WidowVocationalTrainingPage from "./pages/family/WidowVocationalTrainingPage";
 
 import OfficerDashboard from "./pages/officer/OfficerDashboard";
 import OfficerCaseDetails from "./pages/officer/OfficerCaseDetails";
@@ -51,6 +54,9 @@ function App() {
         <Route path="/family/applications" element={<ApplicationsPage />} />
         <Route path="/family/applications/new/:caseId" element={<CreateApplicationPage />} />
         <Route path="/family/applications/:applicationId/documents" element={<ApplicationDocumentsPage />} />
+        <Route path="/family/welfare-assistance" element={<WelfareAssistancePage />} />
+        <Route path="/family/scholarships" element={<ScholarshipAssistancePage />} />
+        <Route path="/family/vocational-training" element={<WidowVocationalTrainingPage />} />
 
         {/* OFFICER */}
         <Route path="/officer/dashboard" element={<OfficerDashboard />} />

@@ -548,9 +548,12 @@ const FamilyDashboard = () => {
                             </p>
 
                             <button
+                                onClick={() =>
+                                    navigate("/family/scholarships")
+                                }
                                 className="mt-6 flex items-center gap-2
-                                text-[#1F4E79] font-semibold
-                                hover:text-[#D4AF37] transition"
+    text-[#1F4E79] font-semibold
+    hover:text-[#D4AF37] transition"
                             >
 
                                 Explore Assistance
@@ -594,9 +597,12 @@ const FamilyDashboard = () => {
                             </p>
 
                             <button
+                                onClick={() =>
+                                    navigate("/family/vocational-training")
+                                }
                                 className="mt-6 flex items-center gap-2
-                                text-[#1F4E79] font-semibold
-                                hover:text-[#D4AF37] transition"
+    text-[#1F4E79] font-semibold
+    hover:text-[#D4AF37] transition"
                             >
 
                                 Explore Assistance

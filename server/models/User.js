@@ -33,6 +33,7 @@ const userSchema = new mongoose.Schema(
         "Pension Department",
         "Insurance Department",
         "ECHS Department",
+        "Welfare Assistance Department"
       ],
       default: null,
     },

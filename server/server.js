@@ -12,6 +12,7 @@ import documentRoutes from "./routes/documentRoutes.js";
 import applicationRoutes from "./routes/applicationRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import communicationRoutes from "./routes/communicationRoutes.js";
+import scholarshipRoutes from "./routes/scholarshipRoutes.js";
 
 import { runReminderChecks } from "./services/reminderService.js";
 
@@ -54,6 +55,7 @@ app.use("/api/documents", documentRoutes);
 app.use("/api/applications", applicationRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/communications", communicationRoutes);
+app.use("/api/scholarships", scholarshipRoutes);
 
 
 // ======================================================
