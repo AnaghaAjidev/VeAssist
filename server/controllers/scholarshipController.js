@@ -1,5 +1,7 @@
 import Scholarship from "../models/Scholarship.js";
 import ScholarshipTracking from "../models/ScholarshipTracking.js";
+import AssistanceCase from "../models/AssistanceCase.js";
+import Document from "../models/Document.js";
 import User from "../models/User.js";
 import { createNotification } from "../services/notificationService.js";
 
@@ -42,7 +44,8 @@ export const getScholarshipById = async (req, res) => {
 
         if (!scholarship) {
             return res.status(404).json({
-                message: "Scholarship or training opportunity not found.",
+                message:
+                    "Scholarship or training opportunity not found.",
             });
         }
 
@@ -70,6 +73,7 @@ export const getMyScholarships = async (req, res) => {
                 familyUser: req.user.userId,
             })
                 .populate("scholarship")
+                .populate("caseId")
                 .sort({ updatedAt: -1 });
 
         return res.status(200).json({
@@ -112,13 +116,17 @@ export const checkScholarshipEligibility = async (
 
         if (!scholarship) {
             return res.status(404).json({
-                message: "Scholarship or training opportunity not found.",
+                message:
+                    "Scholarship or training opportunity not found.",
             });
         }
 
         const reasons = [];
 
+        // --------------------------------------------------------
         // Relationship check
+        // --------------------------------------------------------
+
         if (
             scholarship.eligibleRelationships.length > 0 &&
             !scholarship.eligibleRelationships.includes(
@@ -130,7 +138,10 @@ export const checkScholarshipEligibility = async (
             );
         }
 
+        // --------------------------------------------------------
         // Gender check
+        // --------------------------------------------------------
+
         if (
             scholarship.eligibleGenders.length > 0 &&
             !scholarship.eligibleGenders.includes(gender)
@@ -140,7 +151,10 @@ export const checkScholarshipEligibility = async (
             );
         }
 
+        // --------------------------------------------------------
         // Minimum marks check
+        // --------------------------------------------------------
+
         if (
             scholarship.minimumMarks !== null &&
             (
@@ -154,7 +168,10 @@ export const checkScholarshipEligibility = async (
             );
         }
 
+        // --------------------------------------------------------
         // Course year check
+        // --------------------------------------------------------
+
         if (
             scholarship.eligibleCourseYears.length > 0 &&
             !scholarship.eligibleCourseYears.includes(
@@ -166,7 +183,10 @@ export const checkScholarshipEligibility = async (
             );
         }
 
+        // --------------------------------------------------------
         // Course check
+        // --------------------------------------------------------
+
         if (
             scholarship.eligibleCourses.length > 0 &&
             !scholarship.eligibleCourses.includes(course)
@@ -176,11 +196,14 @@ export const checkScholarshipEligibility = async (
             );
         }
 
+        // --------------------------------------------------------
         // Deadline check
+        // --------------------------------------------------------
+
         if (
             scholarship.applicationDeadline &&
             new Date() >
-            new Date(scholarship.applicationDeadline)
+                new Date(scholarship.applicationDeadline)
         ) {
             reasons.push(
                 "The application deadline has passed."
@@ -213,7 +236,7 @@ export const checkScholarshipEligibility = async (
 
 
 // ============================================================
-// SUBMIT DEMO SCHOLARSHIP / TRAINING APPLICATION
+// SUBMIT SCHOLARSHIP / TRAINING APPLICATION
 // ============================================================
 
 export const applyForScholarship = async (
@@ -223,35 +246,115 @@ export const applyForScholarship = async (
     try {
         const { scholarshipId } = req.params;
 
+        // ========================================================
+        // ASSISTANCE CASE VALIDATION
+        // ========================================================
+
+        const { caseId } = req.body;
+
+        if (!caseId) {
+            return res.status(400).json({
+                message:
+                    "Assistance case is required for this application.",
+            });
+        }
+
+        /*
+         * caseId received from the frontend is the public case ID,
+         * for example:
+         *
+         * VA-2026-000003
+         *
+         * We verify that this case actually belongs to the
+         * currently logged-in family.
+         */
+
+        const assistanceCase =
+            await AssistanceCase.findOne({
+                caseId,
+                familyUser: req.user.userId,
+            });
+
+        if (!assistanceCase) {
+            return res.status(404).json({
+                message:
+                    "Assistance case not found for this family.",
+            });
+        }
+
+        // ========================================================
+        // APPLICATION FORM FIELDS
+        // ========================================================
+
         const {
+            // Applicant / eligibility
             name,
             relationship,
             dateOfBirth,
             gender,
+
+            // Contact
+            mobileNumber,
+            email,
+            address,
+
+            // Education
             course,
             courseYear,
             institution,
+            universityBoard,
+            academicYear,
             marks,
+
+            // Veteran / family
             veteranName,
             serviceNumber,
+            serviceBranch,
+            rank,
+            serviceStatus,
+
+            // Declaration
+            declarationAccepted,
         } = req.body;
 
-        const scholarship = await Scholarship.findOne({
-            _id: scholarshipId,
-            isActive: true,
-        });
+        // ========================================================
+        // CHECK SCHOLARSHIP / TRAINING OPPORTUNITY
+        // ========================================================
+
+        const scholarship =
+            await Scholarship.findOne({
+                _id: scholarshipId,
+                isActive: true,
+            });
 
         if (!scholarship) {
             return res.status(404).json({
-                message: "Scholarship or training opportunity not found.",
+                message:
+                    "Scholarship or training opportunity not found.",
             });
         }
 
-        // Check deadline
+        // ========================================================
+        // DECLARATION VALIDATION
+        // ========================================================
+
+        if (declarationAccepted !== true) {
+            return res.status(400).json({
+                message:
+                    "You must accept the declaration before submitting the application.",
+            });
+        }
+
+        // ========================================================
+        // CHECK DEADLINE
+        // ========================================================
+
         if (
             scholarship.applicationDeadline &&
             new Date() >
-            new Date(scholarship.applicationDeadline)
+                new Date(
+                    scholarship.applicationDeadline
+                )
         ) {
             return res.status(400).json({
                 message:
@@ -259,7 +362,10 @@ export const applyForScholarship = async (
             });
         }
 
-        // Check duplicate application
+        // ========================================================
+        // CHECK DUPLICATE APPLICATION
+        // ========================================================
+
         const existingApplication =
             await ScholarshipTracking.findOne({
                 familyUser: req.user.userId,
@@ -280,8 +386,15 @@ export const applyForScholarship = async (
             });
         }
 
-        // Eligibility validation before application
+        // ========================================================
+        // ELIGIBILITY VALIDATION
+        // ========================================================
+
         const reasons = [];
+
+        // --------------------------------------------------------
+        // Relationship
+        // --------------------------------------------------------
 
         if (
             scholarship.eligibleRelationships.length > 0 &&
@@ -294,6 +407,10 @@ export const applyForScholarship = async (
             );
         }
 
+        // --------------------------------------------------------
+        // Gender
+        // --------------------------------------------------------
+
         if (
             scholarship.eligibleGenders.length > 0 &&
             !scholarship.eligibleGenders.includes(gender)
@@ -303,18 +420,28 @@ export const applyForScholarship = async (
             );
         }
 
+        // --------------------------------------------------------
+        // Minimum marks
+        // --------------------------------------------------------
+
         if (
             scholarship.minimumMarks !== null &&
             (
                 marks === undefined ||
                 marks === null ||
-                Number(marks) < scholarship.minimumMarks
+                marks === "" ||
+                Number(marks) <
+                    scholarship.minimumMarks
             )
         ) {
             reasons.push(
                 `Minimum required marks are ${scholarship.minimumMarks}%.`
             );
         }
+
+        // --------------------------------------------------------
+        // Course year
+        // --------------------------------------------------------
 
         if (
             scholarship.eligibleCourseYears.length > 0 &&
@@ -327,6 +454,10 @@ export const applyForScholarship = async (
             );
         }
 
+        // --------------------------------------------------------
+        // Course
+        // --------------------------------------------------------
+
         if (
             scholarship.eligibleCourses.length > 0 &&
             !scholarship.eligibleCourses.includes(course)
@@ -336,6 +467,26 @@ export const applyForScholarship = async (
             );
         }
 
+        // --------------------------------------------------------
+        // Deadline
+        // --------------------------------------------------------
+
+        if (
+            scholarship.applicationDeadline &&
+            new Date() >
+                new Date(
+                    scholarship.applicationDeadline
+                )
+        ) {
+            reasons.push(
+                "The application deadline has passed."
+            );
+        }
+
+        // --------------------------------------------------------
+        // Return eligibility errors
+        // --------------------------------------------------------
+
         if (reasons.length > 0) {
             return res.status(403).json({
                 message:
@@ -344,8 +495,12 @@ export const applyForScholarship = async (
             });
         }
 
-        // Generate demo application ID
-        const year = new Date().getFullYear();
+        // ========================================================
+        // GENERATE APPLICATION ID
+        // ========================================================
+
+        const year =
+            new Date().getFullYear();
 
         const count =
             await ScholarshipTracking.countDocuments({
@@ -353,7 +508,13 @@ export const applyForScholarship = async (
             });
 
         const applicationId =
-            `SCH-${year}-${String(count + 1).padStart(6, "0")}`;
+            `SCH-${year}-${String(
+                count + 1
+            ).padStart(6, "0")}`;
+
+        // ========================================================
+        // FIND EXISTING TRACKING RECORD
+        // ========================================================
 
         let tracking =
             await ScholarshipTracking.findOne({
@@ -361,86 +522,267 @@ export const applyForScholarship = async (
                 scholarship: scholarshipId,
             });
 
+        // ========================================================
+        // UPDATE EXISTING APPLICATION
+        // ========================================================
+
         if (tracking) {
-            tracking.status = "Submitted";
-            tracking.applicationId = applicationId;
+            /*
+             * IMPORTANT:
+             *
+             * ScholarshipTracking.caseId stores the MongoDB
+             * ObjectId of the AssistanceCase.
+             *
+             * The frontend receives the public caseId after
+             * .populate("caseId").
+             */
+
+            tracking.caseId =
+                assistanceCase._id;
+
+            tracking.status =
+                "Submitted";
+
+            tracking.applicationId =
+                applicationId;
+
+            // ----------------------------------------------------
+            // Applicant details
+            // ----------------------------------------------------
 
             tracking.applicantDetails = {
-                name,
-                relationship,
+                name:
+                    name || "",
+
+                relationship:
+                    relationship || "",
+
                 dateOfBirth:
                     dateOfBirth || null,
-                gender,
-                course,
+
+                gender:
+                    gender || "",
+
+                mobileNumber:
+                    mobileNumber || "",
+
+                email:
+                    email || "",
+
+                address:
+                    address || "",
+
+                course:
+                    course || "",
+
                 courseYear:
-                    Number(courseYear),
-                institution,
+                    courseYear !== undefined &&
+                    courseYear !== null &&
+                    courseYear !== ""
+                        ? Number(courseYear)
+                        : null,
+
+                institution:
+                    institution || "",
+
+                universityBoard:
+                    universityBoard || "",
+
+                academicYear:
+                    academicYear || "",
+
                 marks:
                     marks !== undefined &&
-                        marks !== null
+                    marks !== null &&
+                    marks !== ""
                         ? Number(marks)
                         : null,
             };
 
+            // ----------------------------------------------------
+            // Veteran / family details
+            // ----------------------------------------------------
+
             tracking.familyDetails = {
-                veteranName,
-                serviceNumber,
+                veteranName:
+                    veteranName || "",
+
+                serviceNumber:
+                    serviceNumber || "",
+
+                serviceBranch:
+                    serviceBranch || "",
+
+                rank:
+                    rank || "",
+
+                serviceStatus:
+                    serviceStatus || "",
             };
 
-            tracking.submittedAt = new Date();
-            tracking.authorityRemarks = "";
+            // ----------------------------------------------------
+            // Declaration
+            // ----------------------------------------------------
+
+            tracking.declarationAccepted =
+                declarationAccepted === true;
+
+            // ----------------------------------------------------
+            // Application dates / review information
+            // ----------------------------------------------------
+
+            tracking.submittedAt =
+                new Date();
+
+            tracking.authorityRemarks =
+                "";
+
+            tracking.authorityReviewedAt =
+                null;
 
             await tracking.save();
-        } else {
+        }
+
+        // ========================================================
+        // CREATE NEW APPLICATION
+        // ========================================================
+
+        else {
             tracking =
                 await ScholarshipTracking.create({
-                    familyUser: req.user.userId,
-                    scholarship: scholarshipId,
+                    familyUser:
+                        req.user.userId,
 
-                    status: "Submitted",
+                    /*
+                     * Store the actual MongoDB AssistanceCase
+                     * reference, NOT the public caseId string.
+                     */
+                    caseId:
+                        assistanceCase._id,
+
+                    scholarship:
+                        scholarshipId,
+
+                    status:
+                        "Submitted",
 
                     applicationId,
 
+                    // ------------------------------------------------
+                    // Applicant details
+                    // ------------------------------------------------
+
                     applicantDetails: {
-                        name,
-                        relationship,
+                        name:
+                            name || "",
+
+                        relationship:
+                            relationship || "",
+
                         dateOfBirth:
                             dateOfBirth || null,
-                        gender,
-                        course,
+
+                        gender:
+                            gender || "",
+
+                        mobileNumber:
+                            mobileNumber || "",
+
+                        email:
+                            email || "",
+
+                        address:
+                            address || "",
+
+                        course:
+                            course || "",
+
                         courseYear:
-                            Number(courseYear),
-                        institution,
+                            courseYear !== undefined &&
+                            courseYear !== null &&
+                            courseYear !== ""
+                                ? Number(courseYear)
+                                : null,
+
+                        institution:
+                            institution || "",
+
+                        universityBoard:
+                            universityBoard || "",
+
+                        academicYear:
+                            academicYear || "",
+
                         marks:
                             marks !== undefined &&
-                                marks !== null
+                            marks !== null &&
+                            marks !== ""
                                 ? Number(marks)
                                 : null,
                     },
 
+                    // ------------------------------------------------
+                    // Veteran / family details
+                    // ------------------------------------------------
+
                     familyDetails: {
-                        veteranName,
-                        serviceNumber,
+                        veteranName:
+                            veteranName || "",
+
+                        serviceNumber:
+                            serviceNumber || "",
+
+                        serviceBranch:
+                            serviceBranch || "",
+
+                        rank:
+                            rank || "",
+
+                        serviceStatus:
+                            serviceStatus || "",
                     },
 
-                    submittedAt: new Date(),
+                    // ------------------------------------------------
+                    // Declaration
+                    // ------------------------------------------------
+
+                    declarationAccepted:
+                        declarationAccepted === true,
+
+                    submittedAt:
+                        new Date(),
+
+                    authorityRemarks:
+                        "",
+
+                    authorityReviewedAt:
+                        null,
                 });
         }
 
-        // Notify Welfare Officers
+        // ========================================================
+        // NOTIFY WELFARE OFFICERS
+        // ========================================================
+
         try {
-            const officers = await User.find({
-                role: "officer",
-            }).select("_id");
+            const officers =
+                await User.find({
+                    role: "officer",
+                }).select("_id");
 
             for (const officer of officers) {
                 await createNotification({
-                    recipient: officer._id,
+                    recipient:
+                        officer._id,
+
                     title:
                         "New Scholarship / Training Application",
+
                     message:
                         `${scholarship.title} - Application ${applicationId} has been submitted for authority review.`,
-                    type: "Application Update",
+
+                    type:
+                        "Application Update",
                 });
             }
         } catch (notificationError) {
@@ -450,11 +792,19 @@ export const applyForScholarship = async (
             );
         }
 
+        // ========================================================
+        // SUCCESS RESPONSE
+        // ========================================================
+
         return res.status(201).json({
             message:
                 "Application submitted successfully.",
+
             applicationId,
-            status: tracking.status,
+
+            status:
+                tracking.status,
+
             tracking,
         });
     } catch (error) {
@@ -478,13 +828,12 @@ export const applyForScholarship = async (
 export const getAuthorityScholarshipApplications =
     async (req, res) => {
         try {
-
             // Only Welfare Assistance Department
             // can access scholarship/training applications.
             if (
                 req.user.role === "authority" &&
                 req.user.department !==
-                "Welfare Assistance Department"
+                    "Welfare Assistance Department"
             ) {
                 return res.status(403).json({
                     message:
@@ -508,10 +857,13 @@ export const getAuthorityScholarshipApplications =
                         "name email role"
                     )
                     .populate("scholarship")
+                    .populate("caseId")
                     .sort({ createdAt: -1 });
 
             return res.status(200).json({
-                count: applications.length,
+                count:
+                    applications.length,
+
                 applications,
             });
         } catch (error) {
@@ -535,13 +887,12 @@ export const getAuthorityScholarshipApplications =
 export const getAuthorityScholarshipApplicationById =
     async (req, res) => {
         try {
-
             // Only Welfare Assistance Department
             // can access scholarship/training applications.
             if (
                 req.user.role === "authority" &&
                 req.user.department !==
-                "Welfare Assistance Department"
+                    "Welfare Assistance Department"
             ) {
                 return res.status(403).json({
                     message:
@@ -549,7 +900,9 @@ export const getAuthorityScholarshipApplicationById =
                 });
             }
 
-            const { applicationId } = req.params;
+            const {
+                applicationId,
+            } = req.params;
 
             const application =
                 await ScholarshipTracking.findOne({
@@ -559,7 +912,8 @@ export const getAuthorityScholarshipApplicationById =
                         "familyUser",
                         "name email role"
                     )
-                    .populate("scholarship");
+                    .populate("scholarship")
+                    .populate("caseId");
 
             if (!application) {
                 return res.status(404).json({
@@ -592,13 +946,12 @@ export const getAuthorityScholarshipApplicationById =
 export const reviewScholarshipApplication =
     async (req, res) => {
         try {
-
             // Only Welfare Assistance Department
             // can review scholarship/training applications.
             if (
                 req.user.role === "authority" &&
                 req.user.department !==
-                "Welfare Assistance Department"
+                    "Welfare Assistance Department"
             ) {
                 return res.status(403).json({
                     message:
@@ -606,23 +959,34 @@ export const reviewScholarshipApplication =
                 });
             }
 
-            const { applicationId } = req.params;
+            const {
+                applicationId,
+            } = req.params;
 
             const {
                 status,
                 authorityRemarks,
             } = req.body;
 
+            // --------------------------------------------------------
+            // Validate review status
+            // --------------------------------------------------------
+
             if (
-                !["Approved", "Rejected"].includes(
-                    status
-                )
+                ![
+                    "Approved",
+                    "Rejected",
+                ].includes(status)
             ) {
                 return res.status(400).json({
                     message:
                         "Status must be Approved or Rejected.",
                 });
             }
+
+            // --------------------------------------------------------
+            // Find application
+            // --------------------------------------------------------
 
             const application =
                 await ScholarshipTracking.findOne({
@@ -636,6 +1000,10 @@ export const reviewScholarshipApplication =
                 });
             }
 
+            // --------------------------------------------------------
+            // Validate current status
+            // --------------------------------------------------------
+
             if (
                 ![
                     "Submitted",
@@ -648,7 +1016,53 @@ export const reviewScholarshipApplication =
                 });
             }
 
-            application.status = status;
+            // --------------------------------------------------------
+            // Validate approval requirements
+            // --------------------------------------------------------
+
+            if (status === "Approved") {
+                if (application.declarationAccepted !== true) {
+                    return res.status(400).json({
+                        message:
+                            "This application cannot be approved because the applicant declaration has not been accepted.",
+                    });
+                }
+
+                const requiredDocuments =
+                    application.scholarship?.requiredDocuments || [];
+
+                const documents = await Document.find({
+                    welfareApplicationId: application._id,
+                });
+
+                const documentStatus = new Map(
+                    documents.map((document) => [
+                        document.documentType,
+                        document.status,
+                    ])
+                );
+
+                const incompleteDocuments =
+                    requiredDocuments.filter(
+                        (documentType) =>
+                            documentStatus.get(documentType) !==
+                            "Verified"
+                    );
+
+                if (incompleteDocuments.length > 0) {
+                    return res.status(400).json({
+                        message:
+                            `This application cannot be approved until all required documents are verified. Pending documents: ${incompleteDocuments.join(", ")}.`,
+                    });
+                }
+            }
+
+            // --------------------------------------------------------
+            // Update status
+            // --------------------------------------------------------
+
+            application.status =
+                status;
 
             application.authorityRemarks =
                 authorityRemarks || "";
@@ -658,19 +1072,27 @@ export const reviewScholarshipApplication =
 
             await application.save();
 
-            // Notify family
+            // ========================================================
+            // NOTIFY FAMILY
+            // ========================================================
+
             try {
                 await createNotification({
                     recipient:
                         application.familyUser,
+
                     title:
                         "Scholarship / Training Application Update",
+
                     message:
-                        `${application.scholarship.title} (${application.applicationId}) status updated to ${status}. ${authorityRemarks
-                            ? `Remarks: ${authorityRemarks}`
-                            : ""
+                        `${application.scholarship.title} (${application.applicationId}) status updated to ${status}. ${
+                            authorityRemarks
+                                ? `Remarks: ${authorityRemarks}`
+                                : ""
                         }`,
-                    type: "Application Update",
+
+                    type:
+                        "Application Update",
                 });
             } catch (notificationError) {
                 console.error(
@@ -682,6 +1104,7 @@ export const reviewScholarshipApplication =
             return res.status(200).json({
                 message:
                     `Application ${status.toLowerCase()} successfully.`,
+
                 application,
             });
         } catch (error) {
@@ -697,18 +1120,22 @@ export const reviewScholarshipApplication =
         }
     };
 
+
 // ============================================================
 // CREATE / PUBLISH SCHOLARSHIP OR VOCATIONAL TRAINING
 // ============================================================
 
-export const createScholarship = async (req, res) => {
+export const createScholarship = async (
+    req,
+    res
+) => {
     try {
         // Only Welfare Assistance Department
         // can publish scholarship/training opportunities.
         if (
             req.user.role === "authority" &&
             req.user.department !==
-            "Welfare Assistance Department"
+                "Welfare Assistance Department"
         ) {
             return res.status(403).json({
                 message:
@@ -737,6 +1164,10 @@ export const createScholarship = async (req, res) => {
             opportunityType,
         } = req.body;
 
+        // --------------------------------------------------------
+        // Required fields
+        // --------------------------------------------------------
+
         if (
             !title ||
             !description ||
@@ -748,6 +1179,10 @@ export const createScholarship = async (req, res) => {
                     "Title, description, provider and opportunity type are required.",
             });
         }
+
+        // --------------------------------------------------------
+        // Opportunity type validation
+        // --------------------------------------------------------
 
         if (
             ![
@@ -761,65 +1196,74 @@ export const createScholarship = async (req, res) => {
             });
         }
 
-        const scholarship = await Scholarship.create({
-            title,
-            description,
-            provider,
+        // --------------------------------------------------------
+        // Create opportunity
+        // --------------------------------------------------------
 
-            eligibility:
-                eligibility || [],
+        const scholarship =
+            await Scholarship.create({
+                title,
 
-            eligibleRelationships:
-                eligibleRelationships || [],
+                description,
 
-            eligibleGenders:
-                eligibleGenders || [],
+                provider,
 
-            minimumMarks:
-                minimumMarks !== undefined &&
+                eligibility:
+                    eligibility || [],
+
+                eligibleRelationships:
+                    eligibleRelationships || [],
+
+                eligibleGenders:
+                    eligibleGenders || [],
+
+                minimumMarks:
+                    minimumMarks !== undefined &&
                     minimumMarks !== null &&
                     minimumMarks !== ""
-                    ? Number(minimumMarks)
-                    : null,
+                        ? Number(minimumMarks)
+                        : null,
 
-            eligibleCourseYears:
-                eligibleCourseYears || [],
+                eligibleCourseYears:
+                    eligibleCourseYears || [],
 
-            eligibleCourses:
-                eligibleCourses || [],
+                eligibleCourses:
+                    eligibleCourses || [],
 
-            benefits:
-                benefits || [],
+                benefits:
+                    benefits || [],
 
-            requiredDocuments:
-                requiredDocuments || [],
+                requiredDocuments:
+                    requiredDocuments || [],
 
-            applicationProcedure:
-                applicationProcedure || [],
+                applicationProcedure:
+                    applicationProcedure || [],
 
-            officialPortal:
-                officialPortal || "",
+                officialPortal:
+                    officialPortal || "",
 
-            applicationStartDate:
-                applicationStartDate || null,
+                applicationStartDate:
+                    applicationStartDate || null,
 
-            applicationDeadline:
-                applicationDeadline || null,
+                applicationDeadline:
+                    applicationDeadline || null,
 
-            renewalInformation:
-                renewalInformation || "",
+                renewalInformation:
+                    renewalInformation || "",
 
-            category:
-                category || "Other",
+                category:
+                    category || "Other",
 
-            opportunityType,
+                opportunityType,
 
-            isActive: true,
-        });
+                isActive:
+                    true,
+            });
 
         return res.status(201).json({
             message:
                 "Scholarship/training opportunity published successfully.",
+
             scholarship,
         });
     } catch (error) {
@@ -850,7 +1294,7 @@ export const getAuthorityScholarships = async (
         if (
             req.user.role === "authority" &&
             req.user.department !==
-            "Welfare Assistance Department"
+                "Welfare Assistance Department"
         ) {
             return res.status(403).json({
                 message:
@@ -863,7 +1307,9 @@ export const getAuthorityScholarships = async (
                 .sort({ createdAt: -1 });
 
         return res.status(200).json({
-            count: scholarships.length,
+            count:
+                scholarships.length,
+
             scholarships,
         });
     } catch (error) {
@@ -894,7 +1340,7 @@ export const updateScholarship = async (
         if (
             req.user.role === "authority" &&
             req.user.department !==
-            "Welfare Assistance Department"
+                "Welfare Assistance Department"
         ) {
             return res.status(403).json({
                 message:
@@ -902,7 +1348,9 @@ export const updateScholarship = async (
             });
         }
 
-        const { scholarshipId } = req.params;
+        const {
+            scholarshipId,
+        } = req.params;
 
         const scholarship =
             await Scholarship.findById(
@@ -915,6 +1363,10 @@ export const updateScholarship = async (
                     "Scholarship or training opportunity not found.",
             });
         }
+
+        // --------------------------------------------------------
+        // Fields that authority is allowed to update
+        // --------------------------------------------------------
 
         const allowedFields = [
             "title",
@@ -939,7 +1391,10 @@ export const updateScholarship = async (
         ];
 
         allowedFields.forEach((field) => {
-            if (req.body[field] !== undefined) {
+            if (
+                req.body[field] !==
+                undefined
+            ) {
                 scholarship[field] =
                     req.body[field];
             }
@@ -950,6 +1405,7 @@ export const updateScholarship = async (
         return res.status(200).json({
             message:
                 "Scholarship/training opportunity updated successfully.",
+
             scholarship,
         });
     } catch (error) {

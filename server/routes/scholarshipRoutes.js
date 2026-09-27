@@ -1,5 +1,4 @@
 import express from "express";
-
 import authMiddleware from "../middleware/authMiddleware.js";
 import roleMiddleware from "../middleware/roleMiddleware.js";
 
@@ -26,7 +25,7 @@ const router = express.Router();
 // FAMILY ROUTES
 // ============================================================
 
-// Get all active scholarships and training opportunities
+// Get all active scholarships / vocational training
 router.get(
     "/",
     authMiddleware,
@@ -35,7 +34,7 @@ router.get(
 );
 
 
-// Get family's submitted/tracked applications
+// Get family's scholarship / training applications
 router.get(
     "/my",
     authMiddleware,
@@ -45,8 +44,9 @@ router.get(
 
 
 // ============================================================
-// WELFARE ASSISTANCE AUTHORITY ROUTES
-// IMPORTANT: These MUST come before /:scholarshipId
+// WELFARE AUTHORITY ROUTES
+// IMPORTANT:
+// These routes MUST come before /:scholarshipId
 // ============================================================
 
 // Create / publish scholarship or vocational training
@@ -58,7 +58,7 @@ router.post(
 );
 
 
-// View all published scholarship/training opportunities
+// Get published scholarships / training for authority
 router.get(
     "/authority",
     authMiddleware,
@@ -67,7 +67,34 @@ router.get(
 );
 
 
-// Update published scholarship/training
+// Get all scholarship / training applications
+router.get(
+    "/authority/applications",
+    authMiddleware,
+    roleMiddleware("officer", "authority", "admin"),
+    getAuthorityScholarshipApplications
+);
+
+
+// Get single scholarship / training application
+router.get(
+    "/authority/applications/:applicationId",
+    authMiddleware,
+    roleMiddleware("officer", "authority", "admin"),
+    getAuthorityScholarshipApplicationById
+);
+
+
+// Review scholarship / training application
+router.put(
+    "/authority/applications/:applicationId/review",
+    authMiddleware,
+    roleMiddleware("officer", "authority", "admin"),
+    reviewScholarshipApplication
+);
+
+
+// Update published scholarship / training
 router.put(
     "/authority/:scholarshipId",
     authMiddleware,
@@ -77,39 +104,7 @@ router.put(
 
 
 // ============================================================
-// WELFARE ASSISTANCE AUTHORITY APPLICATION ROUTES
-// ============================================================
-
-// View submitted applications
-router.get(
-    "/authority/applications",
-    authMiddleware,
-    roleMiddleware("officer", "authority", "admin"),
-    getAuthorityScholarshipApplications
-);
-
-
-// View individual application
-router.get(
-    "/authority/applications/:applicationId",
-    authMiddleware,
-    roleMiddleware("officer", "authority", "admin"),
-    getAuthorityScholarshipApplicationById
-);
-
-
-// Approve / Reject application
-router.put(
-    "/authority/applications/:applicationId/review",
-    authMiddleware,
-    roleMiddleware("officer", "authority", "admin"),
-    reviewScholarshipApplication
-);
-
-
-// ============================================================
-// FAMILY DYNAMIC ROUTES
-// IMPORTANT: Keep these AFTER /authority routes
+// FAMILY ELIGIBILITY & APPLICATION
 // ============================================================
 
 // Check eligibility
@@ -121,7 +116,7 @@ router.post(
 );
 
 
-// Submit demo scholarship/training application
+// Submit scholarship / training application
 router.post(
     "/:scholarshipId/apply",
     authMiddleware,
@@ -130,7 +125,8 @@ router.post(
 );
 
 
-// Get individual scholarship/training details
+// Get single scholarship / training details
+// KEEP THIS LAST
 router.get(
     "/:scholarshipId",
     authMiddleware,

@@ -67,6 +67,7 @@ function App() {
         {/* AUTHORITY */}
         <Route path="/authority/dashboard" element={<AuthorityDashboard />} />
         <Route path="/authority/applications/:applicationId" element={<AuthorityApplicationDetails />} />
+        <Route path="/authority/welfare-applications/:applicationId" element={<AuthorityApplicationDetails />} />
 
       </Routes>
     </BrowserRouter>

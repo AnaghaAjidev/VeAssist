@@ -8,9 +8,17 @@ const documentSchema = new mongoose.Schema(
             required: true,
         },
 
+        // Normal Application Management documents
         applicationId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "Application",
+            default: null,
+        },
+
+        // Scholarship / Vocational Training assistance documents
+        welfareApplicationId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "ScholarshipTracking",
             default: null,
         },
 
@@ -29,6 +37,13 @@ const documentSchema = new mongoose.Schema(
                 "Service Document",
                 "Insurance Document",
                 "ECHS Card",
+
+                // Welfare Assistance documents
+                "Service / Family Document",
+                "Educational Certificate",
+                "Bonafide Certificate",
+                "Widow / Family Status Document",
+
                 "Other",
             ],
             required: true,

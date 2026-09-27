@@ -40,6 +40,11 @@ const AuthorityDashboard = () => {
     const [editingOpportunityId, setEditingOpportunityId] = useState(null);
     const [savingOpportunity, setSavingOpportunity] = useState(false);
 
+    // WELFARE ASSISTANCE APPLICATIONS
+    const [welfareApplications, setWelfareApplications] = useState([]);
+    const [welfareApplicationLoading, setWelfareApplicationLoading] = useState(false);
+    const [welfareApplicationError, setWelfareApplicationError] = useState("");
+
     const initialOpportunityForm = {
         title: "",
         description: "",
@@ -192,6 +197,62 @@ const AuthorityDashboard = () => {
     };
 
     // ============================================================
+    // FETCH WELFARE ASSISTANCE APPLICATIONS
+    // ============================================================
+
+    const fetchWelfareApplications = async () => {
+        if (user?.role !== "authority") {
+            return;
+        }
+
+        if (user?.department !== "Welfare Assistance Department") {
+            return;
+        }
+
+        try {
+            setWelfareApplicationLoading(true);
+            setWelfareApplicationError("");
+
+            const token = localStorage.getItem("token");
+
+            if (!token) {
+                navigate("/login");
+                return;
+            }
+
+            const response = await axios.get(
+                "http://localhost:5000/api/scholarships/authority/applications",
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+
+            setWelfareApplications(response.data.applications || []);
+        } catch (error) {
+            console.error(
+                "Fetch Welfare applications error:",
+                error
+            );
+
+            if (error.response?.status === 401) {
+                localStorage.removeItem("token");
+                localStorage.removeItem("user");
+                navigate("/login");
+                return;
+            }
+
+            setWelfareApplicationError(
+                error.response?.data?.message ||
+                    "Unable to load welfare assistance applications."
+            );
+        } finally {
+            setWelfareApplicationLoading(false);
+        }
+    };
+
+    // ============================================================
     // REFRESH EVERYTHING
     // ============================================================
 
@@ -199,6 +260,7 @@ const AuthorityDashboard = () => {
         await Promise.all([
             fetchAuthorityApplications(),
             fetchWelfareOpportunities(),
+            fetchWelfareApplications(),
         ]);
     };
 
@@ -209,6 +271,7 @@ const AuthorityDashboard = () => {
     useEffect(() => {
         fetchAuthorityApplications();
         fetchWelfareOpportunities();
+        fetchWelfareApplications();
 
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
@@ -1901,6 +1964,135 @@ const AuthorityDashboard = () => {
 
                 )}
 
+
+                {/* ==================================================
+                    WELFARE ASSISTANCE APPLICATIONS
+                =================================================== */}
+
+                {department === "Welfare Assistance Department" && (
+                    <section className="mb-12">
+
+                        <div className="mb-6">
+                            <p className="text-[#D4AF37] font-semibold mb-2">
+                                WELFARE ASSISTANCE APPLICATIONS
+                            </p>
+                            <h3 className="text-2xl md:text-3xl font-bold text-[#0B1F3A]">
+                                Scholarship & Training Applications
+                            </h3>
+                            <p className="text-gray-600 mt-2">
+                                Review applications submitted by eligible family beneficiaries.
+                            </p>
+                        </div>
+
+                        {welfareApplicationError && (
+                            <div className="mb-6 bg-red-50 border border-red-200 text-red-700 rounded-xl p-4">
+                                {welfareApplicationError}
+                            </div>
+                        )}
+
+                        {welfareApplicationLoading ? (
+                            <div className="bg-white rounded-2xl border border-slate-200 p-10 text-center shadow-sm">
+                                <RefreshCw
+                                    size={35}
+                                    className="mx-auto text-[#1F4E79] animate-spin"
+                                />
+                                <p className="text-gray-500 mt-4">
+                                    Loading welfare assistance applications...
+                                </p>
+                            </div>
+                        ) : welfareApplications.length === 0 ? (
+                            <div className="bg-white rounded-2xl border border-slate-200 p-10 text-center shadow-sm">
+                                <FileText
+                                    size={42}
+                                    className="mx-auto text-gray-400"
+                                />
+                                <h4 className="text-lg font-bold text-[#0B1F3A] mt-4">
+                                    No Welfare Applications
+                                </h4>
+                                <p className="text-gray-500 mt-2">
+                                    No scholarship or vocational training applications are currently available for review.
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="space-y-5">
+                                {welfareApplications.map((application) => (
+                                    <div
+                                        key={application._id}
+                                        className="bg-white rounded-2xl border border-slate-200 shadow-sm p-7 hover:shadow-md transition"
+                                    >
+                                        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+
+                                            <div className="flex items-start gap-4">
+                                                <div className="w-12 h-12 rounded-xl bg-[#EEF5FF] flex items-center justify-center flex-shrink-0">
+                                                    {application.scholarship?.opportunityType === "Vocational Training" ? (
+                                                        <BriefcaseBusiness
+                                                            size={24}
+                                                            className="text-[#1F4E79]"
+                                                        />
+                                                    ) : (
+                                                        <GraduationCap
+                                                            size={24}
+                                                            className="text-[#1F4E79]"
+                                                        />
+                                                    )}
+                                                </div>
+
+                                                <div>
+                                                    <p className="text-sm text-gray-500">
+                                                        {application.scholarship?.opportunityType || "Welfare Assistance"}
+                                                    </p>
+                                                    <h4 className="text-xl font-bold text-[#0B1F3A] mt-1">
+                                                        {application.scholarship?.title || "Assistance Application"}
+                                                    </h4>
+                                                    <p className="text-gray-600 mt-1">
+                                                        Application ID: {application.applicationId}
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            <div>
+                                                <p className="text-sm text-gray-500">
+                                                    Applicant
+                                                </p>
+                                                <p className="font-semibold text-[#0B1F3A] mt-1">
+                                                    {application.applicantDetails?.name || application.familyUser?.name || "Not available"}
+                                                </p>
+                                            </div>
+
+                                            <div>
+                                                <p className="text-sm text-gray-500">
+                                                    Status
+                                                </p>
+                                                <span className={`inline-flex px-4 py-2 mt-1 rounded-full text-sm font-semibold ${
+                                                    application.status === "Approved"
+                                                        ? "bg-green-50 text-green-700"
+                                                        : application.status === "Rejected"
+                                                        ? "bg-red-50 text-red-700"
+                                                        : "bg-yellow-50 text-yellow-700"
+                                                }`}>
+                                                    {application.status}
+                                                </span>
+                                            </div>
+
+                                            <button
+                                                onClick={() =>
+                                                    navigate(
+                                                        `/authority/welfare-applications/${application.applicationId}`
+                                                    )
+                                                }
+                                                className="flex items-center justify-center gap-2 bg-[#0B1F3A] text-white px-5 py-3 rounded-lg font-semibold hover:bg-[#1F4E79] transition"
+                                            >
+                                                <Eye size={18} />
+                                                View
+                                                <ArrowRight size={17} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </section>
+                )}
 
                 {/* ==================================================
                     DEPARTMENT APPLICATIONS

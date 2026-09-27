@@ -7,15 +7,19 @@ import {
     getDocumentRequirements,
     reviewDocument,
     getOfficerCaseDocuments,
+    getWelfareApplicationDocuments,
 } from "../controllers/documentController.js";
 
 import authMiddleware from "../middleware/authMiddleware.js";
-
 import upload from "../middleware/uploadMiddleware.js";
-
 import roleMiddleware from "../middleware/roleMiddleware.js";
 
 const router = express.Router();
+
+
+// ======================================================
+// UPLOAD DOCUMENT
+// ======================================================
 
 router.post(
     "/upload",
@@ -24,6 +28,11 @@ router.post(
     uploadDocument
 );
 
+
+// ======================================================
+// RE-UPLOAD REJECTED DOCUMENT
+// ======================================================
+
 router.post(
     "/reupload",
     authMiddleware,
@@ -31,21 +40,54 @@ router.post(
     reuploadDocument
 );
 
+
+// ======================================================
+// REVIEW DOCUMENT
+// Welfare Officer / Welfare Authority / Admin
+// ======================================================
+
 router.put(
     "/review/:documentId",
     authMiddleware,
-    roleMiddleware("officer", "admin"),
+    roleMiddleware(
+        "officer",
+        "authority",
+        "admin"
+    ),
     reviewDocument
 );
 
-// Get documents for Welfare Officer
+
+// ======================================================
+// WELFARE ASSISTANCE APPLICATION DOCUMENTS
+// Scholarship / Vocational Training
+// ======================================================
+
+router.get(
+    "/welfare/:applicationId",
+    authMiddleware,
+    getWelfareApplicationDocuments
+);
+
+
+// ======================================================
+// GET DOCUMENTS FOR WELFARE OFFICER
+// ======================================================
 
 router.get(
     "/officer/:caseId",
     authMiddleware,
-    roleMiddleware("officer", "admin"),
+    roleMiddleware(
+        "officer",
+        "admin"
+    ),
     getOfficerCaseDocuments
 );
+
+
+// ======================================================
+// GET ALL DOCUMENTS FOR FAMILY CASE
+// ======================================================
 
 router.get(
     "/:caseId",
@@ -53,10 +95,16 @@ router.get(
     getCaseDocuments
 );
 
+
+// ======================================================
+// GET GENERAL DOCUMENT REQUIREMENTS
+// ======================================================
+
 router.get(
     "/requirements/:caseId",
     authMiddleware,
     getDocumentRequirements
 );
+
 
 export default router;

@@ -196,7 +196,6 @@ export const submitApplication = async (req, res) => {
 
     await application.save();
 
-
     // ==========================================
     // NOTIFY WELFARE OFFICERS
     // ==========================================
@@ -231,7 +230,6 @@ export const submitApplication = async (req, res) => {
         notificationError
       );
     }
-
 
     return res.status(200).json({
       message: "Application submitted successfully.",
@@ -394,7 +392,7 @@ export const getAuthorityApplicationById = async (req, res) => {
     // Get application-specific document requirements
     const requirements =
       applicationDocumentRequirements[
-      application.applicationType
+        application.applicationType
       ] || [];
 
     // Get documents uploaded directly for this application
@@ -575,7 +573,7 @@ export const getOfficerApplicationById = async (req, res) => {
       });
 
     /*
-      Combine direct documents and linked documents.
+      Combine directly uploaded and linked documents.
 
       A document may appear through both paths,
       so use a Map to avoid duplicates.
@@ -608,7 +606,6 @@ export const getOfficerApplicationById = async (req, res) => {
     */
     const supportingDocuments = requirements.map(
       (requiredDocument) => {
-
         const matchingDocument =
           allDocuments.find(
             (document) =>
@@ -887,7 +884,6 @@ export const reviewApplication = async (req, res) => {
 
     await application.save();
 
-
     // ==========================================
     // NOTIFY RELEVANT AUTHORITY
     // ==========================================
@@ -924,7 +920,6 @@ export const reviewApplication = async (req, res) => {
         notificationError
       );
     }
-
 
     return res.status(200).json({
       message:
@@ -1405,8 +1400,11 @@ export const linkExistingDocument = async (req, res) => {
       });
     }
 
-    // Find the existing document
-    const document = await Document.findById(documentId);
+    // Find the existing document and make sure it belongs to the logged-in family user
+    const document = await Document.findOne({
+      _id: documentId,
+      uploadedBy: req.user.userId,
+    });
 
     if (!document) {
       return res.status(404).json({
