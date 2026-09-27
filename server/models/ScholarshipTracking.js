@@ -14,7 +14,12 @@ const scholarshipTrackingSchema = new mongoose.Schema(
             required: true,
         },
 
-        // Application status
+        caseId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "AssistanceCase",
+            default: null,
+        },
+
         status: {
             type: String,
             enum: [
@@ -27,24 +32,24 @@ const scholarshipTrackingSchema = new mongoose.Schema(
             default: "Draft",
         },
 
-        // Demo application reference number
         applicationId: {
             type: String,
             unique: true,
             sparse: true,
         },
 
-        // Applicant information entered during application
+        // ========================================================
+        // APPLICANT DETAILS
+        // ========================================================
+
         applicantDetails: {
             name: {
                 type: String,
-                trim: true,
                 default: "",
             },
 
             relationship: {
                 type: String,
-                trim: true,
                 default: "",
             },
 
@@ -55,13 +60,26 @@ const scholarshipTrackingSchema = new mongoose.Schema(
 
             gender: {
                 type: String,
-                trim: true,
+                default: "",
+            },
+
+            mobileNumber: {
+                type: String,
+                default: "",
+            },
+
+            email: {
+                type: String,
+                default: "",
+            },
+
+            address: {
+                type: String,
                 default: "",
             },
 
             course: {
                 type: String,
-                trim: true,
                 default: "",
             },
 
@@ -72,7 +90,16 @@ const scholarshipTrackingSchema = new mongoose.Schema(
 
             institution: {
                 type: String,
-                trim: true,
+                default: "",
+            },
+
+            universityBoard: {
+                type: String,
+                default: "",
+            },
+
+            academicYear: {
+                type: String,
                 default: "",
             },
 
@@ -82,20 +109,111 @@ const scholarshipTrackingSchema = new mongoose.Schema(
             },
         },
 
-        // Family / veteran information used in the application
+        // ========================================================
+        // VETERAN / FAMILY DETAILS
+        // ========================================================
+
         familyDetails: {
             veteranName: {
                 type: String,
-                trim: true,
                 default: "",
             },
 
             serviceNumber: {
                 type: String,
-                trim: true,
+                default: "",
+            },
+
+            serviceBranch: {
+                type: String,
+                default: "",
+            },
+
+            rank: {
+                type: String,
+                default: "",
+            },
+
+            serviceStatus: {
+                type: String,
                 default: "",
             },
         },
+
+        // ========================================================
+        // VOCATIONAL TRAINING DETAILS
+        // ========================================================
+
+        vocationalTrainingDetails: {
+            trainingType: {
+                type: String,
+                default: "",
+            },
+
+            otherTrainingType: {
+                type: String,
+                default: "",
+            },
+
+            institute: {
+                type: String,
+                default: "",
+            },
+
+            trainingStartDate: {
+                type: Date,
+                default: null,
+            },
+
+            trainingCompletionDate: {
+                type: Date,
+                default: null,
+            },
+
+            certificateNumber: {
+                type: String,
+                default: "",
+            },
+
+            trainingFee: {
+                type: Number,
+                default: null,
+            },
+
+            employmentStatus: {
+                type: String,
+                enum: [
+                    "Employed",
+                    "Self-employed",
+                    "Not employed",
+                    "",
+                ],
+                default: "",
+            },
+
+            zswoRecommendation: {
+                type: String,
+                enum: [
+                    "Recommended",
+                    "Not Recommended",
+                    "",
+                ],
+                default: "",
+            },
+        },
+
+        // ========================================================
+        // DECLARATION
+        // ========================================================
+
+        declarationAccepted: {
+            type: Boolean,
+            default: false,
+        },
+
+        // ========================================================
+        // APPLICATION DATES
+        // ========================================================
 
         submittedAt: {
             type: Date,
@@ -107,31 +225,44 @@ const scholarshipTrackingSchema = new mongoose.Schema(
             default: null,
         },
 
+        // ========================================================
+        // AUTHORITY REMARKS
+        // ========================================================
+
         authorityRemarks: {
             type: String,
-            trim: true,
             default: "",
         },
 
-        // Renewal / deadline reminder
+        // ========================================================
+        // REMINDER
+        // ========================================================
+
         reminderDate: {
             type: Date,
             default: null,
         },
 
+        // ========================================================
+        // NOTES
+        // ========================================================
+
         notes: {
             type: String,
-            trim: true,
             default: "",
         },
     },
+
     {
         timestamps: true,
     }
 );
 
-// One family user can have only one tracking/application
-// record for a particular scholarship.
+
+// ============================================================
+// UNIQUE APPLICATION PER FAMILY + OPPORTUNITY
+// ============================================================
+
 scholarshipTrackingSchema.index(
     {
         familyUser: 1,
@@ -142,9 +273,11 @@ scholarshipTrackingSchema.index(
     }
 );
 
-const ScholarshipTracking = mongoose.model(
-    "ScholarshipTracking",
-    scholarshipTrackingSchema
-);
+
+const ScholarshipTracking =
+    mongoose.model(
+        "ScholarshipTracking",
+        scholarshipTrackingSchema
+    );
 
 export default ScholarshipTracking;
