@@ -27,17 +27,29 @@ const ApplicationDocumentsPage = () => {
   const [uploadError, setUploadError] = useState("");
   const [error, setError] = useState("");
 
+  // New state to distinguish normal Application
+  // from Scholarship / Vocational Training welfare application.
+  const [isWelfareApplication, setIsWelfareApplication] =
+    useState(false);
+
   const fileInputRef = useRef(null);
   const uploadSectionRef = useRef(null);
 
   const token = localStorage.getItem("token");
 
   useEffect(() => {
-    fetchRequirements();
-    fetchReusableDocuments();
-  }, [applicationId]);
+    const loadDocuments = async () => {
+        await fetchRequirements();
+        await fetchReusableDocuments();
+    };
 
-  // Fetch application-specific document requirements
+    loadDocuments();
+}, [applicationId]);
+
+  // ======================================================
+  // FETCH APPLICATION / WELFARE DOCUMENT REQUIREMENTS
+  // ======================================================
+
   const fetchRequirements = async () => {
     try {
       setLoading(true);
@@ -48,8 +60,53 @@ const ApplicationDocumentsPage = () => {
         return;
       }
 
-      const response = await axios.get(
-        `http://localhost:5000/api/applications/${applicationId}/requirements`,
+      // --------------------------------------------------
+      // First try normal Application document requirements.
+      // --------------------------------------------------
+
+      try {
+        const response = await axios.get(
+          `http://localhost:5000/api/applications/${applicationId}/requirements`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        setIsWelfareApplication(false);
+
+        setApplicationType(
+          response.data.applicationType || ""
+        );
+
+        // Public VeAssist case ID is required by the
+        // document upload API.
+        setCaseId(
+          response.data.caseId || ""
+        );
+
+        setDocuments(
+          response.data.requirements || []
+        );
+
+        return;
+      } catch (normalApplicationError) {
+        // If this is not a normal Application,
+        // try the welfare application endpoint.
+        if (
+          normalApplicationError.response?.status !== 404
+        ) {
+          throw normalApplicationError;
+        }
+      }
+
+      // --------------------------------------------------
+      // Scholarship / Vocational Training welfare application
+      // --------------------------------------------------
+
+      const welfareResponse = await axios.get(
+        `http://localhost:5000/api/documents/welfare/${applicationId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -57,16 +114,58 @@ const ApplicationDocumentsPage = () => {
         }
       );
 
+      setIsWelfareApplication(true);
+
       setApplicationType(
-        response.data.applicationType || ""
+        "Welfare Assistance"
       );
 
-      // Public VeAssist case ID is required by the document upload API.
-      setCaseId(response.data.caseId || "");
-
-      setDocuments(
-        response.data.requirements || []
+      setCaseId(
+        welfareResponse.data.caseId || ""
       );
+
+      const requiredDocuments =
+        welfareResponse.data.requiredDocuments || [];
+
+      const uploadedDocuments =
+        welfareResponse.data.documents || [];
+
+      /*
+       * Convert the welfare document records into the
+       * same structure used by the existing UI.
+       */
+      const formattedDocuments =
+        requiredDocuments.map(
+          (documentType) => {
+            const uploadedDocument =
+              uploadedDocuments.find(
+                (document) =>
+                  document.documentType ===
+                  documentType
+              );
+
+            return {
+              documentType,
+              description:
+                getWelfareDocumentDescription(
+                  documentType
+                ),
+              status:
+                uploadedDocument?.status ||
+                "Missing",
+              documentId:
+                uploadedDocument?._id || null,
+              fileName:
+                uploadedDocument?.fileName || "",
+              fileUrl:
+                uploadedDocument?.fileUrl || "",
+              remarks:
+                uploadedDocument?.remarks || "",
+            };
+          }
+        );
+
+      setDocuments(formattedDocuments);
     } catch (error) {
       console.error(
         "Fetch application documents error:",
@@ -89,86 +188,192 @@ const ApplicationDocumentsPage = () => {
     }
   };
 
-  // Fetch verified documents that can be reused
+  // ======================================================
+  // WELFARE DOCUMENT DESCRIPTIONS
+  // ======================================================
+
+  const getWelfareDocumentDescription = (
+    documentType
+  ) => {
+    switch (documentType) {
+      case "Service Discharge Certificate / Service Book":
+        return "Complete service discharge certificate or service book of the ESM.";
+
+      case "Widow I-Card":
+        return "Widow identity card issued to the eligible widow.";
+
+      case "Training Completion Certificate":
+        return "Certificate issued by the training institute after successful completion of training.";
+
+      case "Bank Account Details / Passbook":
+        return "PNB or SBI bank account details including IFSC.";
+
+      case "Service / Family Document":
+        return "Service or family-related supporting document.";
+
+      case "Educational Certificate":
+        return "Educational certificate required for the assistance.";
+
+      case "Bonafide Certificate":
+        return "Bonafide certificate from the educational institution.";
+
+      case "Widow / Family Status Document":
+        return "Document establishing widow or family status.";
+
+      default:
+        return "Required supporting document for this application.";
+    }
+  };
+
+  // ======================================================
+  // FETCH VERIFIED DOCUMENTS THAT CAN BE REUSED
+  // ======================================================
+
   const fetchReusableDocuments = async () => {
     try {
-      setReusableLoading(true);
+        setReusableLoading(true);
 
-      if (!token) {
-        navigate("/login");
-        return;
-      }
-
-      const response = await axios.get(
-        `http://localhost:5000/api/applications/${applicationId}/documents/reusable`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+        if (!token) {
+            navigate("/login");
+            return;
         }
-      );
 
-      setReusableDocuments(
-        response.data.documents || []
-      );
+        let response;
+
+        if (isWelfareApplication) {
+            response = await axios.get(
+                `http://localhost:5000/api/documents/welfare/${applicationId}/documents/reusable`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+        } else {
+            response = await axios.get(
+                `http://localhost:5000/api/applications/${applicationId}/documents/reusable`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+        }
+
+        setReusableDocuments(
+            response.data.documents || []
+        );
     } catch (error) {
-      console.error(
-        "Fetch reusable documents error:",
-        error
-      );
+        console.error(
+            "Fetch reusable documents error:",
+            error
+        );
 
-      if (error.response?.status === 401) {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        navigate("/login");
-        return;
-      }
+        if (error.response?.status === 404) {
+            /*
+             * If the normal application endpoint does not
+             * exist, try the welfare reusable endpoint.
+             */
+            try {
+                const welfareResponse =
+                    await axios.get(
+                        `http://localhost:5000/api/documents/welfare/${applicationId}/documents/reusable`,
+                        {
+                            headers: {
+                                Authorization:
+                                    `Bearer ${token}`,
+                            },
+                        }
+                    );
 
-      setReusableDocuments([]);
+                setReusableDocuments(
+                    welfareResponse.data.documents || []
+                );
+            } catch (welfareError) {
+                setReusableDocuments([]);
+            }
+
+            return;
+        }
+
+        if (error.response?.status === 401) {
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+            navigate("/login");
+            return;
+        }
+
+        setReusableDocuments([]);
     } finally {
-      setReusableLoading(false);
+        setReusableLoading(false);
     }
-  };
+};
 
-  // Link an existing verified document
-  const handleLinkExistingDocument = async (documentId) => {
+  // ======================================================
+  // LINK EXISTING VERIFIED DOCUMENT
+  // ======================================================
+
+  const handleLinkExistingDocument = async (
+    documentId
+) => {
     try {
-      setLinkingDocumentId(documentId);
-      setError("");
+        setLinkingDocumentId(documentId);
+        setError("");
 
-      await axios.post(
-        `http://localhost:5000/api/applications/${applicationId}/documents/link`,
-        {
-          documentId,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+        if (isWelfareApplication) {
+            await axios.post(
+                `http://localhost:5000/api/documents/welfare/${applicationId}/documents/link`,
+                {
+                    documentId,
+                },
+                {
+                    headers: {
+                        Authorization:
+                            `Bearer ${token}`,
+                    },
+                }
+            );
+        } else {
+            await axios.post(
+                `http://localhost:5000/api/applications/${applicationId}/documents/link`,
+                {
+                    documentId,
+                },
+                {
+                    headers: {
+                        Authorization:
+                            `Bearer ${token}`,
+                    },
+                }
+            );
         }
-      );
 
-      // Refresh both lists
-      await fetchRequirements();
-      await fetchReusableDocuments();
-      setOpenReusableType(null);
+        await fetchRequirements();
+        await fetchReusableDocuments();
+
+        setOpenReusableType(null);
     } catch (error) {
-      console.error(
-        "Link existing document error:",
-        error
-      );
+        console.error(
+            "Link existing document error:",
+            error
+        );
 
-      setError(
-        error.response?.data?.message ||
-          "Unable to link the existing document."
-      );
+        setError(
+            error.response?.data?.message ||
+                "Unable to link the existing document."
+        );
     } finally {
-      setLinkingDocumentId(null);
+        setLinkingDocumentId(null);
     }
-  };
+};
 
-  // Open the shared upload section for a specific requirement
-  const openUploadPicker = (documentType) => {
+  // ======================================================
+  // OPEN UPLOAD PICKER
+  // ======================================================
+
+  const openUploadPicker = (
+    documentType
+  ) => {
     setSelectedUploadType(documentType);
     setSelectedFile(null);
     setUploadError("");
@@ -191,9 +396,15 @@ const ApplicationDocumentsPage = () => {
     }
   };
 
-  // Store the selected file before uploading
-  const handleFileSelected = (event) => {
-    const file = event.target.files?.[0];
+  // ======================================================
+  // STORE SELECTED FILE
+  // ======================================================
+
+  const handleFileSelected = (
+    event
+  ) => {
+    const file =
+      event.target.files?.[0];
 
     if (!file) {
       return;
@@ -201,9 +412,14 @@ const ApplicationDocumentsPage = () => {
 
     setUploadError("");
 
-    if (file.size > 5 * 1024 * 1024) {
+    if (
+      file.size >
+      5 * 1024 * 1024
+    ) {
       setSelectedFile(null);
-      setUploadError("File size must be less than 5 MB.");
+      setUploadError(
+        "File size must be less than 5 MB."
+      );
       return;
     }
 
@@ -213,17 +429,28 @@ const ApplicationDocumentsPage = () => {
       "image/png",
     ];
 
-    if (!allowedTypes.includes(file.type)) {
+    if (
+      !allowedTypes.includes(
+        file.type
+      )
+    ) {
       setSelectedFile(null);
-      setUploadError("Only PDF, JPG, and PNG files are allowed.");
+      setUploadError(
+        "Only PDF, JPG, and PNG files are allowed."
+      );
       return;
     }
 
     setSelectedFile(file);
   };
 
-  // Upload a new application document or re-upload a rejected one
-  const handleUploadDocument = async (document) => {
+  // ======================================================
+  // UPLOAD / RE-UPLOAD DOCUMENT
+  // ======================================================
+
+  const handleUploadDocument = async (
+    document
+  ) => {
     try {
       if (!token) {
         navigate("/login");
@@ -231,12 +458,16 @@ const ApplicationDocumentsPage = () => {
       }
 
       if (!caseId) {
-        setUploadError("Unable to identify the assistance case. Please reload the page.");
+        setUploadError(
+          "Unable to identify the assistance case. Please reload the page."
+        );
         return;
       }
 
       if (!selectedFile) {
-        setUploadError("Please select a document file.");
+        setUploadError(
+          "Please select a document file."
+        );
         return;
       }
 
@@ -244,31 +475,76 @@ const ApplicationDocumentsPage = () => {
       setUploadError("");
       setError("");
 
-      const formData = new FormData();
-      formData.append("caseId", caseId);
-      formData.append("applicationId", applicationId);
-      formData.append("documentType", document.documentType);
-      formData.append("file", selectedFile);
+      const formData =
+        new FormData();
 
-      if (document.status === "Rejected" && document.documentId) {
-        formData.append("documentId", document.documentId);
+      formData.append(
+        "caseId",
+        caseId
+      );
+
+      /*
+       * Normal application and welfare application
+       * use different identifiers.
+       */
+      if (isWelfareApplication) {
+        formData.append(
+          "welfareApplicationId",
+          applicationId
+        );
+      } else {
+        formData.append(
+          "applicationId",
+          applicationId
+        );
+      }
+
+      formData.append(
+        "documentType",
+        document.documentType
+      );
+
+      formData.append(
+        "file",
+        selectedFile
+      );
+
+      // --------------------------------------------------
+      // Re-upload rejected document
+      // --------------------------------------------------
+
+      if (
+        document.status ===
+          "Rejected" &&
+        document.documentId
+      ) {
+        formData.append(
+          "documentId",
+          document.documentId
+        );
 
         await axios.post(
           "http://localhost:5000/api/documents/reupload",
           formData,
           {
             headers: {
-              Authorization: `Bearer ${token}`,
+              Authorization:
+                `Bearer ${token}`,
             },
           }
         );
       } else {
+        // ------------------------------------------------
+        // New document upload
+        // ------------------------------------------------
+
         await axios.post(
           "http://localhost:5000/api/documents/upload",
           formData,
           {
             headers: {
-              Authorization: `Bearer ${token}`,
+              Authorization:
+                `Bearer ${token}`,
             },
           }
         );
@@ -276,6 +552,7 @@ const ApplicationDocumentsPage = () => {
 
       setSelectedFile(null);
       setSelectedUploadType("");
+
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
@@ -283,11 +560,21 @@ const ApplicationDocumentsPage = () => {
       await fetchRequirements();
       await fetchReusableDocuments();
     } catch (error) {
-      console.error("Application document upload error:", error);
+      console.error(
+        "Application document upload error:",
+        error
+      );
 
-      if (error.response?.status === 401) {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
+      if (
+        error.response?.status ===
+        401
+      ) {
+        localStorage.removeItem(
+          "token"
+        );
+        localStorage.removeItem(
+          "user"
+        );
         navigate("/login");
         return;
       }
@@ -301,35 +588,62 @@ const ApplicationDocumentsPage = () => {
     }
   };
 
+  // ======================================================
+  // CANCEL UPLOAD
+  // ======================================================
+
   const cancelUpload = () => {
     setSelectedFile(null);
     setSelectedUploadType("");
     setUploadError("");
+
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
   };
 
-  const getStatusIcon = (status) => {
+  // ======================================================
+  // STATUS ICON
+  // ======================================================
+
+  const getStatusIcon = (
+    status
+  ) => {
     switch (status) {
       case "Verified":
-        return <CheckCircle size={17} />;
+        return (
+          <CheckCircle size={17} />
+        );
 
       case "Rejected":
-        return <XCircle size={17} />;
+        return (
+          <XCircle size={17} />
+        );
 
       case "Under Review":
-        return <Clock size={17} />;
+        return (
+          <Clock size={17} />
+        );
 
       case "Pending":
-        return <Clock size={17} />;
+        return (
+          <Clock size={17} />
+        );
 
       default:
-        return <FileText size={17} />;
+        return (
+          <FileText size={17} />
+        );
     }
   };
 
-  const getStatusClass = (status) => {
+  // ======================================================
+  // STATUS CLASS
+  // ======================================================
+
+  const getStatusClass = (
+    status
+  ) => {
     switch (status) {
       case "Verified":
         return "bg-green-100 text-green-700";
@@ -349,13 +663,16 @@ const ApplicationDocumentsPage = () => {
   };
 
   /*
-    Find reusable documents that match the current
-    missing requirement.
+    Find reusable documents that match
+    the current missing requirement.
   */
-  const getReusableForDocumentType = (documentType) => {
+  const getReusableForDocumentType = (
+    documentType
+  ) => {
     return reusableDocuments.filter(
       (document) =>
-        document.documentType === documentType
+        document.documentType ===
+        documentType
     );
   };
 
@@ -381,7 +698,9 @@ const ApplicationDocumentsPage = () => {
           {/* Dashboard navigation */}
           <button
             onClick={() =>
-              navigate("/family/dashboard")
+              navigate(
+                "/family/dashboard"
+              )
             }
             className="flex items-center gap-2
             text-sm text-white
@@ -399,7 +718,9 @@ const ApplicationDocumentsPage = () => {
         {/* Back to Applications */}
         <button
           onClick={() =>
-            navigate("/family/applications")
+            navigate(
+              "/family/applications"
+            )
           }
           className="flex items-center gap-2
           text-sm font-semibold text-[#1F4E79]
@@ -525,7 +846,8 @@ const ApplicationDocumentsPage = () => {
                 {
                   documents.filter(
                     (document) =>
-                      document.status === "Verified"
+                      document.status ===
+                      "Verified"
                   ).length
                 }{" "}
                 of {documents.length} verified
@@ -535,242 +857,283 @@ const ApplicationDocumentsPage = () => {
             {/* Document Cards */}
             <div className="grid grid-cols-1 gap-4">
 
-              {documents.map((document) => {
-                const reusableForType =
-                  getReusableForDocumentType(
-                    document.documentType
-                  );
+              {documents.map(
+                (document) => {
+                  const reusableForType =
+                    getReusableForDocumentType(
+                      document.documentType
+                    );
 
-                return (
-                  <div
-                    key={document.documentType}
-                    className="bg-white rounded-xl shadow-sm
-                    border border-gray-100 p-5
-                    hover:shadow-md transition"
-                  >
+                  return (
                     <div
-                      className="flex flex-col
-                      md:flex-row md:items-center
-                      md:justify-between gap-5"
+                      key={
+                        document.documentType
+                      }
+                      className="bg-white rounded-xl shadow-sm
+                      border border-gray-100 p-5
+                      hover:shadow-md transition"
                     >
+                      <div
+                        className="flex flex-col
+                        md:flex-row md:items-center
+                        md:justify-between gap-5"
+                      >
 
-                      {/* Document Information */}
-                      <div className="flex items-start gap-3">
+                        {/* Document Information */}
+                        <div className="flex items-start gap-3">
 
-                        <div
-                          className="bg-blue-50 p-3 rounded-lg
-                          flex-shrink-0"
-                        >
-                          <FileText
-                            size={23}
-                            className="text-[#0B1F3A]"
-                          />
+                          <div
+                            className="bg-blue-50 p-3 rounded-lg
+                            flex-shrink-0"
+                          >
+                            <FileText
+                              size={23}
+                              className="text-[#0B1F3A]"
+                            />
+                          </div>
+
+                          <div>
+                            <h3 className="text-lg font-bold text-gray-800">
+                              {
+                                document.documentType
+                              }
+                            </h3>
+
+                            <p className="text-sm text-gray-500 mt-1">
+                              {
+                                document.description
+                              }
+                            </p>
+
+                            {document.fileName && (
+                              <p className="text-sm text-gray-600 mt-2">
+                                File:{" "}
+                                <span className="font-medium">
+                                  {
+                                    document.fileName
+                                  }
+                                </span>
+                              </p>
+                            )}
+
+                            {document.remarks && (
+                              <div className="mt-3">
+                                <p
+                                  className="text-xs font-semibold
+                                  text-gray-500 uppercase"
+                                >
+                                  Officer Remark
+                                </p>
+
+                                <p className="text-sm text-gray-700 mt-1">
+                                  {
+                                    document.remarks
+                                  }
+                                </p>
+                              </div>
+                            )}
+
+                          </div>
                         </div>
 
-                        <div>
-                          <h3 className="text-lg font-bold text-gray-800">
-                            {document.documentType}
-                          </h3>
+                        {/* Status + Actions */}
+                        <div
+                          className="flex items-center
+                          gap-3 flex-wrap md:justify-end"
+                        >
 
-                          <p className="text-sm text-gray-500 mt-1">
-                            {document.description}
-                          </p>
+                          {/* Status */}
+                          <span
+                            className={`inline-flex items-center
+                            gap-1 px-3 py-1.5 rounded-full
+                            text-xs font-semibold
+                            whitespace-nowrap
+                            ${getStatusClass(
+                              document.status
+                            )}`}
+                          >
+                            {getStatusIcon(
+                              document.status
+                            )}
 
-                          {document.fileName && (
-                            <p className="text-sm text-gray-600 mt-2">
-                              File:{" "}
-                              <span className="font-medium">
-                                {document.fileName}
-                              </span>
-                            </p>
+                            {
+                              document.status
+                            }
+                          </span>
+
+                          {/* View */}
+                          {document.fileUrl && (
+                            <a
+                              href={
+                                document.fileUrl
+                              }
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-4 py-2 border
+                              border-[#0B1F3A]
+                              text-[#0B1F3A]
+                              rounded-lg font-semibold text-sm
+                              hover:bg-slate-50 transition"
+                            >
+                              View
+                            </a>
                           )}
 
-                          {document.remarks && (
-                            <div className="mt-3">
-                              <p
-                                className="text-xs font-semibold
-                                text-gray-500 uppercase"
-                              >
-                                Officer Remark
-                              </p>
+                          {/* Missing / Rejected Document Actions */}
+                          {(
+                            document.status ===
+                              "Missing" ||
+                            document.status ===
+                              "Rejected"
+                          ) && (
+                            <div className="flex flex-wrap gap-2">
 
-                              <p className="text-sm text-gray-700 mt-1">
-                                {document.remarks}
-                              </p>
+                              {/* Use Existing Document */}
+                              {document.status ===
+                                "Missing" &&
+                                reusableForType.length >
+                                  0 && (
+                                  <div className="relative">
+                                    <button
+                                      type="button"
+                                      onClick={(
+                                        event
+                                      ) => {
+                                        event.stopPropagation();
+
+                                        setOpenReusableType(
+                                          openReusableType ===
+                                            document.documentType
+                                            ? null
+                                            : document.documentType
+                                        );
+                                      }}
+                                      className="px-4 py-2
+                                      border border-[#0B1F3A]
+                                      text-[#0B1F3A]
+                                      rounded-lg font-semibold text-sm
+                                      hover:bg-slate-50 transition"
+                                    >
+                                      Use Existing Document
+                                    </button>
+
+                                    {openReusableType ===
+                                      document.documentType && (
+                                      <div
+                                        className="absolute right-0 top-full mt-2
+                                        w-72 bg-white border border-gray-200
+                                        rounded-lg shadow-lg p-3 z-50"
+                                      >
+                                        <div className="flex items-center justify-between mb-2">
+                                          <p
+                                            className="text-xs font-semibold
+                                            text-gray-500 uppercase"
+                                          >
+                                            Verified Documents
+                                          </p>
+
+                                          <button
+                                            type="button"
+                                            onClick={() =>
+                                              setOpenReusableType(
+                                                null
+                                              )
+                                            }
+                                            className="text-gray-400 hover:text-gray-700 text-lg"
+                                          >
+                                            ×
+                                          </button>
+                                        </div>
+
+                                        {reusableForType.map(
+                                          (
+                                            reusableDocument
+                                          ) => (
+                                            <div
+                                              key={
+                                                reusableDocument._id
+                                              }
+                                              className="border border-gray-100
+                                              rounded-lg p-3 mb-2 last:mb-0"
+                                            >
+                                              <p
+                                                className="text-sm font-semibold
+                                                text-gray-800"
+                                              >
+                                                {
+                                                  reusableDocument.fileName
+                                                }
+                                              </p>
+
+                                              <p
+                                                className="text-xs text-green-600 mt-1"
+                                              >
+                                                Verified
+                                              </p>
+
+                                              <button
+                                                type="button"
+                                                disabled={
+                                                  linkingDocumentId ===
+                                                  reusableDocument._id
+                                                }
+                                                onClick={() =>
+                                                  handleLinkExistingDocument(
+                                                    reusableDocument._id
+                                                  )
+                                                }
+                                                className="w-full mt-2
+                                                bg-[#0B1F3A] text-white px-3 py-2
+                                                rounded-lg text-xs font-semibold
+                                                hover:bg-[#16375F] transition
+                                                disabled:opacity-50
+                                                disabled:cursor-not-allowed"
+                                              >
+                                                {
+                                                  linkingDocumentId ===
+                                                  reusableDocument._id
+                                                    ? "Linking..."
+                                                    : "Use This Document"
+                                                }
+                                              </button>
+                                            </div>
+                                          )
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+
+                              {/* Upload / Re-upload */}
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  openUploadPicker(
+                                    document.documentType
+                                  )
+                                }
+                                className="px-4 py-2
+                                bg-[#0B1F3A] text-white rounded-lg
+                                font-semibold text-sm hover:bg-[#16375F]
+                                transition"
+                              >
+                                {
+                                  document.status ===
+                                  "Rejected"
+                                    ? "Re-upload"
+                                    : "Upload"
+                                }
+                              </button>
+
                             </div>
                           )}
 
                         </div>
                       </div>
-
-                      {/* Status + Actions */}
-                      <div
-                        className="flex items-center
-                        gap-3 flex-wrap md:justify-end"
-                      >
-
-                        {/* Status */}
-                        <span
-                          className={`inline-flex items-center
-                          gap-1 px-3 py-1.5 rounded-full
-                          text-xs font-semibold
-                          whitespace-nowrap
-                          ${getStatusClass(
-                            document.status
-                          )}`}
-                        >
-                          {getStatusIcon(
-                            document.status
-                          )}
-
-                          {document.status}
-                        </span>
-
-                        {/* View */}
-                        {document.fileUrl && (
-                          <a
-                            href={document.fileUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="px-4 py-2 border
-                            border-[#0B1F3A]
-                            text-[#0B1F3A]
-                            rounded-lg font-semibold text-sm
-                            hover:bg-slate-50 transition"
-                          >
-                            View
-                          </a>
-                        )}
-
-                        {/* Missing / Rejected Document Actions */}
-                        {(document.status === "Missing" ||
-                          document.status === "Rejected") && (
-                          <div className="flex flex-wrap gap-2">
-
-                            {/* Use Existing Document */}
-                            {document.status === "Missing" &&
-                              reusableForType.length > 0 && (
-                                <div className="relative">
-                                  <button
-                                    type="button"
-                                    onClick={(event) => {
-                                      event.stopPropagation();
-                                      setOpenReusableType(
-                                        openReusableType === document.documentType
-                                          ? null
-                                          : document.documentType
-                                      );
-                                    }}
-                                    className="px-4 py-2
-                                    border border-[#0B1F3A]
-                                    text-[#0B1F3A]
-                                    rounded-lg font-semibold text-sm
-                                    hover:bg-slate-50 transition"
-                                  >
-                                    Use Existing Document
-                                  </button>
-
-                                  {openReusableType === document.documentType && (
-                                    <div
-                                      className="absolute right-0 top-full mt-2
-                                      w-72 bg-white border border-gray-200
-                                      rounded-lg shadow-lg p-3 z-50"
-                                    >
-                                      <div className="flex items-center justify-between mb-2">
-                                        <p
-                                          className="text-xs font-semibold
-                                          text-gray-500 uppercase"
-                                        >
-                                          Verified Documents
-                                        </p>
-
-                                        <button
-                                          type="button"
-                                          onClick={() =>
-                                            setOpenReusableType(null)
-                                          }
-                                          className="text-gray-400 hover:text-gray-700 text-lg"
-                                        >
-                                          ×
-                                        </button>
-                                      </div>
-
-                                      {reusableForType.map(
-                                        (reusableDocument) => (
-                                          <div
-                                            key={reusableDocument._id}
-                                            className="border border-gray-100
-                                            rounded-lg p-3 mb-2 last:mb-0"
-                                          >
-                                            <p
-                                              className="text-sm font-semibold
-                                              text-gray-800"
-                                            >
-                                              {reusableDocument.fileName}
-                                            </p>
-
-                                            <p
-                                              className="text-xs text-green-600 mt-1"
-                                            >
-                                              Verified
-                                            </p>
-
-                                            <button
-                                              type="button"
-                                              disabled={
-                                                linkingDocumentId ===
-                                                reusableDocument._id
-                                              }
-                                              onClick={() =>
-                                                handleLinkExistingDocument(
-                                                  reusableDocument._id
-                                                )
-                                              }
-                                              className="w-full mt-2
-                                              bg-[#0B1F3A] text-white px-3 py-2
-                                              rounded-lg text-xs font-semibold
-                                              hover:bg-[#16375F] transition
-                                              disabled:opacity-50
-                                              disabled:cursor-not-allowed"
-                                            >
-                                              {linkingDocumentId ===
-                                              reusableDocument._id
-                                                ? "Linking..."
-                                                : "Use This Document"}
-                                            </button>
-                                          </div>
-                                        )
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-
-                            {/* Upload / Re-upload */}
-                            <button
-                              type="button"
-                              onClick={() =>
-                                openUploadPicker(document.documentType)
-                              }
-                              className="px-4 py-2
-                              bg-[#0B1F3A] text-white rounded-lg
-                              font-semibold text-sm hover:bg-[#16375F]
-                              transition"
-                            >
-                              {document.status === "Rejected"
-                                ? "Re-upload"
-                                : "Upload"}
-                            </button>
-
-                          </div>
-                        )}
-
-
-                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                }
+              )}
 
             </div>
           </div>
@@ -786,12 +1149,18 @@ const ApplicationDocumentsPage = () => {
             <div className="flex items-start justify-between gap-4 mb-6">
               <div>
                 <h2 className="text-2xl font-bold text-[#0B1F3A]">
-                  {documents.find(
-                    (item) => item.documentType === selectedUploadType
-                  )?.status === "Rejected"
-                    ? "Re-upload Document"
-                    : "Upload Document"}
+                  {
+                    documents.find(
+                      (item) =>
+                        item.documentType ===
+                        selectedUploadType
+                    )?.status ===
+                    "Rejected"
+                      ? "Re-upload Document"
+                      : "Upload Document"
+                  }
                 </h2>
+
                 <p className="text-gray-500 mt-1">
                   Upload the required document for this application.
                 </p>
@@ -799,8 +1168,12 @@ const ApplicationDocumentsPage = () => {
 
               <button
                 type="button"
-                onClick={cancelUpload}
-                disabled={uploading}
+                onClick={
+                  cancelUpload
+                }
+                disabled={
+                  uploading
+                }
                 className="text-gray-500 hover:text-gray-800 text-xl"
               >
                 ×
@@ -811,13 +1184,21 @@ const ApplicationDocumentsPage = () => {
               <p className="text-xs font-semibold text-gray-500 uppercase">
                 Document Type
               </p>
+
               <p className="text-lg font-bold text-[#0B1F3A] mt-1">
-                {selectedUploadType}
+                {
+                  selectedUploadType
+                }
               </p>
+
               <p className="text-sm text-gray-500 mt-1">
-                {documents.find(
-                  (item) => item.documentType === selectedUploadType
-                )?.description}
+                {
+                  documents.find(
+                    (item) =>
+                      item.documentType ===
+                      selectedUploadType
+                  )?.description
+                }
               </p>
             </div>
 
@@ -826,14 +1207,20 @@ const ApplicationDocumentsPage = () => {
                 ref={fileInputRef}
                 type="file"
                 accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
-                onChange={handleFileSelected}
+                onChange={
+                  handleFileSelected
+                }
                 className="hidden"
               />
 
               <button
                 type="button"
-                onClick={triggerFilePicker}
-                disabled={uploading}
+                onClick={
+                  triggerFilePicker
+                }
+                disabled={
+                  uploading
+                }
                 className="w-full border-2 border-dashed border-slate-300
                 rounded-xl p-8 text-center hover:border-[#1F4E79]
                 hover:bg-slate-50 transition disabled:opacity-50"
@@ -842,9 +1229,15 @@ const ApplicationDocumentsPage = () => {
                   size={32}
                   className="mx-auto text-[#1F4E79] mb-3"
                 />
+
                 <p className="font-semibold text-[#0B1F3A]">
-                  {selectedFile ? selectedFile.name : "Choose a document"}
+                  {
+                    selectedFile
+                      ? selectedFile.name
+                      : "Choose a document"
+                  }
                 </p>
+
                 <p className="text-sm text-gray-500 mt-1">
                   PDF, JPG or PNG · Maximum 5 MB
                 </p>
@@ -852,7 +1245,9 @@ const ApplicationDocumentsPage = () => {
 
               {uploadError && (
                 <p className="text-sm text-red-600 mt-3">
-                  {uploadError}
+                  {
+                    uploadError
+                  }
                 </p>
               )}
 
@@ -860,14 +1255,25 @@ const ApplicationDocumentsPage = () => {
                 <button
                   type="button"
                   onClick={() => {
-                    const selectedDocument = documents.find(
-                      (item) => item.documentType === selectedUploadType
-                    );
-                    if (selectedDocument) {
-                      handleUploadDocument(selectedDocument);
+                    const selectedDocument =
+                      documents.find(
+                        (item) =>
+                          item.documentType ===
+                          selectedUploadType
+                      );
+
+                    if (
+                      selectedDocument
+                    ) {
+                      handleUploadDocument(
+                        selectedDocument
+                      );
                     }
                   }}
-                  disabled={!selectedFile || uploading}
+                  disabled={
+                    !selectedFile ||
+                    uploading
+                  }
                   className="px-5 py-2.5 bg-[#0B1F3A] text-white
                   rounded-lg font-semibold text-sm hover:bg-[#16375F]
                   transition disabled:opacity-50 disabled:cursor-not-allowed"
@@ -875,16 +1281,23 @@ const ApplicationDocumentsPage = () => {
                   {uploading
                     ? "Uploading..."
                     : documents.find(
-                        (item) => item.documentType === selectedUploadType
-                      )?.status === "Rejected"
-                      ? "Submit Re-upload"
-                      : "Upload Document"}
+                        (item) =>
+                          item.documentType ===
+                          selectedUploadType
+                      )?.status ===
+                      "Rejected"
+                    ? "Submit Re-upload"
+                    : "Upload Document"}
                 </button>
 
                 <button
                   type="button"
-                  onClick={cancelUpload}
-                  disabled={uploading}
+                  onClick={
+                    cancelUpload
+                  }
+                  disabled={
+                    uploading
+                  }
                   className="px-5 py-2.5 border border-gray-300
                   text-gray-700 rounded-lg font-semibold text-sm
                   hover:bg-white transition disabled:opacity-50"
@@ -896,11 +1309,14 @@ const ApplicationDocumentsPage = () => {
           </section>
         )}
 
-        {uploadError && !selectedUploadType && (
-          <div className="mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-            {uploadError}
-          </div>
-        )}
+        {uploadError &&
+          !selectedUploadType && (
+            <div className="mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+              {
+                uploadError
+              }
+            </div>
+          )}
 
         {/* Shared hidden file picker for application document uploads */}
       </main>

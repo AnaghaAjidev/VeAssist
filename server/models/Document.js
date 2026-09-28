@@ -38,11 +38,17 @@ const documentSchema = new mongoose.Schema(
                 "Insurance Document",
                 "ECHS Card",
 
-                // Welfare Assistance documents
+                // Scholarship Welfare Assistance documents
                 "Service / Family Document",
                 "Educational Certificate",
                 "Bonafide Certificate",
                 "Widow / Family Status Document",
+
+                // Vocational Training Assistance documents
+                "Service Discharge Certificate / Service Book",
+                "Widow I-Card",
+                "Training Completion Certificate",
+                "Bank Account Details / Passbook",
 
                 "Other",
             ],

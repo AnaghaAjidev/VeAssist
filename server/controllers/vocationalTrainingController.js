@@ -2,6 +2,7 @@ import Scholarship from "../models/Scholarship.js";
 import ScholarshipTracking from "../models/ScholarshipTracking.js";
 import AssistanceCase from "../models/AssistanceCase.js";
 import User from "../models/User.js";
+import Document from "../models/Document.js";
 import { createNotification } from "../services/notificationService.js";
 
 // ============================================================
@@ -121,6 +122,10 @@ export const getMyVocationalTrainingApplications = async (
 // CHECK VOCATIONAL TRAINING ELIGIBILITY
 // ============================================================
 
+// ============================================================
+// CHECK VOCATIONAL TRAINING ELIGIBILITY
+// ============================================================
+
 export const checkVocationalTrainingEligibility = async (
     req,
     res
@@ -135,6 +140,7 @@ export const checkVocationalTrainingEligibility = async (
             serviceNumber,
             rank,
             trainingCompleted,
+            trainingCompletionDate,
             trainingType,
         } = req.body;
 
@@ -175,7 +181,9 @@ export const checkVocationalTrainingEligibility = async (
 
         if (
             program.eligibleGenders.length > 0 &&
-            !program.eligibleGenders.includes(gender)
+            !program.eligibleGenders.includes(
+                gender
+            )
         ) {
             reasons.push(
                 "Your gender does not match the eligibility criteria."
@@ -186,7 +194,15 @@ export const checkVocationalTrainingEligibility = async (
         // Training completion
         // --------------------------------------------------------
 
-        if (trainingCompleted !== true) {
+        const today =
+            new Date()
+                .toISOString()
+                .split("T")[0];
+
+        if (
+            !trainingCompletionDate ||
+            trainingCompletionDate > today
+        ) {
             reasons.push(
                 "The vocational training must be successfully completed before applying."
             );
@@ -415,6 +431,20 @@ export const applyForVocationalTraining = async (
             });
         }
 
+        const today =
+            new Date()
+                .toISOString()
+                .split("T")[0];
+
+        if (
+            trainingCompletionDate > today
+        ) {
+            return res.status(400).json({
+                message:
+                    "Training completion date cannot be in the future.",
+            });
+        }
+
         if (
             trainingStartDate &&
             new Date(trainingCompletionDate) <
@@ -568,6 +598,16 @@ export const applyForVocationalTraining = async (
             );
         }
 
+        // Future completion date protection
+        if (
+            trainingCompletionDate &&
+            trainingCompletionDate > today
+        ) {
+            reasons.push(
+                "The vocational training must be completed before applying."
+            );
+        }
+
         if (
             program.applicationDeadline &&
             new Date() >
@@ -652,8 +692,10 @@ export const applyForVocationalTraining = async (
 
                 course: "",
                 courseYear: null,
+
                 institution:
                     institute || "",
+
                 universityBoard: "",
                 academicYear: "",
                 marks: null,
@@ -913,7 +955,7 @@ export const getAuthorityVocationalApplications =
             if (
                 req.user.role === "authority" &&
                 req.user.department !==
-                    "Welfare Assistance Department"
+                "Welfare Assistance Department"
             ) {
                 return res.status(403).json({
                     message:
@@ -985,7 +1027,7 @@ export const getAuthorityVocationalApplicationById =
             if (
                 req.user.role === "authority" &&
                 req.user.department !==
-                    "Welfare Assistance Department"
+                "Welfare Assistance Department"
             ) {
                 return res.status(403).json({
                     message:
@@ -1013,7 +1055,7 @@ export const getAuthorityVocationalApplicationById =
                 !application.scholarship ||
                 application.scholarship
                     .opportunityType !==
-                    "Vocational Training"
+                "Vocational Training"
             ) {
                 return res.status(404).json({
                     message:
@@ -1048,7 +1090,7 @@ export const reviewVocationalTrainingApplication =
             if (
                 req.user.role === "authority" &&
                 req.user.department !==
-                    "Welfare Assistance Department"
+                "Welfare Assistance Department"
             ) {
                 return res.status(403).json({
                     message:
@@ -1087,7 +1129,7 @@ export const reviewVocationalTrainingApplication =
                 !application.scholarship ||
                 application.scholarship
                     .opportunityType !==
-                    "Vocational Training"
+                "Vocational Training"
             ) {
                 return res.status(404).json({
                     message:
@@ -1107,6 +1149,56 @@ export const reviewVocationalTrainingApplication =
                     message:
                         "This application cannot be reviewed in its current status.",
                 });
+            }
+
+            // ====================================================
+            // APPROVAL PROTECTION
+            // ====================================================
+
+            if (status === "Approved") {
+                // Declaration must be accepted before approval.
+                if (application.declarationAccepted !== true) {
+                    return res.status(400).json({
+                        message:
+                            "This application cannot be approved because the declaration has not been accepted.",
+                    });
+                }
+
+                // All required vocational training documents
+                // must be verified before approval.
+                const requiredDocuments = [
+                    "Service Discharge Certificate / Service Book",
+                    "Widow I-Card",
+                    "Training Completion Certificate",
+                    "Bank Account Details / Passbook",
+                ];
+
+                const uploadedDocuments =
+                    await Document.find({
+                        welfareApplicationId: application._id,
+                    });
+
+                const documentStatusMap = new Map(
+                    uploadedDocuments.map((document) => [
+                        document.documentType,
+                        document.status,
+                    ])
+                );
+
+                const pendingDocuments =
+                    requiredDocuments.filter(
+                        (documentType) =>
+                            documentStatusMap.get(documentType) !==
+                            "Verified"
+                    );
+
+                if (pendingDocuments.length > 0) {
+                    return res.status(400).json({
+                        message:
+                            "This application cannot be approved until all required documents are verified.",
+                        pendingDocuments,
+                    });
+                }
             }
 
             application.status =
@@ -1133,10 +1225,9 @@ export const reviewVocationalTrainingApplication =
                         "Vocational Training Application Update",
 
                     message:
-                        `${application.scholarship.title} (${application.applicationId}) status updated to ${status}. ${
-                            authorityRemarks
-                                ? `Remarks: ${authorityRemarks}`
-                                : ""
+                        `${application.scholarship.title} (${application.applicationId}) status updated to ${status}. ${authorityRemarks
+                            ? `Remarks: ${authorityRemarks}`
+                            : ""
                         }`,
 
                     type:

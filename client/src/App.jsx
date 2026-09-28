@@ -54,6 +54,7 @@ function App() {
         <Route path="/family/applications" element={<ApplicationsPage />} />
         <Route path="/family/applications/new/:caseId" element={<CreateApplicationPage />} />
         <Route path="/family/applications/:applicationId/documents" element={<ApplicationDocumentsPage />} />
+        <Route path="/family/application-documents/:applicationId" element={<ApplicationDocumentsPage />} />
         <Route path="/family/welfare-assistance" element={<WelfareAssistancePage />} />
         <Route path="/family/scholarships" element={<ScholarshipAssistancePage />} />
         <Route path="/family/vocational-training" element={<WidowVocationalTrainingPage />} />

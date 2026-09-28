@@ -11,80 +11,71 @@ import {
     reviewVocationalTrainingApplication,
 } from "../controllers/vocationalTrainingController.js";
 
-import { protect } from "../middleware/authMiddleware.js";
+import authMiddleware from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
 
-// ============================================================
-// FAMILY - VOCATIONAL TRAINING PROGRAMS
-// ============================================================
+// ======================================================
+// FAMILY / GENERAL VOCATIONAL TRAINING ROUTES
+// ======================================================
 
-// Get all active vocational training programs
 router.get(
     "/",
-    protect,
+    authMiddleware,
     getVocationalTrainingPrograms
 );
 
-
-// Get single vocational training program
-router.get(
-    "/:programId",
-    protect,
-    getVocationalTrainingById
-);
-
-
-// Get family's vocational training applications
 router.get(
     "/my",
-    protect,
+    authMiddleware,
     getMyVocationalTrainingApplications
 );
 
 
-// Check eligibility
-router.post(
-    "/:programId/eligibility",
-    protect,
-    checkVocationalTrainingEligibility
-);
+// ======================================================
+// AUTHORITY VOCATIONAL APPLICATION ROUTES
+// ======================================================
 
-
-// Submit vocational training application
-router.post(
-    "/:programId/apply",
-    protect,
-    applyForVocationalTraining
-);
-
-
-// ============================================================
-// AUTHORITY - VOCATIONAL TRAINING APPLICATIONS
-// ============================================================
-
-// Get authority vocational training applications
 router.get(
     "/authority/applications",
-    protect,
+    authMiddleware,
     getAuthorityVocationalApplications
 );
 
-
-// Get single authority vocational training application
 router.get(
     "/authority/applications/:applicationId",
-    protect,
+    authMiddleware,
     getAuthorityVocationalApplicationById
 );
 
-
-// Review vocational training application
 router.patch(
     "/authority/applications/:applicationId/review",
-    protect,
+    authMiddleware,
     reviewVocationalTrainingApplication
+);
+
+
+// ======================================================
+// SINGLE PROGRAM / ELIGIBILITY / APPLICATION
+// ======================================================
+
+router.get(
+    "/:programId",
+    authMiddleware,
+    getVocationalTrainingById
+);
+
+router.post(
+    "/:programId/eligibility",
+    authMiddleware,
+    checkVocationalTrainingEligibility
+);
+
+router.post(
+    "/:programId/apply",
+    authMiddleware,
+    applyForVocationalTraining
 );
 
 
