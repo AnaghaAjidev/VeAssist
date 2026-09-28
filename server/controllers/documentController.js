@@ -119,7 +119,7 @@ export const uploadDocument = async (req, res) => {
 
             const requiredDocuments =
                 applicationDocumentRequirements[
-                    application.applicationType
+                application.applicationType
                 ] || [];
 
             const requiredDocument = requiredDocuments.find(
@@ -371,7 +371,7 @@ export const reuploadDocument = async (req, res) => {
             if (
                 welfareApplication.caseId &&
                 welfareApplication.caseId.toString() !==
-                    assistanceCase._id.toString()
+                assistanceCase._id.toString()
             ) {
                 return res.status(403).json({
                     message:
@@ -381,15 +381,40 @@ export const reuploadDocument = async (req, res) => {
         }
 
 
-        // Upload replacement file to Cloudinary
+        // ==================================================
+        // UPLOAD REPLACEMENT FILE TO CLOUDINARY
+        // ==================================================
+
         const result = await uploadToCloudinary(
             req.file.buffer,
             "veassist/documents"
         );
 
 
-        // Delete old Cloudinary file
-        if (document.publicId) {
+        // ==================================================
+        // DELETE OLD CLOUDINARY FILE
+        // ==================================================
+
+        /*
+         * IMPORTANT:
+         *
+         * A reused document points to the same Cloudinary
+         * file as the original verified document.
+         *
+         * Therefore, when a reused document is re-uploaded,
+         * we must NOT delete its old Cloudinary file.
+         *
+         * Otherwise, the original document would also lose
+         * access to the shared Cloudinary file.
+         */
+        const isReusedDocument =
+            document.remarks ===
+            "Reused from an existing verified document.";
+
+        if (
+            document.publicId &&
+            !isReusedDocument
+        ) {
             try {
                 await cloudinary.uploader.destroy(
                     document.publicId,
@@ -413,7 +438,10 @@ export const reuploadDocument = async (req, res) => {
         }
 
 
-        // Update existing document record
+        // ==================================================
+        // UPDATE EXISTING DOCUMENT RECORD
+        // ==================================================
+
         document.fileName = req.file.originalname;
         document.fileUrl = result.secure_url;
         document.publicId = result.public_id;
@@ -460,7 +488,9 @@ export const getWelfareApplicationDocuments = async (
         const welfareApplication =
             await ScholarshipTracking.findOne({
                 applicationId,
-            }).populate("scholarship");
+            })
+                .populate("scholarship")
+                .populate("caseId");
 
         if (!welfareApplication) {
             return res.status(404).json({
@@ -475,7 +505,7 @@ export const getWelfareApplicationDocuments = async (
         const isWelfareAuthority =
             req.user.role === "authority" &&
             req.user.department ===
-                "Welfare Assistance Department";
+            "Welfare Assistance Department";
 
         const isOfficerOrAdmin =
             req.user.role === "officer" ||
@@ -512,6 +542,8 @@ export const getWelfareApplicationDocuments = async (
             applicationId,
             welfareApplicationId:
                 welfareApplication._id,
+            caseId:
+                welfareApplication.caseId?.caseId || "",
             requiredDocuments:
                 welfareApplication.scholarship?.requiredDocuments ||
                 [],
@@ -718,7 +750,7 @@ export const reviewDocument = async (req, res) => {
         if (req.user.role === "authority") {
             if (
                 req.user.department !==
-                    "Welfare Assistance Department" ||
+                "Welfare Assistance Department" ||
                 !document.welfareApplicationId
             ) {
                 return res.status(403).json({
@@ -742,7 +774,7 @@ export const reviewDocument = async (req, res) => {
             if (
                 welfareApplication.caseId &&
                 welfareApplication.caseId.toString() !==
-                    assistanceCase._id.toString()
+                assistanceCase._id.toString()
             ) {
                 return res.status(403).json({
                     message:
@@ -941,7 +973,7 @@ export const linkExistingDocument = async (req, res) => {
         // for this application.
         const requiredDocuments =
             applicationDocumentRequirements[
-                application.applicationType
+            application.applicationType
             ] || [];
 
         const isRequired = requiredDocuments.some(
@@ -1033,7 +1065,7 @@ export const getReusableDocuments = async (req, res) => {
         // for this application.
         const requirements =
             applicationDocumentRequirements[
-                application.applicationType
+            application.applicationType
             ] || [];
 
         const requiredDocumentTypes =
@@ -1104,6 +1136,213 @@ export const getReusableDocuments = async (req, res) => {
         return res.status(500).json({
             message:
                 "Server error while fetching reusable documents.",
+        });
+    }
+};
+
+
+// ======================================================
+// GET REUSABLE VERIFIED DOCUMENTS FOR WELFARE APPLICATION
+// Scholarship / Vocational Training
+// ======================================================
+
+export const getReusableWelfareDocuments = async (
+    req,
+    res
+) => {
+    try {
+        const { applicationId } = req.params;
+
+        const welfareApplication =
+            await ScholarshipTracking.findOne({
+                applicationId,
+                familyUser: req.user.userId,
+            }).populate("scholarship");
+
+        if (!welfareApplication) {
+            return res.status(404).json({
+                message:
+                    "Welfare assistance application not found.",
+            });
+        }
+
+        if (!welfareApplication.caseId) {
+            return res.status(400).json({
+                message:
+                    "Assistance case is not linked to this application.",
+            });
+        }
+
+        const requiredDocuments =
+            welfareApplication.scholarship?.requiredDocuments ||
+            [];
+
+        const documents = await Document.find({
+            caseId: welfareApplication.caseId,
+            uploadedBy: req.user.userId,
+            status: "Verified",
+            documentType: {
+                $in: requiredDocuments,
+            },
+            welfareApplicationId: {
+                $ne: welfareApplication._id,
+            },
+        }).sort({
+            uploadedAt: -1,
+        });
+
+        return res.status(200).json({
+            applicationId,
+            welfareApplicationId:
+                welfareApplication._id,
+            documents,
+        });
+
+    } catch (error) {
+        console.error(
+            "Get reusable welfare documents error:",
+            error
+        );
+
+        return res.status(500).json({
+            message:
+                "Server error while fetching reusable welfare documents.",
+        });
+    }
+};
+
+
+// ======================================================
+// LINK EXISTING VERIFIED DOCUMENT TO WELFARE APPLICATION
+// Scholarship / Vocational Training
+// ======================================================
+
+export const linkExistingWelfareDocument = async (
+    req,
+    res
+) => {
+    try {
+        const { applicationId } = req.params;
+        const { documentId } = req.body;
+
+        if (!documentId) {
+            return res.status(400).json({
+                message: "Document ID is required.",
+            });
+        }
+
+        const welfareApplication =
+            await ScholarshipTracking.findOne({
+                applicationId,
+                familyUser: req.user.userId,
+            }).populate("scholarship");
+
+        if (!welfareApplication) {
+            return res.status(404).json({
+                message:
+                    "Welfare assistance application not found.",
+            });
+        }
+
+        if (!welfareApplication.caseId) {
+            return res.status(400).json({
+                message:
+                    "Assistance case is not linked to this application.",
+            });
+        }
+
+        const document =
+            await Document.findOne({
+                _id: documentId,
+                caseId: welfareApplication.caseId,
+                uploadedBy: req.user.userId,
+                status: "Verified",
+            });
+
+        if (!document) {
+            return res.status(404).json({
+                message:
+                    "Verified document not found for this assistance case.",
+            });
+        }
+
+        const requiredDocuments =
+            welfareApplication.scholarship?.requiredDocuments ||
+            [];
+
+        if (
+            !requiredDocuments.includes(
+                document.documentType
+            )
+        ) {
+            return res.status(400).json({
+                message:
+                    `${document.documentType} is not required for this welfare assistance application.`,
+            });
+        }
+
+        const existingDocument =
+            await Document.findOne({
+                caseId: welfareApplication.caseId,
+                welfareApplicationId:
+                    welfareApplication._id,
+                documentType:
+                    document.documentType,
+            });
+
+        if (existingDocument) {
+            return res.status(409).json({
+                message:
+                    "This document is already linked to this welfare application.",
+            });
+        }
+
+        /*
+         * Create a new Document record using the same
+         * Cloudinary file.
+         *
+         * No second file upload is performed.
+         */
+        const linkedDocument =
+            await Document.create({
+                caseId:
+                    welfareApplication.caseId,
+                welfareApplicationId:
+                    welfareApplication._id,
+                uploadedBy:
+                    req.user.userId,
+                documentType:
+                    document.documentType,
+                fileName:
+                    document.fileName,
+                fileUrl:
+                    document.fileUrl,
+                publicId:
+                    document.publicId,
+                resourceType:
+                    document.resourceType,
+                status: "Verified",
+                remarks:
+                    "Reused from an existing verified document.",
+                uploadedAt:
+                    document.uploadedAt,
+            });
+
+        return res.status(201).json({
+            message:
+                "Existing verified document linked successfully.",
+            document: linkedDocument,
+        });
+
+    } catch (error) {
+        console.error(
+            "Link existing welfare document error:",
+            error
+        );
+
+        return res.status(500).json({
+            message:
+                "Server error while linking welfare document.",
         });
     }
 };

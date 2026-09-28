@@ -203,7 +203,7 @@ export const checkScholarshipEligibility = async (
         if (
             scholarship.applicationDeadline &&
             new Date() >
-                new Date(scholarship.applicationDeadline)
+            new Date(scholarship.applicationDeadline)
         ) {
             reasons.push(
                 "The application deadline has passed."
@@ -352,9 +352,9 @@ export const applyForScholarship = async (
         if (
             scholarship.applicationDeadline &&
             new Date() >
-                new Date(
-                    scholarship.applicationDeadline
-                )
+            new Date(
+                scholarship.applicationDeadline
+            )
         ) {
             return res.status(400).json({
                 message:
@@ -431,7 +431,7 @@ export const applyForScholarship = async (
                 marks === null ||
                 marks === "" ||
                 Number(marks) <
-                    scholarship.minimumMarks
+                scholarship.minimumMarks
             )
         ) {
             reasons.push(
@@ -474,9 +474,9 @@ export const applyForScholarship = async (
         if (
             scholarship.applicationDeadline &&
             new Date() >
-                new Date(
-                    scholarship.applicationDeadline
-                )
+            new Date(
+                scholarship.applicationDeadline
+            )
         ) {
             reasons.push(
                 "The application deadline has passed."
@@ -577,8 +577,8 @@ export const applyForScholarship = async (
 
                 courseYear:
                     courseYear !== undefined &&
-                    courseYear !== null &&
-                    courseYear !== ""
+                        courseYear !== null &&
+                        courseYear !== ""
                         ? Number(courseYear)
                         : null,
 
@@ -593,8 +593,8 @@ export const applyForScholarship = async (
 
                 marks:
                     marks !== undefined &&
-                    marks !== null &&
-                    marks !== ""
+                        marks !== null &&
+                        marks !== ""
                         ? Number(marks)
                         : null,
             };
@@ -699,8 +699,8 @@ export const applyForScholarship = async (
 
                         courseYear:
                             courseYear !== undefined &&
-                            courseYear !== null &&
-                            courseYear !== ""
+                                courseYear !== null &&
+                                courseYear !== ""
                                 ? Number(courseYear)
                                 : null,
 
@@ -715,8 +715,8 @@ export const applyForScholarship = async (
 
                         marks:
                             marks !== undefined &&
-                            marks !== null &&
-                            marks !== ""
+                                marks !== null &&
+                                marks !== ""
                                 ? Number(marks)
                                 : null,
                     },
@@ -833,7 +833,7 @@ export const getAuthorityScholarshipApplications =
             if (
                 req.user.role === "authority" &&
                 req.user.department !==
-                    "Welfare Assistance Department"
+                "Welfare Assistance Department"
             ) {
                 return res.status(403).json({
                     message:
@@ -892,7 +892,7 @@ export const getAuthorityScholarshipApplicationById =
             if (
                 req.user.role === "authority" &&
                 req.user.department !==
-                    "Welfare Assistance Department"
+                "Welfare Assistance Department"
             ) {
                 return res.status(403).json({
                     message:
@@ -951,7 +951,7 @@ export const reviewScholarshipApplication =
             if (
                 req.user.role === "authority" &&
                 req.user.department !==
-                    "Welfare Assistance Department"
+                "Welfare Assistance Department"
             ) {
                 return res.status(403).json({
                     message:
@@ -1085,10 +1085,9 @@ export const reviewScholarshipApplication =
                         "Scholarship / Training Application Update",
 
                     message:
-                        `${application.scholarship.title} (${application.applicationId}) status updated to ${status}. ${
-                            authorityRemarks
-                                ? `Remarks: ${authorityRemarks}`
-                                : ""
+                        `${application.scholarship.title} (${application.applicationId}) status updated to ${status}. ${authorityRemarks
+                            ? `Remarks: ${authorityRemarks}`
+                            : ""
                         }`,
 
                     type:
@@ -1135,7 +1134,7 @@ export const createScholarship = async (
         if (
             req.user.role === "authority" &&
             req.user.department !==
-                "Welfare Assistance Department"
+            "Welfare Assistance Department"
         ) {
             return res.status(403).json({
                 message:
@@ -1219,8 +1218,8 @@ export const createScholarship = async (
 
                 minimumMarks:
                     minimumMarks !== undefined &&
-                    minimumMarks !== null &&
-                    minimumMarks !== ""
+                        minimumMarks !== null &&
+                        minimumMarks !== ""
                         ? Number(minimumMarks)
                         : null,
 
@@ -1234,7 +1233,14 @@ export const createScholarship = async (
                     benefits || [],
 
                 requiredDocuments:
-                    requiredDocuments || [],
+                    opportunityType === "Vocational Training"
+                        ? [
+                            "Service Discharge Certificate / Service Book",
+                            "Widow I-Card",
+                            "Training Completion Certificate",
+                            "Bank Account Details / Passbook",
+                        ]
+                        : requiredDocuments || [],
 
                 applicationProcedure:
                     applicationProcedure || [],
@@ -1294,7 +1300,7 @@ export const getAuthorityScholarships = async (
         if (
             req.user.role === "authority" &&
             req.user.department !==
-                "Welfare Assistance Department"
+            "Welfare Assistance Department"
         ) {
             return res.status(403).json({
                 message:
@@ -1340,7 +1346,7 @@ export const updateScholarship = async (
         if (
             req.user.role === "authority" &&
             req.user.department !==
-                "Welfare Assistance Department"
+            "Welfare Assistance Department"
         ) {
             return res.status(403).json({
                 message:
@@ -1399,6 +1405,15 @@ export const updateScholarship = async (
                     req.body[field];
             }
         });
+
+        if (scholarship.opportunityType === "Vocational Training") {
+            scholarship.requiredDocuments = [
+                "Service Discharge Certificate / Service Book",
+                "Widow I-Card",
+                "Training Completion Certificate",
+                "Bank Account Details / Passbook",
+            ];
+        }
 
         await scholarship.save();
 

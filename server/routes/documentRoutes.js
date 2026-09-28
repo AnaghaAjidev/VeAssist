@@ -8,6 +8,8 @@ import {
     reviewDocument,
     getOfficerCaseDocuments,
     getWelfareApplicationDocuments,
+    getReusableWelfareDocuments,
+    linkExistingWelfareDocument,
 } from "../controllers/documentController.js";
 
 import authMiddleware from "../middleware/authMiddleware.js";
@@ -16,10 +18,9 @@ import roleMiddleware from "../middleware/roleMiddleware.js";
 
 const router = express.Router();
 
-
-// ======================================================
+// ============================================================
 // UPLOAD DOCUMENT
-// ======================================================
+// ============================================================
 
 router.post(
     "/upload",
@@ -28,10 +29,9 @@ router.post(
     uploadDocument
 );
 
-
-// ======================================================
-// RE-UPLOAD REJECTED DOCUMENT
-// ======================================================
+// ============================================================
+// RE-UPLOAD DOCUMENT
+// ============================================================
 
 router.post(
     "/reupload",
@@ -40,11 +40,9 @@ router.post(
     reuploadDocument
 );
 
-
-// ======================================================
+// ============================================================
 // REVIEW DOCUMENT
-// Welfare Officer / Welfare Authority / Admin
-// ======================================================
+// ============================================================
 
 router.put(
     "/review/:documentId",
@@ -57,11 +55,9 @@ router.put(
     reviewDocument
 );
 
-
-// ======================================================
-// WELFARE ASSISTANCE APPLICATION DOCUMENTS
-// Scholarship / Vocational Training
-// ======================================================
+// ============================================================
+// WELFARE APPLICATION DOCUMENTS
+// ============================================================
 
 router.get(
     "/welfare/:applicationId",
@@ -69,10 +65,27 @@ router.get(
     getWelfareApplicationDocuments
 );
 
+// ============================================================
+// REUSABLE WELFARE DOCUMENTS
+// ============================================================
 
-// ======================================================
-// GET DOCUMENTS FOR WELFARE OFFICER
-// ======================================================
+router.get(
+    "/welfare/:applicationId/documents/reusable",
+    authMiddleware,
+    roleMiddleware("family"),
+    getReusableWelfareDocuments
+);
+
+router.post(
+    "/welfare/:applicationId/documents/link",
+    authMiddleware,
+    roleMiddleware("family"),
+    linkExistingWelfareDocument
+);
+
+// ============================================================
+// OFFICER CASE DOCUMENTS
+// ============================================================
 
 router.get(
     "/officer/:caseId",
@@ -84,10 +97,9 @@ router.get(
     getOfficerCaseDocuments
 );
 
-
-// ======================================================
-// GET ALL DOCUMENTS FOR FAMILY CASE
-// ======================================================
+// ============================================================
+// CASE DOCUMENTS
+// ============================================================
 
 router.get(
     "/:caseId",
@@ -95,16 +107,14 @@ router.get(
     getCaseDocuments
 );
 
-
-// ======================================================
-// GET GENERAL DOCUMENT REQUIREMENTS
-// ======================================================
+// ============================================================
+// DOCUMENT REQUIREMENTS
+// ============================================================
 
 router.get(
     "/requirements/:caseId",
     authMiddleware,
     getDocumentRequirements
 );
-
 
 export default router;
