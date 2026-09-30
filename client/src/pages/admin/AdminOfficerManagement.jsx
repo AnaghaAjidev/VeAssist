@@ -1484,17 +1484,16 @@ const AdminOfficerManagement = () => {
                                                                 transition
                                                                 text-sm
                                                                 font-semibold
-                                                                ${
-                                                                    officer.isActive ===
+                                                                ${officer.isActive ===
                                                                     false
-                                                                        ? "bg-green-50 text-green-700 hover:bg-green-100"
-                                                                        : "bg-red-50 text-red-700 hover:bg-red-100"
+                                                                    ? "bg-green-50 text-green-700 hover:bg-green-100"
+                                                                    : "bg-red-50 text-red-700 hover:bg-red-100"
                                                                 }
                                                             `}
                                                         >
 
                                                             {officer.isActive ===
-                                                            false ? (
+                                                                false ? (
                                                                 <>
                                                                     <UserCheck
                                                                         size={
@@ -2251,7 +2250,7 @@ const AdminOfficerManagement = () => {
 
 
                                         {assignedApplications.length ===
-                                        0 ? (
+                                            0 ? (
 
                                             <div
                                                 className="

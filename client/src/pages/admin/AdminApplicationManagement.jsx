@@ -442,7 +442,7 @@ const AdminApplicationManagement = () => {
                     const matchesStatus =
                         statusFilter === "All" ||
                         application.status ===
-                            statusFilter;
+                        statusFilter;
 
 
                     // ------------------------------------------
@@ -452,7 +452,7 @@ const AdminApplicationManagement = () => {
                     const matchesType =
                         typeFilter === "All" ||
                         application.applicationType ===
-                            typeFilter;
+                        typeFilter;
 
 
                     return (

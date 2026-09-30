@@ -813,10 +813,9 @@ const AdminUserDetails = () => {
                                     border
                                     text-sm
                                     font-semibold
-                                    ${
-                                        user?.isActive === false
-                                            ? "bg-red-50 text-red-700 border-red-100"
-                                            : "bg-emerald-50 text-emerald-700 border-emerald-100"
+                                    ${user?.isActive === false
+                                        ? "bg-red-50 text-red-700 border-red-100"
+                                        : "bg-emerald-50 text-emerald-700 border-emerald-100"
                                     }
                                 `}
                             >
