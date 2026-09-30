@@ -28,6 +28,12 @@ import AuthorityApplicationDetails from "./pages/authority/AuthorityApplicationD
 
 import NotificationsPage from "./pages/notifications/NotificationsPage";
 
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminOfficerManagement from "./pages/admin/AdminOfficerManagement";
+import AdminUserManagement from "./pages/admin/AdminUserManagement";
+import AdminUserDetails from "./pages/admin/AdminUserDetails";
+import AdminApplicationManagement from "./pages/admin/AdminApplicationManagement";
+
 function App() {
   return (
     <BrowserRouter>
@@ -69,6 +75,13 @@ function App() {
         <Route path="/authority/dashboard" element={<AuthorityDashboard />} />
         <Route path="/authority/applications/:applicationId" element={<AuthorityApplicationDetails />} />
         <Route path="/authority/welfare-applications/:applicationId" element={<AuthorityApplicationDetails />} />
+
+        {/* ADMIN */}
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="/admin/officers" element={<AdminOfficerManagement />} />
+        <Route path="/admin/users" element={<AdminUserManagement />} />
+        <Route path="/admin/users/:userId" element={<AdminUserDetails />} />
+        <Route path="/admin/applications" element={<AdminApplicationManagement />} />
 
       </Routes>
     </BrowserRouter>

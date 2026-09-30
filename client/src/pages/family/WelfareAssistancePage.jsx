@@ -1140,7 +1140,7 @@ const WelfareAssistancePage = () => {
 
                 </section>
 
-                {/* ==================================================
+                                {/* ==================================================
                     MY APPLICATIONS
                 ================================================== */}
 
@@ -1165,17 +1165,23 @@ const WelfareAssistancePage = () => {
                     </div>
 
                     {myApplications.length === 0 ? (
+
                         <div className="bg-white rounded-xl border p-8 text-center">
+
                             <p className="text-gray-500">
                                 You have not submitted any welfare
                                 assistance applications yet.
                             </p>
+
                         </div>
+
                     ) : (
+
                         <div className="space-y-4">
 
                             {myApplications.map(
                                 (application) => (
+
                                     <div
                                         key={
                                             application._id
@@ -1185,37 +1191,58 @@ const WelfareAssistancePage = () => {
                                         p-5"
                                     >
 
+                                        {/* =================================================
+                                            APPLICATION HEADER
+                                        ================================================= */}
+
                                         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
 
                                             <div>
+
                                                 <h4 className="font-bold text-[#0B1F3A]">
+
                                                     {
                                                         application
                                                             .scholarship
                                                             ?.title
                                                     }
+
                                                 </h4>
 
                                                 <p className="text-sm text-gray-500 mt-1">
+
                                                     Application ID:{" "}
+
                                                     <span className="font-semibold">
+
                                                         {
                                                             application.applicationId
                                                         }
+
                                                     </span>
+
                                                 </p>
 
                                                 {application.submittedAt && (
+
                                                     <p className="text-sm text-gray-500 mt-1">
+
                                                         Submitted:{" "}
+
                                                         {new Date(
                                                             application.submittedAt
                                                         ).toLocaleDateString(
                                                             "en-IN"
                                                         )}
+
                                                     </p>
+
                                                 )}
+
                                             </div>
+
+
+                                            {/* STATUS */}
 
                                             <span
                                                 className={`inline-flex
@@ -1227,47 +1254,209 @@ const WelfareAssistancePage = () => {
                                                     application.status
                                                 )}`}
                                             >
+
                                                 {application.status ===
                                                 "Approved" ? (
+
                                                     <CheckCircle
-                                                        size={
-                                                            17
-                                                        }
+                                                        size={17}
                                                     />
+
                                                 ) : (
+
                                                     <Clock
-                                                        size={
-                                                            17
-                                                        }
+                                                        size={17}
                                                     />
+
                                                 )}
 
                                                 {
                                                     application.status
                                                 }
+
                                             </span>
 
                                         </div>
 
+
+                                        {/* =================================================
+                                            AUTHORITY REMARKS
+                                        ================================================= */}
+
                                         {application.authorityRemarks && (
+
                                             <div className="mt-4 bg-slate-50 rounded-lg p-4">
+
                                                 <p className="text-sm font-semibold text-gray-700">
+
                                                     Authority Remarks
+
                                                 </p>
 
                                                 <p className="text-sm text-gray-600 mt-1">
+
                                                     {
                                                         application.authorityRemarks
                                                     }
+
                                                 </p>
+
                                             </div>
+
+                                        )}
+
+
+                                        {/* =================================================
+                                            APPLICATION HISTORY
+                                        ================================================= */}
+
+                                        {application.applicationHistory &&
+                                            application.applicationHistory.length > 0 && (
+
+                                                <div className="mt-4 bg-white rounded-lg border border-slate-200 p-4">
+
+                                                    <p className="text-sm font-semibold text-gray-700">
+
+                                                        Application History
+
+                                                    </p>
+
+                                                    <div className="mt-3 space-y-3">
+
+                                                        {application.applicationHistory.map(
+                                                            (
+                                                                historyItem,
+                                                                index
+                                                            ) => (
+
+                                                                <div
+                                                                    key={`${historyItem.status}-${historyItem.date}-${index}`}
+                                                                    className="border border-slate-200 rounded-xl p-4 bg-slate-50"
+                                                                >
+
+                                                                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+
+                                                                        <div className="flex items-center gap-3">
+
+                                                                            <div className="w-8 h-8 rounded-full bg-green-100 text-green-700 flex items-center justify-center font-bold shrink-0">
+
+                                                                                ✓
+
+                                                                            </div>
+
+                                                                            <p className="font-semibold text-[#0B1F3A]">
+
+                                                                                {historyItem.status ===
+                                                                                "Submitted"
+
+                                                                                    ? "Application Submitted"
+
+                                                                                    : historyItem.status ===
+                                                                                      "Approved"
+
+                                                                                        ? "Application Approved"
+
+                                                                                        : historyItem.status ===
+                                                                                          "Rejected"
+
+                                                                                            ? "Application Rejected"
+
+                                                                                            : historyItem.status}
+
+                                                                            </p>
+
+                                                                        </div>
+
+
+                                                                        {historyItem.date && (
+
+                                                                            <p className="text-xs text-gray-500">
+
+                                                                                {new Date(
+                                                                                    historyItem.date
+                                                                                ).toLocaleString(
+                                                                                    "en-IN",
+                                                                                    {
+                                                                                        day: "2-digit",
+                                                                                        month: "short",
+                                                                                        year: "numeric",
+                                                                                        hour: "2-digit",
+                                                                                        minute: "2-digit",
+                                                                                    }
+                                                                                )}
+
+                                                                            </p>
+
+                                                                        )}
+
+                                                                    </div>
+
+
+                                                                    {historyItem.remarks && (
+
+                                                                        <p className="mt-2 text-sm text-gray-600 ml-11">
+
+                                                                            <strong>
+                                                                                Remarks:
+                                                                            </strong>{" "}
+
+                                                                            {
+                                                                                historyItem.remarks
+                                                                            }
+
+                                                                        </p>
+
+                                                                    )}
+
+                                                                </div>
+
+                                                            )
+                                                        )}
+
+                                                    </div>
+
+                                                </div>
+
+                                            )}
+
+
+                                        {/* =================================================
+                                            GOVERNMENT PROCESSING
+                                        ================================================= */}
+
+                                        {application.status ===
+                                            "Approved" && (
+
+                                            <div className="mt-4 bg-green-50 border border-green-200 rounded-lg p-4">
+
+                                                <p className="text-sm font-semibold text-green-800">
+
+                                                    Government Processing
+
+                                                </p>
+
+                                                <p className="text-sm text-green-700 mt-1 leading-6">
+
+                                                    Your application has been approved
+                                                    by the Welfare Assistance Department.
+                                                    Further processing/disbursement is
+                                                    handled through the concerned
+                                                    official government channel.
+
+                                                </p>
+
+                                            </div>
+
                                         )}
 
                                     </div>
+
                                 )
+
                             )}
 
                         </div>
+
                     )}
 
                 </section>

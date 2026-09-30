@@ -49,7 +49,7 @@ router.get(
     getAuthorityVocationalApplicationById
 );
 
-router.patch(
+router.put(
     "/authority/applications/:applicationId/review",
     authMiddleware,
     reviewVocationalTrainingApplication

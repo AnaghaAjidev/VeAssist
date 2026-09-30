@@ -133,7 +133,7 @@ const ApplicationsPage = () => {
     );
   };
 
-  const getStatusIcon = (status) => {
+    const getStatusIcon = (status) => {
     switch (status) {
       case "Approved":
         return <CheckCircle size={18} />;
@@ -142,6 +142,12 @@ const ApplicationsPage = () => {
         return <XCircle size={18} />;
 
       case "Under Review":
+        return <Clock size={18} />;
+
+      case "Under Authority Review":
+        return <Clock size={18} />;
+
+      case "Forwarded to Authority":
         return <Clock size={18} />;
 
       case "Submitted":
@@ -162,6 +168,12 @@ const ApplicationsPage = () => {
 
       case "Under Review":
         return "bg-yellow-100 text-yellow-700";
+
+      case "Under Authority Review":
+        return "bg-yellow-100 text-yellow-700";
+
+      case "Forwarded to Authority":
+        return "bg-purple-100 text-purple-700";
 
       case "Submitted":
         return "bg-blue-100 text-blue-700";
@@ -348,6 +360,122 @@ const ApplicationsPage = () => {
                     </p>
                   </div>
                 )}
+
+                                {/* =================================================
+                    APPLICATION HISTORY
+                ================================================= */}
+
+                {application.applicationHistory &&
+                  application.applicationHistory.length > 0 && (
+                    <div className="mt-5 border-t border-gray-100 pt-4">
+
+                      <p className="text-xs font-semibold text-gray-500 uppercase">
+                        Application History
+                      </p>
+
+                      <div className="mt-3 space-y-3">
+
+                        {application.applicationHistory.map(
+                          (historyItem, index) => (
+                            <div
+                              key={`${historyItem.status}-${historyItem.date}-${index}`}
+                              className="flex items-start gap-3"
+                            >
+
+                              <div className="
+                                w-7
+                                h-7
+                                rounded-full
+                                bg-green-100
+                                text-green-700
+                                flex
+                                items-center
+                                justify-center
+                                shrink-0
+                                font-bold
+                                text-sm
+                              ">
+                                ✓
+                              </div>
+
+                              <div className="flex-1">
+
+                                <div className="
+                                  flex
+                                  flex-col
+                                  sm:flex-row
+                                  sm:items-center
+                                  sm:justify-between
+                                  gap-1
+                                ">
+
+                                  <p className="
+                                    text-sm
+                                    font-semibold
+                                    text-[#0B1F3A]
+                                  ">
+                                    {historyItem.status ===
+                                    "Submitted"
+                                      ? "Application Submitted"
+                                      : historyItem.status ===
+                                        "Under Review"
+                                        ? "Under Welfare Officer Review"
+                                        : historyItem.status ===
+                                          "Forwarded to Authority"
+                                          ? "Forwarded to Authority"
+                                          : historyItem.status ===
+                                            "Under Authority Review"
+                                            ? "Under Authority Review"
+                                            : historyItem.status ===
+                                              "Approved"
+                                              ? "Application Approved"
+                                              : historyItem.status ===
+                                                "Rejected"
+                                                ? "Application Rejected"
+                                                : historyItem.status}
+                                  </p>
+
+                                  {historyItem.date && (
+                                    <p className="
+                                      text-xs
+                                      text-gray-500
+                                    ">
+                                      {new Date(
+                                        historyItem.date
+                                      ).toLocaleDateString(
+                                        "en-IN",
+                                        {
+                                          day: "2-digit",
+                                          month: "short",
+                                          year: "numeric",
+                                        }
+                                      )}
+                                    </p>
+                                  )}
+
+                                </div>
+
+                                {historyItem.remarks && (
+                                  <p className="
+                                    mt-1
+                                    text-xs
+                                    text-gray-600
+                                  ">
+                                    {historyItem.remarks}
+                                  </p>
+                                )}
+
+                              </div>
+
+                            </div>
+                          )
+                        )}
+
+                      </div>
+
+                    </div>
+                  )}
+
 
                 {/* Application Actions */}
                 <div

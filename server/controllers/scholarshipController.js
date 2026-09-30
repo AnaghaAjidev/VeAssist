@@ -628,6 +628,29 @@ export const applyForScholarship = async (
                 declarationAccepted === true;
 
             // ----------------------------------------------------
+            // Application history
+            // ----------------------------------------------------
+
+            if (
+                !tracking.applicationHistory ||
+                tracking.applicationHistory.length === 0 ||
+                tracking.applicationHistory[
+                    tracking.applicationHistory.length - 1
+                ].status !== "Submitted"
+            ) {
+                tracking.applicationHistory.push({
+                    status:
+                        "Submitted",
+
+                    remarks:
+                        "",
+
+                    date:
+                        new Date(),
+                });
+            }
+
+            // ----------------------------------------------------
             // Application dates / review information
             // ----------------------------------------------------
 
@@ -748,6 +771,23 @@ export const applyForScholarship = async (
 
                     declarationAccepted:
                         declarationAccepted === true,
+
+                    // ------------------------------------------------
+                    // Application history
+                    // ------------------------------------------------
+
+                    applicationHistory: [
+                        {
+                            status:
+                                "Submitted",
+
+                            remarks:
+                                "",
+
+                            date:
+                                new Date(),
+                        },
+                    ],
 
                     submittedAt:
                         new Date(),
@@ -1069,6 +1109,28 @@ export const reviewScholarshipApplication =
 
             application.authorityReviewedAt =
                 new Date();
+
+            // --------------------------------------------------------
+            // Application history
+            // --------------------------------------------------------
+
+            if (
+                !application.applicationHistory
+            ) {
+                application.applicationHistory =
+                    [];
+            }
+
+            application.applicationHistory.push({
+                status:
+                    status,
+
+                remarks:
+                    authorityRemarks || "",
+
+                date:
+                    new Date(),
+            });
 
             await application.save();
 

@@ -134,6 +134,7 @@ export const checkVocationalTrainingEligibility = async (
         const { programId } = req.params;
 
         const {
+            caseId,
             relationship,
             gender,
             veteranName,
@@ -155,6 +156,30 @@ export const checkVocationalTrainingEligibility = async (
             return res.status(404).json({
                 message:
                     "Vocational training program not found.",
+            });
+        }
+
+        // ========================================================
+        // ASSISTANCE CASE VALIDATION
+        // ========================================================
+
+        if (!caseId) {
+            return res.status(400).json({
+                message:
+                    "Assistance case is required to check eligibility.",
+            });
+        }
+
+        const assistanceCase =
+            await AssistanceCase.findOne({
+                caseId,
+                familyUser: req.user.userId,
+            });
+
+        if (!assistanceCase) {
+            return res.status(404).json({
+                message:
+                    "Assistance case not found for this family.",
             });
         }
 
@@ -244,6 +269,19 @@ export const checkVocationalTrainingEligibility = async (
         }
 
         if (
+            serviceNumber &&
+            assistanceCase.veteranDetails?.serviceNumber &&
+            String(serviceNumber).trim().toUpperCase() !==
+            String(
+                assistanceCase.veteranDetails.serviceNumber
+            ).trim().toUpperCase()
+        ) {
+            reasons.push(
+                "The entered service number does not match the service number associated with the selected assistance case."
+            );
+        }
+
+        if (
             !rank ||
             String(rank).trim() === ""
         ) {
@@ -259,9 +297,9 @@ export const checkVocationalTrainingEligibility = async (
         if (
             program.applicationDeadline &&
             new Date() >
-                new Date(
-                    program.applicationDeadline
-                )
+            new Date(
+                program.applicationDeadline
+            )
         ) {
             reasons.push(
                 "The application deadline has passed."
@@ -448,7 +486,7 @@ export const applyForVocationalTraining = async (
         if (
             trainingStartDate &&
             new Date(trainingCompletionDate) <
-                new Date(trainingStartDate)
+            new Date(trainingStartDate)
         ) {
             return res.status(400).json({
                 message:
@@ -528,9 +566,9 @@ export const applyForVocationalTraining = async (
         if (
             program.applicationDeadline &&
             new Date() >
-                new Date(
-                    program.applicationDeadline
-                )
+            new Date(
+                program.applicationDeadline
+            )
         ) {
             return res.status(400).json({
                 message:
@@ -592,6 +630,32 @@ export const applyForVocationalTraining = async (
             );
         }
 
+        // ========================================================
+// SERVICE NUMBER VALIDATION
+// ========================================================
+
+if (
+    !serviceNumber ||
+    String(serviceNumber).trim() === ""
+) {
+    reasons.push(
+        "Service number is required."
+    );
+}
+
+if (
+    serviceNumber &&
+    assistanceCase.veteranDetails?.serviceNumber &&
+    String(serviceNumber).trim().toUpperCase() !==
+    String(
+        assistanceCase.veteranDetails.serviceNumber
+    ).trim().toUpperCase()
+) {
+    reasons.push(
+        "The entered service number does not match the service number associated with the selected assistance case."
+    );
+}
+
         if (!trainingCompletionDate) {
             reasons.push(
                 "Training completion is required."
@@ -611,9 +675,9 @@ export const applyForVocationalTraining = async (
         if (
             program.applicationDeadline &&
             new Date() >
-                new Date(
-                    program.applicationDeadline
-                )
+            new Date(
+                program.applicationDeadline
+            )
         ) {
             reasons.push(
                 "The application deadline has passed."
@@ -721,6 +785,29 @@ export const applyForVocationalTraining = async (
             tracking.declarationAccepted =
                 declarationAccepted === true;
 
+            // ----------------------------------------------------
+            // Application history
+            // ----------------------------------------------------
+
+            if (
+                !tracking.applicationHistory ||
+                tracking.applicationHistory.length === 0 ||
+                tracking.applicationHistory[
+                    tracking.applicationHistory.length - 1
+                ].status !== "Submitted"
+            ) {
+                tracking.applicationHistory.push({
+                    status:
+                        "Submitted",
+
+                    remarks:
+                        "",
+
+                    date:
+                        new Date(),
+                });
+            }
+
             tracking.submittedAt =
                 new Date();
 
@@ -751,8 +838,8 @@ export const applyForVocationalTraining = async (
 
                 trainingFee:
                     trainingFee !== undefined &&
-                    trainingFee !== null &&
-                    trainingFee !== ""
+                        trainingFee !== null &&
+                        trainingFee !== ""
                         ? Number(trainingFee)
                         : null,
 
@@ -840,6 +927,23 @@ export const applyForVocationalTraining = async (
                     declarationAccepted:
                         declarationAccepted === true,
 
+                    // ------------------------------------------------
+                    // Application history
+                    // ------------------------------------------------
+
+                    applicationHistory: [
+                        {
+                            status:
+                                "Submitted",
+
+                            remarks:
+                                "",
+
+                            date:
+                                new Date(),
+                        },
+                    ],
+
                     submittedAt:
                         new Date(),
 
@@ -870,8 +974,8 @@ export const applyForVocationalTraining = async (
 
                         trainingFee:
                             trainingFee !== undefined &&
-                            trainingFee !== null &&
-                            trainingFee !== ""
+                                trainingFee !== null &&
+                                trainingFee !== ""
                                 ? Number(trainingFee)
                                 : null,
 
@@ -1209,6 +1313,28 @@ export const reviewVocationalTrainingApplication =
 
             application.authorityReviewedAt =
                 new Date();
+
+            // ====================================================
+            // APPLICATION HISTORY
+            // ====================================================
+
+            if (
+                !application.applicationHistory
+            ) {
+                application.applicationHistory =
+                    [];
+            }
+
+            application.applicationHistory.push({
+                status:
+                    status,
+
+                remarks:
+                    authorityRemarks || "",
+
+                date:
+                    new Date(),
+            });
 
             await application.save();
 

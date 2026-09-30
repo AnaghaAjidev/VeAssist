@@ -13,9 +13,9 @@ function HomePage() {
     const features = [
         {
             icon: <Bot size={40} />,
-            title: "AI Guidance",
+            title: "Assistance Case Management",
             description:
-                "Receive personalized guidance, checklists, and smart assistance throughout the welfare process.",
+                "Create and manage assistance cases while keeping family information, applications, documents, and case progress organized in one place.",
         },
         {
             icon: <ClipboardCheck size={40} />,
@@ -111,8 +111,8 @@ function HomePage() {
 
                     <p className="mt-6 text-lg text-gray-600 leading-8">
                         VeAssist helps families navigate pension, ECHS, insurance and welfare
-                        procedures after the loss of a veteran. Get personalized guidance,
-                        document management and application tracking in one place.
+                        procedures after the loss of a veteran. Manage assistance cases,
+                         required documents, applications, and welfare services in one place.
                     </p>
 
                     <div className="mt-8 flex gap-4">
@@ -206,7 +206,7 @@ function HomePage() {
 
                                 <div>
                                     <h3 className="text-3xl font-bold text-[#0B1F3A]">24/7</h3>
-                                    <p className="text-gray-500 mt-2">AI Guidance</p>
+                                    <p className="text-gray-500 mt-2">Guidance</p>
                                 </div>
 
                                 <div>

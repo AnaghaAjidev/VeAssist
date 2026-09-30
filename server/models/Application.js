@@ -14,6 +14,13 @@ const applicationSchema = new mongoose.Schema(
       required: true,
     },
 
+    // REGULAR ASSISTANCE OFFICER
+    assignedOfficer: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+
     applicationType: {
       type: String,
       enum: [
@@ -42,10 +49,6 @@ const applicationSchema = new mongoose.Schema(
       trim: true,
     },
 
-    /*
-      Automatically assigned when the Welfare Officer
-      forwards the application.
-    */
     authorityDepartment: {
       type: String,
       enum: [
@@ -70,23 +73,45 @@ const applicationSchema = new mongoose.Schema(
       default: "Draft",
     },
 
-    /*
-      Welfare Officer remarks
-    */
     remarks: {
       type: String,
       default: "",
       trim: true,
     },
 
-    /*
-      Final Authority remarks
-    */
     authorityRemarks: {
       type: String,
       default: "",
       trim: true,
     },
+
+    applicationHistory: [
+      {
+        status: {
+          type: String,
+          enum: [
+            "Draft",
+            "Submitted",
+            "Under Review",
+            "Forwarded to Authority",
+            "Under Authority Review",
+            "Approved",
+            "Rejected",
+          ],
+          required: true,
+        },
+
+        remarks: {
+          type: String,
+          default: "",
+        },
+
+        date: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
 
     submittedAt: {
       type: Date,

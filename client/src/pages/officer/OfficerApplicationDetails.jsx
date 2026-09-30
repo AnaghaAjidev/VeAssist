@@ -41,6 +41,16 @@ const OfficerApplicationDetails = () => {
                 return;
             }
 
+            const user = JSON.parse(
+                localStorage.getItem("user") || "null"
+            );
+
+            // REGULAR ASSISTANCE OFFICER ONLY
+            if (!user || user.role !== "officer") {
+                navigate("/login");
+                return;
+            }
+
             const response = await axios.get(
                 `http://localhost:5000/api/applications/officer/${applicationId}`,
                 {
@@ -246,7 +256,7 @@ const OfficerApplicationDetails = () => {
                     </h2>
 
                     <p className="text-gray-600 mt-2">
-                        Review the application submitted by the family.
+                        Review the application assigned to you.
                     </p>
                 </div>
 
@@ -503,6 +513,110 @@ const OfficerApplicationDetails = () => {
                     </div>
                 )}
 
+                {/* ==================================================
+                    APPLICATION HISTORY
+                ================================================== */}
+
+                {application.applicationHistory &&
+                    application.applicationHistory.length > 0 && (
+
+                        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 mb-6">
+
+                            <h3 className="text-lg font-bold text-[#0B1F3A] mb-4">
+                                Application History
+                            </h3>
+
+                            <div className="space-y-4">
+
+                                {application.applicationHistory.map(
+                                    (historyItem, index) => (
+
+                                        <div
+                                            key={`${historyItem.status}-${historyItem.date}-${index}`}
+                                            className="border border-slate-200 rounded-xl p-4 bg-slate-50"
+                                        >
+
+                                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+
+                                                <div className="flex items-center gap-3">
+
+                                                    <div className="w-8 h-8 rounded-full bg-green-100 text-green-700 flex items-center justify-center font-bold shrink-0">
+                                                        ✓
+                                                    </div>
+
+                                                    <p className="font-semibold text-[#0B1F3A]">
+
+                                                        {historyItem.status ===
+                                                        "Submitted"
+                                                            ? "Application Submitted"
+                                                            : historyItem.status ===
+                                                              "Under Review"
+                                                                ? "Application Under Review"
+                                                                : historyItem.status ===
+                                                                  "Forwarded to Authority"
+                                                                    ? "Application Forwarded to Authority"
+                                                                    : historyItem.status ===
+                                                                      "Approved"
+                                                                        ? "Application Approved"
+                                                                        : historyItem.status ===
+                                                                          "Rejected"
+                                                                            ? "Application Rejected"
+                                                                            : historyItem.status}
+
+                                                    </p>
+
+                                                </div>
+
+                                                {historyItem.date && (
+
+                                                    <p className="text-xs text-gray-500">
+
+                                                        {new Date(
+                                                            historyItem.date
+                                                        ).toLocaleString(
+                                                            "en-IN",
+                                                            {
+                                                                day: "2-digit",
+                                                                month: "short",
+                                                                year: "numeric",
+                                                                hour: "2-digit",
+                                                                minute: "2-digit",
+                                                            }
+                                                        )}
+
+                                                    </p>
+
+                                                )}
+
+                                            </div>
+
+                                            {historyItem.remarks && (
+
+                                                <p className="mt-2 text-sm text-gray-600 ml-11">
+
+                                                    <strong>
+                                                        Remarks:
+                                                    </strong>{" "}
+
+                                                    {
+                                                        historyItem.remarks
+                                                    }
+
+                                                </p>
+
+                                            )}
+
+                                        </div>
+
+                                    )
+                                )}
+
+                            </div>
+
+                        </div>
+
+                    )}
+
                 {/* APPLICATION DESCRIPTION */}
                 <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 mb-6">
 
@@ -751,9 +865,25 @@ const OfficerApplicationDetails = () => {
                     ) : (
 
                         <div className="mt-5 bg-gray-50 border border-gray-200 rounded-lg p-4">
+
                             <p className="text-sm text-gray-600">
-                                This application has already been reviewed.
+
+                                {application.status ===
+                                "Forwarded to Authority"
+                                    ? "This application has been forwarded to the concerned authority for further processing."
+                                    : application.status ===
+                                      "Under Authority Review"
+                                    ? "This application is currently under review by the concerned authority."
+                                    : application.status ===
+                                      "Approved"
+                                    ? "This application has been approved by the concerned authority."
+                                    : application.status ===
+                                      "Rejected"
+                                    ? "This application has been rejected by the concerned authority."
+                                    : "This application has already been reviewed."}
+
                             </p>
+
                         </div>
 
                     )}

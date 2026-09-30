@@ -20,16 +20,19 @@ const assistanceCaseSchema = new mongoose.Schema(
                 required: true,
                 trim: true,
             },
+
             serviceNumber: {
                 type: String,
                 required: true,
                 trim: true,
             },
+
             serviceStatus: {
                 type: String,
                 required: true,
                 trim: true,
             },
+
             pensionStatus: {
                 type: String,
                 required: true,
@@ -42,11 +45,13 @@ const assistanceCaseSchema = new mongoose.Schema(
                 type: Date,
                 required: true,
             },
+
             placeOfDeath: {
                 type: String,
                 required: true,
                 trim: true,
             },
+
             circumstanceOfDeath: {
                 type: String,
                 required: true,
@@ -59,21 +64,23 @@ const assistanceCaseSchema = new mongoose.Schema(
                 type: String,
                 trim: true,
             },
+
             spouseRelationship: {
                 type: String,
                 trim: true,
             },
+
             childrenCount: {
                 type: Number,
                 default: 0,
             },
+
             dependentsCount: {
                 type: Number,
                 default: 0,
             },
         },
 
-        // CASE TASKS
         tasks: [
             {
                 title: {
@@ -103,7 +110,6 @@ const assistanceCaseSchema = new mongoose.Schema(
             },
         ],
 
-        // CASE TIMELINE
         timeline: [
             {
                 event: {

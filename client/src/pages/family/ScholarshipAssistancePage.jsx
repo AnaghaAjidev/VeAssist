@@ -1773,6 +1773,171 @@ function ScholarshipAssistancePage() {
                                         </div>
                                     )}
 
+                                                                        {/* =================================================
+                                        APPLICATION HISTORY
+                                    ================================================= */}
+
+                                    {application.applicationHistory &&
+                                        application.applicationHistory.length > 0 && (
+                                            <div className="
+                                                mx-5
+                                                mt-4
+                                                rounded-xl
+                                                border border-slate-200
+                                                bg-white
+                                                p-4
+                                            ">
+
+                                                <h4 className="
+                                                    font-bold
+                                                    text-[#0B1F3A]
+                                                    text-lg
+                                                ">
+                                                    Application History
+                                                </h4>
+
+                                                <div className="
+                                                    mt-4
+                                                    space-y-4
+                                                ">
+
+                                                    {application.applicationHistory.map(
+                                                        (historyItem, index) => (
+                                                            <div
+                                                                key={`${historyItem.status}-${historyItem.date}-${index}`}
+                                                                className="
+                                                                    flex
+                                                                    items-start
+                                                                    gap-3
+                                                                "
+                                                            >
+
+                                                                {/* HISTORY ICON */}
+
+                                                                <div className="
+                                                                    w-8
+                                                                    h-8
+                                                                    rounded-full
+                                                                    bg-green-100
+                                                                    text-green-700
+                                                                    flex
+                                                                    items-center
+                                                                    justify-center
+                                                                    shrink-0
+                                                                    font-bold
+                                                                ">
+                                                                    ✓
+                                                                </div>
+
+                                                                {/* HISTORY DETAILS */}
+
+                                                                <div className="flex-1">
+
+                                                                    <div className="
+                                                                        flex
+                                                                        flex-col
+                                                                        sm:flex-row
+                                                                        sm:items-center
+                                                                        sm:justify-between
+                                                                        gap-1
+                                                                    ">
+
+                                                                        <p className="
+                                                                            font-semibold
+                                                                            text-[#0B1F3A]
+                                                                        ">
+                                                                            {historyItem.status ===
+                                                                            "Submitted"
+                                                                                ? "Application Submitted"
+                                                                                : historyItem.status ===
+                                                                                  "Approved"
+                                                                                    ? "Application Approved"
+                                                                                    : historyItem.status ===
+                                                                                      "Rejected"
+                                                                                        ? "Application Rejected"
+                                                                                        : historyItem.status}
+                                                                        </p>
+
+                                                                        {historyItem.date && (
+                                                                            <p className="
+                                                                                text-xs
+                                                                                text-slate-500
+                                                                            ">
+                                                                                {new Date(
+                                                                                    historyItem.date
+                                                                                ).toLocaleDateString(
+                                                                                    "en-IN",
+                                                                                    {
+                                                                                        day: "2-digit",
+                                                                                        month: "long",
+                                                                                        year: "numeric",
+                                                                                    }
+                                                                                )}
+                                                                            </p>
+                                                                        )}
+
+                                                                    </div>
+
+                                                                    {historyItem.remarks && (
+                                                                        <p className="
+                                                                            mt-1
+                                                                            text-sm
+                                                                            text-slate-600
+                                                                        ">
+                                                                            {historyItem.remarks}
+                                                                        </p>
+                                                                    )}
+
+                                                                </div>
+
+                                                            </div>
+                                                        )
+                                                    )}
+
+                                                </div>
+
+                                            </div>
+                                        )}
+
+                                                                            {/* =================================================
+                                        GOVERNMENT PROCESSING
+                                    ================================================= */}
+
+                                    {application.status === "Approved" && (
+                                        <div className="
+                                            mx-5
+                                            mt-4
+                                            rounded-xl
+                                            border border-green-200
+                                            bg-green-50
+                                            px-4
+                                            py-4
+                                        ">
+
+                                            <h4 className="
+                                                font-bold
+                                                text-green-800
+                                                text-lg
+                                            ">
+                                                Government Processing
+                                            </h4>
+
+                                            <p className="
+                                                mt-2
+                                                text-sm
+                                                leading-6
+                                                text-green-700
+                                            ">
+                                                Your application has been approved
+                                                by the Welfare Assistance Department.
+                                                Further processing/disbursement is
+                                                handled through the concerned
+                                                official government channel.
+                                            </p>
+
+                                        </div>
+                                    )}
+
                                     {/* REQUIRED DOCUMENTS */}
 
                                     <div className="p-5">

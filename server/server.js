@@ -14,6 +14,8 @@ import notificationRoutes from "./routes/notificationRoutes.js";
 import communicationRoutes from "./routes/communicationRoutes.js";
 import scholarshipRoutes from "./routes/scholarshipRoutes.js";
 import vocationalTrainingRoutes from "./routes/vocationalTrainingRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
+import adminUserRoutes from "./routes/adminUserRoutes.js";
 
 import { runReminderChecks } from "./services/reminderService.js";
 
@@ -61,6 +63,9 @@ app.use(
     "/api/vocational-training",
     vocationalTrainingRoutes
 );
+app.use("/api/admin",adminRoutes);
+app.use("/api/admin/users",adminUserRoutes);
+
 
 
 // ======================================================

@@ -38,10 +38,8 @@ const OfficerApplications = () => {
         localStorage.getItem("user") || "null"
       );
 
-      if (
-        !user ||
-        (user.role !== "officer" && user.role !== "admin")
-      ) {
+      // REGULAR ASSISTANCE OFFICER ONLY
+      if (!user || user.role !== "officer") {
         navigate("/login");
         return;
       }
@@ -89,6 +87,12 @@ const OfficerApplications = () => {
       case "Under Review":
         return <Clock size={17} />;
 
+      case "Under Authority Review":
+        return <Clock size={17} />;
+
+      case "Forwarded to Authority":
+        return <Clock size={17} />;
+
       case "Submitted":
         return <AlertCircle size={17} />;
 
@@ -107,6 +111,12 @@ const OfficerApplications = () => {
 
       case "Under Review":
         return "bg-yellow-100 text-yellow-700";
+
+      case "Under Authority Review":
+        return "bg-yellow-100 text-yellow-700";
+
+      case "Forwarded to Authority":
+        return "bg-purple-100 text-purple-700";
 
       case "Submitted":
         return "bg-blue-100 text-blue-700";
@@ -183,8 +193,8 @@ const OfficerApplications = () => {
           </h2>
 
           <p className="text-gray-600 mt-2">
-            Review and manage assistance applications submitted
-            by families.
+            Review and manage assistance applications assigned
+            to you.
           </p>
 
         </div>
@@ -204,6 +214,7 @@ const OfficerApplications = () => {
             </p>
           </div>
         ) : applications.length === 0 ? (
+
           /* Empty State */
           <div className="bg-white rounded-xl shadow-sm p-12 text-center">
 
@@ -217,11 +228,13 @@ const OfficerApplications = () => {
             </h3>
 
             <p className="text-gray-500 mt-2">
-              There are currently no applications to display.
+              There are currently no applications assigned to you.
             </p>
 
           </div>
+
         ) : (
+
           /* Application List */
           <div className="space-y-5">
 
@@ -340,6 +353,7 @@ const OfficerApplications = () => {
             ))}
 
           </div>
+
         )}
 
       </main>

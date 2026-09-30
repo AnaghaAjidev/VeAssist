@@ -32,6 +32,15 @@ const OfficerDashboard = () => {
     const userName = user?.name || "Welfare Officer";
 
     // =========================================================
+    // OFFICER ACCESS CHECK
+    // =========================================================
+    useEffect(() => {
+        if (!user || user.role !== "officer") {
+            navigate("/login");
+        }
+    }, [navigate, user]);
+
+    // =========================================================
     // FETCH OFFICER CASES
     // =========================================================
     const fetchOfficerCases = async () => {
@@ -76,7 +85,7 @@ const OfficerDashboard = () => {
 
             setCaseError(
                 error.response?.data?.message ||
-                "Unable to load assistance cases."
+                    "Unable to load assistance cases."
             );
         }
     };
@@ -129,7 +138,7 @@ const OfficerDashboard = () => {
 
             setApplicationError(
                 error.response?.data?.message ||
-                "Unable to load applications."
+                    "Unable to load applications."
             );
         }
     };
@@ -165,7 +174,12 @@ const OfficerDashboard = () => {
     // INITIAL LOAD
     // =========================================================
     useEffect(() => {
+        if (!user || user.role !== "officer") {
+            return;
+        }
+
         loadDashboard(true);
+
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
@@ -470,8 +484,8 @@ const OfficerDashboard = () => {
                                         </h3>
 
                                         <p className="text-gray-600 mt-1">
-                                            Review and manage family
-                                            assistance applications.
+                                            Review and manage assistance
+                                            applications assigned to you.
                                         </p>
 
                                     </div>

@@ -507,8 +507,7 @@ export const getWelfareApplicationDocuments = async (
             req.user.department ===
             "Welfare Assistance Department";
 
-        const isOfficerOrAdmin =
-            req.user.role === "officer" ||
+        const isAdmin =
             req.user.role === "admin";
 
         if (isFamily) {
@@ -523,7 +522,7 @@ export const getWelfareApplicationDocuments = async (
             }
         } else if (
             !isWelfareAuthority &&
-            !isOfficerOrAdmin
+            !isAdmin
         ) {
             return res.status(403).json({
                 message:
@@ -745,12 +744,23 @@ export const reviewDocument = async (req, res) => {
         }
 
 
-        // Welfare Assistance Authority can review
-        // only Welfare Assistance documents.
+        // ==================================================
+        // WELFARE ASSISTANCE AUTHORITY
+        // ==================================================
+        //
+        // Scholarship / Vocational Training documents
+        // remain under the separate Welfare Authority
+        // workflow.
+        //
+        // Do not apply regular Welfare Officer
+        // assignment rules here.
+        // ==================================================
+
         if (req.user.role === "authority") {
+
             if (
                 req.user.department !==
-                "Welfare Assistance Department" ||
+                    "Welfare Assistance Department" ||
                 !document.welfareApplicationId
             ) {
                 return res.status(403).json({
@@ -774,7 +784,7 @@ export const reviewDocument = async (req, res) => {
             if (
                 welfareApplication.caseId &&
                 welfareApplication.caseId.toString() !==
-                assistanceCase._id.toString()
+                    assistanceCase._id.toString()
             ) {
                 return res.status(403).json({
                     message:
@@ -784,30 +794,103 @@ export const reviewDocument = async (req, res) => {
         }
 
 
+        // ==================================================
+        // REGULAR APPLICATION - WELFARE OFFICER
+        // ==================================================
+        //
+        // Scholarship/Vocational documents are identified
+        // by welfareApplicationId and must not be reviewed
+        // by a Welfare Officer.
+        // ==================================================
+
+        if (req.user.role === "officer") {
+
+            // Officer must NOT review Welfare Assistance
+            // documents.
+            if (document.welfareApplicationId) {
+                return res.status(403).json({
+                    message:
+                        "Welfare Assistance documents can only be reviewed by the Welfare Assistance Authority.",
+                });
+            }
+
+            // Regular document must belong to an application.
+            if (!document.applicationId) {
+                return res.status(403).json({
+                    message:
+                        "This document is not associated with a regular application.",
+                });
+            }
+
+            const application =
+                await Application.findById(
+                    document.applicationId
+                );
+
+            if (!application) {
+                return res.status(404).json({
+                    message:
+                        "Associated application not found.",
+                });
+            }
+
+            // The application must have an assigned
+            // Welfare Officer.
+            if (!application.assignedOfficer) {
+                return res.status(403).json({
+                    message:
+                        "This application has no assigned Welfare Officer.",
+                });
+            }
+
+            // Only the assigned Welfare Officer can
+            // review the document.
+            if (
+                application.assignedOfficer.toString() !==
+                req.user.userId.toString()
+            ) {
+                return res.status(403).json({
+                    message:
+                        "You are not authorized to review this application's documents.",
+                });
+            }
+        }
+
+
+        // ==================================================
+        // UPDATE DOCUMENT REVIEW
+        // ==================================================
+
         document.status = status;
         document.remarks = remarks || "";
 
         await document.save();
 
 
-        // Notify family when document is
-        // verified or rejected.
+        // ==================================================
+        // NOTIFY FAMILY
+        // ==================================================
+
         if (
             status === "Verified" ||
             status === "Rejected"
         ) {
             try {
+
                 let title;
                 let message;
 
                 if (status === "Verified") {
+
                     title = "Document Verified";
 
                     message =
                         `Your ${document.documentType} ` +
                         `for Case ${assistanceCase.caseId} ` +
                         `has been verified.`;
+
                 } else {
+
                     title = "Document Rejected";
 
                     message =
@@ -824,16 +907,24 @@ export const reviewDocument = async (req, res) => {
                 await createNotification({
                     recipient:
                         assistanceCase.familyUser,
+
                     title,
+
                     message,
-                    type: "Document Update",
+
+                    type:
+                        "Document Update",
+
                     relatedCase:
                         assistanceCase._id,
+
                     relatedApplication:
-                        document.applicationId || null,
+                        document.applicationId ||
+                        null,
                 });
 
             } catch (notificationError) {
+
                 console.error(
                     "Document notification error:",
                     notificationError
@@ -849,6 +940,7 @@ export const reviewDocument = async (req, res) => {
         });
 
     } catch (error) {
+
         console.error(
             "Document review error:",
             error
@@ -860,7 +952,6 @@ export const reviewDocument = async (req, res) => {
         });
     }
 };
-
 
 // ======================================================
 // GET DOCUMENTS FOR WELFARE OFFICER
@@ -886,18 +977,79 @@ export const getOfficerCaseDocuments = async (
             });
         }
 
-        // Get all documents belonging to the case
+
+        // ==================================================
+        // WELFARE OFFICER AUTHORIZATION
+        // ==================================================
+        //
+        // A Welfare Officer can access regular application
+        // documents only when that officer is assigned to
+        // a regular application belonging to this case.
+        //
+        // Admin can access the documents without assignment.
+        // ==================================================
+
+        if (req.user.role === "officer") {
+
+            const regularApplication =
+                await Application.findOne({
+                    caseId:
+                        assistanceCase._id,
+
+                    applicationType: {
+                        $in: [
+                            "Pension Assistance",
+                            "Insurance Assistance",
+                            "ECHS Assistance",
+                        ],
+                    },
+
+                    assignedOfficer:
+                        req.user.userId,
+                });
+
+            if (!regularApplication) {
+                return res.status(403).json({
+                    message:
+                        "You are not authorized to access documents for this assistance case.",
+                });
+            }
+        }
+
+
+        // ==================================================
+        // GET REGULAR APPLICATION DOCUMENTS ONLY
+        // ==================================================
+        //
+        // Scholarship and Vocational Training documents
+        // have welfareApplicationId and belong to the
+        // Welfare Assistance Authority workflow.
+        // ==================================================
+
         const documents = await Document.find({
             caseId: assistanceCase._id,
+
+            $or: [
+                {
+                    welfareApplicationId: {
+                        $exists: false,
+                    },
+                },
+                {
+                    welfareApplicationId: null,
+                },
+            ],
         }).sort({
             uploadedAt: -1,
         });
+
 
         return res.status(200).json({
             documents,
         });
 
     } catch (error) {
+
         console.error(
             "Get officer documents error:",
             error
@@ -909,7 +1061,6 @@ export const getOfficerCaseDocuments = async (
         });
     }
 };
-
 
 // ======================================================
 // LINK EXISTING VERIFIED DOCUMENT TO APPLICATION

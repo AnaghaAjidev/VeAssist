@@ -75,9 +75,8 @@ function AboutPage() {
                         <p className="mt-8 text-lg text-gray-600 leading-8">
                             VeAssist is a web-based assistance platform developed to support
                             Naval Ex-Servicemen families in accessing welfare services with
-                            greater ease and confidence. It brings together AI-guided
-                            assistance, document management, application tracking, and
-                            Welfare Officer support into a single digital platform.
+                            greater ease and confidence. It brings together case management, document management,
+                             application tracking, notifications, and Welfare Officer support into a single digital platform.
                         </p>
 
                         <p className="mt-6 text-lg text-gray-600 leading-8">
@@ -196,11 +195,12 @@ function AboutPage() {
 
                             <div>
                                 <h3 className="text-2xl font-semibold text-[#0B1F3A]">
-                                    Provide AI-Guided Assistance
+                                    Streamline Application Processing
                                 </h3>
 
                                 <p className="text-gray-600 mt-2 leading-7">
-                                    Offer intelligent guidance and recommendations throughout every stage of the process.
+                                   Provide a structured workflow for creating applications, managing required documents, 
+                                   verifying submissions, and tracking application progress.
                                 </p>
                             </div>
                         </div>
@@ -365,8 +365,7 @@ function AboutPage() {
                             "Cloudinary",
                             "JWT",
                             "Git",
-                            "GitHub",
-                            "Gemini AI"
+                            "GitHub"
                         ].map((tech, index) => (
 
                             <span

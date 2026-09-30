@@ -987,10 +987,12 @@ const AuthorityApplicationDetails = () => {
                 )}
 
                 {/* =================================================
-                    EDUCATION INFORMATION
+                    EDUCATION / VOCATIONAL TRAINING INFORMATION
                 ================================================== */}
 
-                {isWelfareApplication && (
+                {isWelfareApplication &&
+                    application.scholarship?.opportunityType ===
+                        "Vocational Training" ? (
                     <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-7 mb-7">
 
                         <div className="flex items-center gap-3 mb-6">
@@ -1004,11 +1006,11 @@ const AuthorityApplicationDetails = () => {
 
                             <div>
                                 <h3 className="text-2xl font-bold text-[#0B1F3A]">
-                                    Education Information
+                                    Vocational Training Information
                                 </h3>
 
                                 <p className="text-gray-500 text-sm">
-                                    Academic information submitted with the application.
+                                    Training information submitted with the vocational assistance application.
                                 </p>
                             </div>
                         </div>
@@ -1016,8 +1018,11 @@ const AuthorityApplicationDetails = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                             <InfoItem
-                                label="Course / Training"
+                                label="Training Type"
                                 value={
+                                    application
+                                        .vocationalTrainingDetails
+                                        ?.trainingType ||
                                     application
                                         .applicantDetails
                                         ?.course
@@ -1025,17 +1030,20 @@ const AuthorityApplicationDetails = () => {
                             />
 
                             <InfoItem
-                                label="Course Year"
+                                label="Other Training Type"
                                 value={
                                     application
-                                        .applicantDetails
-                                        ?.courseYear
+                                        .vocationalTrainingDetails
+                                        ?.otherTrainingType
                                 }
                             />
 
                             <InfoItem
-                                label="Institution"
+                                label="Institute"
                                 value={
+                                    application
+                                        .vocationalTrainingDetails
+                                        ?.institute ||
                                     application
                                         .applicantDetails
                                         ?.institution
@@ -1043,39 +1051,157 @@ const AuthorityApplicationDetails = () => {
                             />
 
                             <InfoItem
-                                label="University / Board"
+                                label="Training Start Date"
+                                value={formatDateOnly(
+                                    application
+                                        .vocationalTrainingDetails
+                                        ?.trainingStartDate
+                                )}
+                            />
+
+                            <InfoItem
+                                label="Training Completion Date"
+                                value={formatDateOnly(
+                                    application
+                                        .vocationalTrainingDetails
+                                        ?.trainingCompletionDate
+                                )}
+                            />
+
+                            <InfoItem
+                                label="Certificate Number"
                                 value={
                                     application
-                                        .applicantDetails
-                                        ?.universityBoard
+                                        .vocationalTrainingDetails
+                                        ?.certificateNumber
                                 }
                             />
 
                             <InfoItem
-                                label="Academic Year"
+                                label="Training Fee"
                                 value={
                                     application
-                                        .applicantDetails
-                                        ?.academicYear
-                                }
-                            />
-
-                            <InfoItem
-                                label="Marks"
-                                value={
+                                        .vocationalTrainingDetails
+                                        ?.trainingFee !== null &&
                                     application
-                                        .applicantDetails
-                                        ?.marks !== null &&
+                                        .vocationalTrainingDetails
+                                        ?.trainingFee !==
+                                        undefined &&
                                     application
-                                        .applicantDetails
-                                        ?.marks !==
-                                        undefined
-                                        ? `${application.applicantDetails.marks}%`
+                                        .vocationalTrainingDetails
+                                        ?.trainingFee !== ""
+                                        ? `₹${application.vocationalTrainingDetails.trainingFee}`
                                         : "Not provided"
+                                }
+                            />
+
+                            <InfoItem
+                                label="Employment Status"
+                                value={
+                                    application
+                                        .vocationalTrainingDetails
+                                        ?.employmentStatus
+                                }
+                            />
+
+                            <InfoItem
+                                label="ZSWO Recommendation"
+                                value={
+                                    application
+                                        .vocationalTrainingDetails
+                                        ?.zswoRecommendation
                                 }
                             />
                         </div>
                     </section>
+                ) : (
+                    isWelfareApplication && (
+                        <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-7 mb-7">
+
+                            <div className="flex items-center gap-3 mb-6">
+
+                                <div className="w-11 h-11 rounded-xl bg-[#EEF5FF] flex items-center justify-center">
+                                    <FileText
+                                        size={23}
+                                        className="text-[#1F4E79]"
+                                    />
+                                </div>
+
+                                <div>
+                                    <h3 className="text-2xl font-bold text-[#0B1F3A]">
+                                        Education Information
+                                    </h3>
+
+                                    <p className="text-gray-500 text-sm">
+                                        Academic information submitted with the application.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                                <InfoItem
+                                    label="Course / Training"
+                                    value={
+                                        application
+                                            .applicantDetails
+                                            ?.course
+                                    }
+                                />
+
+                                <InfoItem
+                                    label="Course Year"
+                                    value={
+                                        application
+                                            .applicantDetails
+                                            ?.courseYear
+                                    }
+                                />
+
+                                <InfoItem
+                                    label="Institution"
+                                    value={
+                                        application
+                                            .applicantDetails
+                                            ?.institution
+                                    }
+                                />
+
+                                <InfoItem
+                                    label="University / Board"
+                                    value={
+                                        application
+                                            .applicantDetails
+                                            ?.universityBoard
+                                    }
+                                />
+
+                                <InfoItem
+                                    label="Academic Year"
+                                    value={
+                                        application
+                                            .applicantDetails
+                                            ?.academicYear
+                                    }
+                                />
+
+                                <InfoItem
+                                    label="Marks"
+                                    value={
+                                        application
+                                            .applicantDetails
+                                            ?.marks !== null &&
+                                        application
+                                            .applicantDetails
+                                            ?.marks !==
+                                            undefined
+                                            ? `${application.applicantDetails.marks}%`
+                                            : "Not provided"
+                                    }
+                                />
+                            </div>
+                        </section>
+                    )
                 )}
 
                 {/* =================================================
@@ -1640,6 +1766,90 @@ const AuthorityApplicationDetails = () => {
                                 "No authority remarks yet."}
                         </div>
                     </div>
+
+                                            {/* =================================================
+                            APPLICATION HISTORY
+                        ================================================== */}
+
+                        {application.applicationHistory &&
+                            application.applicationHistory.length > 0 && (
+                                <div className="mt-6">
+
+                                    <p className="text-sm font-semibold text-gray-500">
+                                        Application History
+                                    </p>
+
+                                    <div className="mt-3 space-y-3">
+
+                                        {application.applicationHistory.map(
+                                            (historyItem, index) => (
+                                                <div
+                                                    key={`${historyItem.status}-${historyItem.date}-${index}`}
+                                                    className="border border-slate-200 rounded-xl p-4 bg-slate-50"
+                                                >
+
+                                                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+
+                                                        <div className="flex items-center gap-3">
+
+                                                            <div className="w-8 h-8 rounded-full bg-green-100 text-green-700 flex items-center justify-center font-bold shrink-0">
+                                                                ✓
+                                                            </div>
+
+                                                            <p className="font-semibold text-[#0B1F3A]">
+                                                                {historyItem.status ===
+                                                                "Submitted"
+                                                                    ? "Application Submitted"
+                                                                    : historyItem.status ===
+                                                                      "Approved"
+                                                                        ? "Application Approved"
+                                                                        : historyItem.status ===
+                                                                          "Rejected"
+                                                                            ? "Application Rejected"
+                                                                            : historyItem.status}
+                                                            </p>
+
+                                                        </div>
+
+                                                        {historyItem.date && (
+                                                            <p className="text-xs text-gray-500">
+                                                                {new Date(
+                                                                    historyItem.date
+                                                                ).toLocaleString(
+                                                                    "en-IN",
+                                                                    {
+                                                                        day: "2-digit",
+                                                                        month: "short",
+                                                                        year: "numeric",
+                                                                        hour: "2-digit",
+                                                                        minute: "2-digit",
+                                                                    }
+                                                                )}
+                                                            </p>
+                                                        )}
+
+                                                    </div>
+
+                                                    {historyItem.remarks && (
+                                                        <p className="mt-2 text-sm text-gray-600 ml-11">
+                                                            <strong>
+                                                                Remarks:
+                                                            </strong>{" "}
+                                                            {
+                                                                historyItem.remarks
+                                                            }
+                                                        </p>
+                                                    )}
+
+                                                </div>
+                                            )
+                                        )}
+
+                                    </div>
+
+                                </div>
+                            )}
+                            
                 </section>
 
                 {/* =================================================

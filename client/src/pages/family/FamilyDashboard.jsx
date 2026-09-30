@@ -40,6 +40,15 @@ const FamilyDashboard = () => {
     const [pendingDocumentCount, setPendingDocumentCount] = useState(0);
     const [loadingOverview, setLoadingOverview] = useState(true);
 
+    const [scholarshipApplicationCount, setScholarshipApplicationCount] =
+    useState(0);
+
+const [vocationalApplicationCount, setVocationalApplicationCount] =
+    useState(0);
+
+const [recentActivities, setRecentActivities] =
+    useState([]);
+
     // ============================================================
     // LOAD CASES + APPLICATION OVERVIEW
     // ============================================================
@@ -152,13 +161,312 @@ const FamilyDashboard = () => {
                     }
                 }
 
-                setApplicationCount(
-                    totalApplications
+                                // ------------------------------------------------
+                // Load Scholarship + Vocational Applications
+                // ------------------------------------------------
+
+                let scholarshipCount = 0;
+                let vocationalCount = 0;
+                let welfarePendingDocuments = 0;
+                let activityList = [];
+
+                try {
+                    const welfareResponse = await axios.get(
+                        "http://localhost:5000/api/scholarships/my",
+                        {
+                            headers: {
+                                Authorization: `Bearer ${token}`,
+                            },
+                        }
+                    );
+
+                    const welfareApplications =
+                        welfareResponse.data.scholarships || [];
+
+                    const scholarshipApplications =
+                        welfareApplications.filter(
+                            (application) =>
+                                application.scholarship
+                                    ?.opportunityType ===
+                                "Scholarship"
+                        );
+
+                    const vocationalApplications =
+                        welfareApplications.filter(
+                            (application) =>
+                                application.scholarship
+                                    ?.opportunityType ===
+                                "Vocational Training"
+                        );
+
+                    scholarshipCount =
+                        scholarshipApplications.length;
+
+                    vocationalCount =
+                        vocationalApplications.length;
+
+                    // ------------------------------------------------
+                    // Welfare application documents
+                    // ------------------------------------------------
+
+                    for (
+                        const application of welfareApplications
+                    ) {
+                        try {
+                            if (!application.applicationId) {
+                                continue;
+                            }
+
+                            const documentsResponse =
+                                await axios.get(
+                                    `http://localhost:5000/api/documents/welfare/${application.applicationId}`,
+                                    {
+                                        headers: {
+                                            Authorization: `Bearer ${token}`,
+                                        },
+                                    }
+                                );
+
+                            const welfareDocuments =
+                                documentsResponse.data
+                                    ?.documents || [];
+
+                            const requiredDocuments =
+                                documentsResponse.data
+                                    ?.requiredDocuments || [];
+
+                            const pendingDocuments =
+                                requiredDocuments.filter(
+                                    (documentType) => {
+                                        const document =
+                                            welfareDocuments.find(
+                                                (item) =>
+                                                    item.documentType ===
+                                                    documentType
+                                            );
+
+                                        return (
+                                            document?.status !==
+                                            "Verified"
+                                        );
+                                    }
+                                );
+
+                            welfarePendingDocuments +=
+                                pendingDocuments.length;
+                        } catch (error) {
+                            console.error(
+                                "Load welfare application documents error:",
+                                error
+                            );
+                        }
+
+                        // ------------------------------------------------
+                        // Application history
+                        // ------------------------------------------------
+
+                        if (
+    application.applicationHistory &&
+    application.applicationHistory.length > 0
+) {
+
+    application.applicationHistory.forEach(
+        (historyItem) => {
+
+            activityList.push({
+                title:
+                    application.scholarship
+                        ?.title ||
+                    "Welfare Assistance Application",
+
+                status:
+                    historyItem.status,
+
+                remarks:
+                    historyItem.remarks || "",
+
+                date:
+                    historyItem.date ||
+                    application.updatedAt ||
+                    application.createdAt,
+            });
+
+        }
+    );
+
+} else if (
+    application.status &&
+    application.status !== "Draft"
+) {
+
+    // ------------------------------------------------
+    // Fallback for older welfare applications
+    // ------------------------------------------------
+
+    activityList.push({
+        title:
+            application.scholarship
+                ?.title ||
+            "Welfare Assistance Application",
+
+        status:
+            application.status,
+
+        remarks:
+            application.authorityRemarks ||
+            "",
+
+        date:
+            application.updatedAt ||
+            application.submittedAt ||
+            application.createdAt,
+    });
+
+}
+                    }
+                } catch (error) {
+                    console.error(
+                        "Load welfare applications error:",
+                        error
+                    );
+                }
+
+                // ------------------------------------------------
+                // Add normal application history
+                // ------------------------------------------------
+
+                for (
+                    const assistanceCase of familyCases
+                ) {
+                    try {
+                        const applicationsResponse =
+                            await axios.get(
+                                `http://localhost:5000/api/applications/my/${assistanceCase.caseId}`,
+                                {
+                                    headers: {
+                                        Authorization: `Bearer ${token}`,
+                                    },
+                                }
+                            );
+
+                        const applications =
+                            applicationsResponse.data
+                                .applications || [];
+
+                        applications.forEach(
+    (application) => {
+
+        if (
+            application.applicationHistory &&
+            application.applicationHistory.length > 0
+        ) {
+
+            application.applicationHistory.forEach(
+                (historyItem) => {
+
+                    activityList.push({
+                        title:
+                            application.title ||
+                            application.applicationType ||
+                            "Assistance Application",
+
+                        status:
+                            historyItem.status,
+
+                        remarks:
+                            historyItem.remarks ||
+                            "",
+
+                        date:
+                            historyItem.date ||
+                            application.updatedAt ||
+                            application.createdAt,
+                    });
+
+                }
+            );
+
+        } else if (
+            application.status &&
+            application.status !== "Draft"
+        ) {
+
+            // ------------------------------------------------
+            // Fallback for older applications
+            // created before Application History was added
+            // ------------------------------------------------
+
+            activityList.push({
+                title:
+                    application.title ||
+                    application.applicationType ||
+                    "Assistance Application",
+
+                status:
+                    application.status,
+
+                remarks:
+                    application.authorityRemarks ||
+                    application.remarks ||
+                    "",
+
+                date:
+                    application.updatedAt ||
+                    application.submittedAt ||
+                    application.createdAt,
+            });
+
+        }
+
+    }
+);
+
+                    } catch (error) {
+                        console.error(
+                            "Load application history error:",
+                            error
+                        );
+                    }
+                }
+
+                // ------------------------------------------------
+                // Final overview values
+                // ------------------------------------------------
+
+                setScholarshipApplicationCount(
+                    scholarshipCount
+                );
+
+                setVocationalApplicationCount(
+                    vocationalCount
                 );
 
                 setPendingDocumentCount(
-                    totalPendingDocuments
+                    totalPendingDocuments +
+                    welfarePendingDocuments
                 );
+
+                setApplicationCount(
+                    totalApplications +
+                    scholarshipCount +
+                    vocationalCount
+                );
+
+                setRecentActivities(
+                    activityList
+                        .filter(
+                            (activity) =>
+                                activity.date
+                        )
+                        .sort(
+                            (a, b) =>
+                                new Date(b.date) -
+                                new Date(a.date)
+                        )
+                        .slice(0, 5)
+                );
+
+
             } catch (error) {
                 console.error(
                     "Fetch dashboard data error:",
@@ -1480,44 +1788,157 @@ const FamilyDashboard = () => {
 
 
                 {/* ==================================================
-                    RECENT ACTIVITY
-                ================================================== */}
-                <section className="mt-12 mb-8">
+    RECENT ACTIVITY
+================================================== */}
+<section className="mt-12 mb-8">
 
-                    <div
-                        className="bg-white rounded-2xl
-                        border border-slate-200
-                        p-8 text-center"
-                    >
+    <div className="mb-6">
+
+        <h3 className="text-2xl font-bold text-[#0B1F3A]">
+            Recent Activity
+        </h3>
+
+        <p className="text-gray-600 mt-1">
+            Recent updates from your assistance applications.
+        </p>
+
+    </div>
+
+    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+
+        {loadingOverview ? (
+
+            <div className="text-center py-6">
+
+                <p className="text-gray-500">
+                    Loading recent activity...
+                </p>
+
+            </div>
+
+        ) : recentActivities.length === 0 ? (
+
+            <div className="text-center py-8">
+
+                <div
+                    className="w-14 h-14 mx-auto rounded-full
+                    bg-[#EEF5FF]
+                    flex items-center justify-center mb-4"
+                >
+
+                    <ShieldCheck
+                        size={28}
+                        className="text-[#1F4E79]"
+                    />
+
+                </div>
+
+                <h3 className="text-lg font-bold text-[#0B1F3A]">
+                    No Recent Activity
+                </h3>
+
+                <p className="text-gray-500 mt-2">
+                    Your assistance activities and updates will
+                    appear here.
+                </p>
+
+            </div>
+
+        ) : (
+
+            <div className="space-y-4">
+
+                {recentActivities.map(
+                    (activity, index) => (
 
                         <div
-                            className="w-14 h-14 mx-auto rounded-full
-                            bg-[#EEF5FF]
-                            flex items-center justify-center mb-4"
+                            key={`${activity.status}-${activity.date}-${index}`}
+                            className="flex items-start gap-4
+                            border-b border-slate-100
+                            last:border-b-0
+                            pb-4
+                            last:pb-0"
                         >
 
-                            <ShieldCheck
-                                size={28}
-                                className="text-[#1F4E79]"
-                            />
+                            <div
+                                className="w-10 h-10 rounded-full
+                                bg-[#EEF5FF]
+                                flex items-center justify-center
+                                shrink-0"
+                            >
+
+                                <ShieldCheck
+                                    size={20}
+                                    className="text-[#1F4E79]"
+                                />
+
+                            </div>
+
+                            <div className="flex-1">
+
+                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+
+                                    <p className="font-semibold text-[#0B1F3A]">
+                                        {activity.title}
+                                    </p>
+
+                                    <p className="text-xs text-gray-500">
+                                        {new Date(
+                                            activity.date
+                                        ).toLocaleDateString(
+                                            "en-IN",
+                                            {
+                                                day: "2-digit",
+                                                month: "short",
+                                                year: "numeric",
+                                            }
+                                        )}
+                                    </p>
+
+                                </div>
+
+                                <p className="text-sm text-[#1F4E79] mt-1 font-medium">
+                                    {activity.status ===
+                                    "Submitted"
+                                        ? "Application Submitted"
+                                        : activity.status ===
+                                          "Under Review"
+                                        ? "Under Welfare Officer Review"
+                                        : activity.status ===
+                                          "Forwarded to Authority"
+                                        ? "Forwarded to Authority"
+                                        : activity.status ===
+                                          "Under Authority Review"
+                                        ? "Under Authority Review"
+                                        : activity.status ===
+                                          "Approved"
+                                        ? "Application Approved"
+                                        : activity.status ===
+                                          "Rejected"
+                                        ? "Application Rejected"
+                                        : activity.status}
+                                </p>
+
+                                {activity.remarks && (
+                                    <p className="text-sm text-gray-600 mt-1">
+                                        {activity.remarks}
+                                    </p>
+                                )}
+
+                            </div>
 
                         </div>
 
-                        <h3
-                            className="text-xl font-bold
-                            text-[#0B1F3A]"
-                        >
-                            No Recent Activity
-                        </h3>
+                    )
+                )}
 
-                        <p className="text-gray-500 mt-2">
-                            Your assistance activities and updates will
-                            appear here.
-                        </p>
+            </div>
 
-                    </div>
+        )}
 
-                </section>
+    </div>
+
+</section>
 
             </main>
 

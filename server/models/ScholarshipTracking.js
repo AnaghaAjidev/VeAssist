@@ -211,6 +211,36 @@ const scholarshipTrackingSchema = new mongoose.Schema(
             default: false,
         },
 
+                // ========================================================
+        // APPLICATION HISTORY
+        // ========================================================
+
+        applicationHistory: [
+            {
+                status: {
+                    type: String,
+                    enum: [
+                        "Draft",
+                        "Submitted",
+                        "Under Authority Review",
+                        "Approved",
+                        "Rejected",
+                    ],
+                    required: true,
+                },
+
+                remarks: {
+                    type: String,
+                    default: "",
+                },
+
+                date: {
+                    type: Date,
+                    default: Date.now,
+                },
+            },
+        ],
+        
         // ========================================================
         // APPLICATION DATES
         // ========================================================

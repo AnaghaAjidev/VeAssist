@@ -132,7 +132,7 @@ function WidowVocationalTrainingPage() {
             if (!response.ok) {
                 throw new Error(
                     data.message ||
-                        "Unable to load vocational training programs."
+                    "Unable to load vocational training programs."
                 );
             }
 
@@ -164,7 +164,7 @@ function WidowVocationalTrainingPage() {
             if (!response.ok) {
                 throw new Error(
                     data.message ||
-                        "Unable to load your vocational training applications."
+                    "Unable to load your vocational training applications."
                 );
             }
 
@@ -213,7 +213,7 @@ function WidowVocationalTrainingPage() {
             if (!response.ok) {
                 throw new Error(
                     data.message ||
-                        "Unable to load assistance cases."
+                    "Unable to load assistance cases."
                 );
             }
 
@@ -266,7 +266,7 @@ function WidowVocationalTrainingPage() {
             if (!response.ok) {
                 throw new Error(
                     data.message ||
-                        "Unable to load application documents."
+                    "Unable to load application documents."
                 );
             }
 
@@ -318,7 +318,7 @@ function WidowVocationalTrainingPage() {
             if (!response.ok) {
                 throw new Error(
                     data.message ||
-                        "Unable to load reusable documents."
+                    "Unable to load reusable documents."
                 );
             }
 
@@ -386,7 +386,7 @@ function WidowVocationalTrainingPage() {
             if (!response.ok) {
                 throw new Error(
                     data.message ||
-                        "Unable to use the existing document."
+                    "Unable to use the existing document."
                 );
             }
 
@@ -486,7 +486,7 @@ function WidowVocationalTrainingPage() {
             if (!response.ok) {
                 throw new Error(
                     data.message ||
-                        "Unable to upload document."
+                    "Unable to upload document."
                 );
             }
 
@@ -563,7 +563,7 @@ function WidowVocationalTrainingPage() {
             if (!response.ok) {
                 throw new Error(
                     data.message ||
-                        "Unable to re-upload document."
+                    "Unable to re-upload document."
                 );
             }
 
@@ -647,7 +647,7 @@ function WidowVocationalTrainingPage() {
                 Boolean(
                     form.trainingCompletionDate &&
                     form.trainingCompletionDate <=
-                        today
+                    today
                 );
 
             const response = await fetch(
@@ -661,6 +661,9 @@ function WidowVocationalTrainingPage() {
                             `Bearer ${token}`,
                     },
                     body: JSON.stringify({
+                        caseId:
+                            selectedCaseId,
+
                         relationship:
                             form.relationship,
 
@@ -693,7 +696,7 @@ function WidowVocationalTrainingPage() {
             if (!response.ok) {
                 throw new Error(
                     data.message ||
-                        "Unable to check eligibility."
+                    "Unable to check eligibility."
                 );
             }
 
@@ -829,7 +832,7 @@ function WidowVocationalTrainingPage() {
             if (!response.ok) {
                 throw new Error(
                     data.message ||
-                        "Unable to submit application."
+                    "Unable to submit application."
                 );
             }
 
@@ -942,9 +945,9 @@ function WidowVocationalTrainingPage() {
                                     myApplications.find(
                                         (item) =>
                                             item.scholarship?._id ===
-                                                program._id ||
+                                            program._id ||
                                             item.scholarship ===
-                                                program._id
+                                            program._id
                                     );
 
                                 return (
@@ -1327,19 +1330,19 @@ function WidowVocationalTrainingPage() {
 
                                 {form.trainingType ===
                                     "Other" && (
-                                    <input
-                                        type="text"
-                                        name="otherTrainingType"
-                                        placeholder="Specify Training"
-                                        value={
-                                            form.otherTrainingType
-                                        }
-                                        onChange={
-                                            handleChange
-                                        }
-                                        className="border rounded-lg px-4 py-3"
-                                    />
-                                )}
+                                        <input
+                                            type="text"
+                                            name="otherTrainingType"
+                                            placeholder="Specify Training"
+                                            value={
+                                                form.otherTrainingType
+                                            }
+                                            onChange={
+                                                handleChange
+                                            }
+                                            className="border rounded-lg px-4 py-3"
+                                        />
+                                    )}
 
                                 {/* TRAINING COMPLETION DATE */}
 
@@ -1424,11 +1427,10 @@ function WidowVocationalTrainingPage() {
 
                         {eligibility && (
                             <div
-                                className={`mt-6 p-5 rounded-lg border ${
-                                    eligibility.eligible
-                                        ? "bg-green-50 border-green-200"
-                                        : "bg-red-50 border-red-200"
-                                }`}
+                                className={`mt-6 p-5 rounded-lg border ${eligibility.eligible
+                                    ? "bg-green-50 border-green-200"
+                                    : "bg-red-50 border-red-200"
+                                    }`}
                             >
 
                                 <h3 className="font-bold">
@@ -1441,25 +1443,25 @@ function WidowVocationalTrainingPage() {
 
                                 {eligibility.reasons?.length >
                                     0 && (
-                                    <ul className="list-disc ml-5 mt-2">
+                                        <ul className="list-disc ml-5 mt-2">
 
-                                        {eligibility.reasons.map(
-                                            (
-                                                reason,
-                                                index
-                                            ) => (
-                                                <li
-                                                    key={
-                                                        index
-                                                    }
-                                                >
-                                                    {reason}
-                                                </li>
-                                            )
-                                        )}
+                                            {eligibility.reasons.map(
+                                                (
+                                                    reason,
+                                                    index
+                                                ) => (
+                                                    <li
+                                                        key={
+                                                            index
+                                                        }
+                                                    >
+                                                        {reason}
+                                                    </li>
+                                                )
+                                            )}
 
-                                    </ul>
-                                )}
+                                        </ul>
+                                    )}
 
                             </div>
                         )}
@@ -1641,20 +1643,20 @@ function WidowVocationalTrainingPage() {
 
                                     {form.trainingType ===
                                         "Other" && (
-                                        <input
-                                            type="text"
-                                            name="otherTrainingType"
-                                            placeholder="Specify Training"
-                                            value={
-                                                form.otherTrainingType
-                                            }
-                                            onChange={
-                                                handleChange
-                                            }
-                                            className="border rounded-lg px-4 py-3"
-                                            required
-                                        />
-                                    )}
+                                            <input
+                                                type="text"
+                                                name="otherTrainingType"
+                                                placeholder="Specify Training"
+                                                value={
+                                                    form.otherTrainingType
+                                                }
+                                                onChange={
+                                                    handleChange
+                                                }
+                                                className="border rounded-lg px-4 py-3"
+                                                required
+                                            />
+                                        )}
 
                                     {/* INSTITUTE */}
 
@@ -1844,11 +1846,8 @@ function WidowVocationalTrainingPage() {
                                             value={
                                                 form.serviceNumber
                                             }
-                                            onChange={
-                                                handleChange
-                                            }
+                                            onChange={handleChange}
                                             className="border rounded-lg px-4 py-3"
-                                            required
                                         />
 
                                         <input
@@ -2049,8 +2048,167 @@ function WidowVocationalTrainingPage() {
                                         )}
 
                                         {/* =================================================
+                                            APPLICATION HISTORY
+                                        ================================================= */}
+
+                                        {application.applicationHistory &&
+                                            application.applicationHistory.length > 0 && (
+                                                <div className="
+                                                    mt-4
+                                                    rounded-xl
+                                                    border border-slate-200
+                                                    bg-white
+                                                    p-4
+                                                ">
+
+                                                    <h4 className="
+                                                        font-bold
+                                                        text-[#0B1F3A]
+                                                        text-lg
+                                                    ">
+                                                        Application History
+                                                    </h4>
+
+                                                    <div className="
+                                                        mt-4
+                                                        space-y-4
+                                                    ">
+
+                                                        {application.applicationHistory.map(
+                                                            (historyItem, index) => (
+                                                                <div
+                                                                    key={`${historyItem.status}-${historyItem.date}-${index}`}
+                                                                    className="
+                                                                        flex
+                                                                        items-start
+                                                                        gap-3
+                                                                    "
+                                                                >
+
+                                                                    <div className="
+                                                                        w-8
+                                                                        h-8
+                                                                        rounded-full
+                                                                        bg-green-100
+                                                                        text-green-700
+                                                                        flex
+                                                                        items-center
+                                                                        justify-center
+                                                                        shrink-0
+                                                                        font-bold
+                                                                    ">
+                                                                        ✓
+                                                                    </div>
+
+                                                                    <div className="flex-1">
+
+                                                                        <div className="
+                                                                            flex
+                                                                            flex-col
+                                                                            sm:flex-row
+                                                                            sm:items-center
+                                                                            sm:justify-between
+                                                                            gap-1
+                                                                        ">
+
+                                                                            <p className="
+                                                                                font-semibold
+                                                                                text-[#0B1F3A]
+                                                                            ">
+                                                                                {historyItem.status ===
+                                                                                    "Submitted"
+                                                                                    ? "Application Submitted"
+                                                                                    : historyItem.status ===
+                                                                                        "Approved"
+                                                                                        ? "Application Approved"
+                                                                                        : historyItem.status ===
+                                                                                            "Rejected"
+                                                                                            ? "Application Rejected"
+                                                                                            : historyItem.status}
+                                                                            </p>
+
+                                                                            {historyItem.date && (
+                                                                                <p className="
+                                                                                    text-xs
+                                                                                    text-slate-500
+                                                                                ">
+                                                                                    {new Date(
+                                                                                        historyItem.date
+                                                                                    ).toLocaleDateString(
+                                                                                        "en-IN",
+                                                                                        {
+                                                                                            day: "2-digit",
+                                                                                            month: "long",
+                                                                                            year: "numeric",
+                                                                                        }
+                                                                                    )}
+                                                                                </p>
+                                                                            )}
+
+                                                                        </div>
+
+                                                                        {historyItem.remarks && (
+                                                                            <p className="
+                                                                                mt-1
+                                                                                text-sm
+                                                                                text-slate-600
+                                                                            ">
+                                                                                {historyItem.remarks}
+                                                                            </p>
+                                                                        )}
+
+                                                                    </div>
+
+                                                                </div>
+                                                            )
+                                                        )}
+
+                                                    </div>
+
+                                                </div>
+                                            )}
+
+                                        {/* =================================================
                                             REQUIRED DOCUMENTS
                                         ================================================= */}
+
+                                        {/* =================================================
+                                            GOVERNMENT PROCESSING
+                                        ================================================= */}
+
+                                        {application.status === "Approved" && (
+                                            <div className="
+                                                mt-4
+                                                rounded-xl
+                                                border border-green-200
+                                                bg-green-50
+                                                px-4
+                                                py-4
+                                            ">
+
+                                                <h4 className="
+                                                    font-bold
+                                                    text-green-800
+                                                    text-lg
+                                                ">
+                                                    Government Processing
+                                                </h4>
+
+                                                <p className="
+                                                    mt-2
+                                                    text-sm
+                                                    leading-6
+                                                    text-green-700
+                                                ">
+                                                    Your application has been approved
+                                                    by the Welfare Assistance Department.
+                                                    Further processing/disbursement is
+                                                    handled through the concerned
+                                                    official government channel.
+                                                </p>
+
+                                            </div>
+                                        )}
 
                                         <div className="mt-5 border-t pt-5">
 
@@ -2158,7 +2316,7 @@ function WidowVocationalTrainingPage() {
 
                                                             const isUploading =
                                                                 uploadingDocument[
-                                                                    uploadKey
+                                                                uploadKey
                                                                 ];
 
                                                             const isRejected =
@@ -2171,9 +2329,9 @@ function WidowVocationalTrainingPage() {
 
                                                             const isPending =
                                                                 document?.status ===
-                                                                    "Pending" ||
+                                                                "Pending" ||
                                                                 document?.status ===
-                                                                    "Under Review";
+                                                                "Under Review";
 
                                                             return (
                                                                 <div
@@ -2209,15 +2367,14 @@ function WidowVocationalTrainingPage() {
                                                                                 </p>
 
                                                                                 <span
-                                                                                    className={`inline-block mt-1 px-2.5 py-1 rounded-full text-xs font-semibold ${
-                                                                                        isVerified
-                                                                                            ? "bg-green-100 text-green-700"
-                                                                                            : isRejected
+                                                                                    className={`inline-block mt-1 px-2.5 py-1 rounded-full text-xs font-semibold ${isVerified
+                                                                                        ? "bg-green-100 text-green-700"
+                                                                                        : isRejected
                                                                                             ? "bg-red-100 text-red-700"
                                                                                             : document
-                                                                                            ? "bg-amber-100 text-amber-700"
-                                                                                            : "bg-slate-200 text-slate-600"
-                                                                                    }`}
+                                                                                                ? "bg-amber-100 text-amber-700"
+                                                                                                : "bg-slate-200 text-slate-600"
+                                                                                        }`}
                                                                                 >
 
                                                                                     {
@@ -2383,7 +2540,7 @@ function WidowVocationalTrainingPage() {
                                                                                         accept=".pdf,.jpg,.jpeg,.png"
                                                                                         disabled={
                                                                                             uploadingDocument[
-                                                                                                `${document._id}-reupload`
+                                                                                            `${document._id}-reupload`
                                                                                             ]
                                                                                         }
                                                                                         onChange={(
@@ -2422,109 +2579,109 @@ function WidowVocationalTrainingPage() {
 
                                                                         {openReusableType ===
                                                                             `${application.applicationId}-${documentType}` && (
-                                                                            <div className="mt-3 border border-blue-200 bg-blue-50 rounded-lg p-4">
-                                                                                <div className="flex items-center justify-between gap-3">
-                                                                                    <div>
-                                                                                        <p className="font-semibold text-[#0B1F3A]">
-                                                                                            Existing Verified Documents
-                                                                                        </p>
-                                                                                        <p className="text-xs text-gray-600 mt-1">
-                                                                                            You can reuse a verified document from the same assistance case.
-                                                                                        </p>
+                                                                                <div className="mt-3 border border-blue-200 bg-blue-50 rounded-lg p-4">
+                                                                                    <div className="flex items-center justify-between gap-3">
+                                                                                        <div>
+                                                                                            <p className="font-semibold text-[#0B1F3A]">
+                                                                                                Existing Verified Documents
+                                                                                            </p>
+                                                                                            <p className="text-xs text-gray-600 mt-1">
+                                                                                                You can reuse a verified document from the same assistance case.
+                                                                                            </p>
+                                                                                        </div>
                                                                                     </div>
-                                                                                </div>
 
-                                                                                {reusableLoading[
-                                                                                    application.applicationId
-                                                                                ] ? (
-                                                                                    <p className="text-sm text-gray-500 mt-3">
-                                                                                        Loading existing documents...
-                                                                                    </p>
-                                                                                ) : (
-                                                                                    <div className="mt-3 space-y-2">
-                                                                                        {(
-                                                                                            reusableDocuments[
+                                                                                    {reusableLoading[
+                                                                                        application.applicationId
+                                                                                    ] ? (
+                                                                                        <p className="text-sm text-gray-500 mt-3">
+                                                                                            Loading existing documents...
+                                                                                        </p>
+                                                                                    ) : (
+                                                                                        <div className="mt-3 space-y-2">
+                                                                                            {(
+                                                                                                reusableDocuments[
                                                                                                 application.applicationId
-                                                                                            ] || []
-                                                                                        )
-                                                                                            .filter(
+                                                                                                ] || []
+                                                                                            )
+                                                                                                .filter(
+                                                                                                    (
+                                                                                                        reusableDocument
+                                                                                                    ) =>
+                                                                                                        reusableDocument.documentType ===
+                                                                                                        documentType
+                                                                                                )
+                                                                                                .map(
+                                                                                                    (
+                                                                                                        reusableDocument
+                                                                                                    ) => (
+                                                                                                        <div
+                                                                                                            key={
+                                                                                                                reusableDocument._id
+                                                                                                            }
+                                                                                                            className="flex flex-wrap items-center justify-between gap-3 bg-white border border-slate-200 rounded-lg p-3"
+                                                                                                        >
+                                                                                                            <div>
+                                                                                                                <p className="font-medium text-[#0B1F3A]">
+                                                                                                                    {reusableDocument.originalName ||
+                                                                                                                        reusableDocument.fileName ||
+                                                                                                                        "Verified Document"}
+                                                                                                                </p>
+
+                                                                                                                <p className="text-xs text-green-700 mt-1">
+                                                                                                                    Verified
+                                                                                                                </p>
+                                                                                                            </div>
+
+                                                                                                            <button
+                                                                                                                type="button"
+                                                                                                                onClick={() =>
+                                                                                                                    linkExistingWelfareDocument(
+                                                                                                                        application,
+                                                                                                                        reusableDocument._id
+                                                                                                                    )
+                                                                                                                }
+                                                                                                                disabled={
+                                                                                                                    linkingDocumentId ===
+                                                                                                                    reusableDocument._id
+                                                                                                                }
+                                                                                                                className="inline-flex items-center gap-2 bg-[#1F4E79] text-white px-3 py-2 rounded-lg text-sm font-semibold hover:bg-[#0B1F3A] disabled:opacity-50"
+                                                                                                            >
+                                                                                                                <FileText
+                                                                                                                    size={
+                                                                                                                        16
+                                                                                                                    }
+                                                                                                                />
+
+                                                                                                                {linkingDocumentId ===
+                                                                                                                    reusableDocument._id
+                                                                                                                    ? "Using..."
+                                                                                                                    : "Use This Document"}
+                                                                                                            </button>
+                                                                                                        </div>
+                                                                                                    )
+                                                                                                )}
+
+                                                                                            {(
+                                                                                                reusableDocuments[
+                                                                                                application.applicationId
+                                                                                                ] || []
+                                                                                            ).filter(
                                                                                                 (
                                                                                                     reusableDocument
                                                                                                 ) =>
                                                                                                     reusableDocument.documentType ===
                                                                                                     documentType
-                                                                                            )
-                                                                                            .map(
-                                                                                                (
-                                                                                                    reusableDocument
-                                                                                                ) => (
-                                                                                                    <div
-                                                                                                        key={
-                                                                                                            reusableDocument._id
-                                                                                                        }
-                                                                                                        className="flex flex-wrap items-center justify-between gap-3 bg-white border border-slate-200 rounded-lg p-3"
-                                                                                                    >
-                                                                                                        <div>
-                                                                                                            <p className="font-medium text-[#0B1F3A]">
-                                                                                                                {reusableDocument.originalName ||
-                                                                                                                    reusableDocument.fileName ||
-                                                                                                                    "Verified Document"}
-                                                                                                            </p>
-
-                                                                                                            <p className="text-xs text-green-700 mt-1">
-                                                                                                                Verified
-                                                                                                            </p>
-                                                                                                        </div>
-
-                                                                                                        <button
-                                                                                                            type="button"
-                                                                                                            onClick={() =>
-                                                                                                                linkExistingWelfareDocument(
-                                                                                                                    application,
-                                                                                                                    reusableDocument._id
-                                                                                                                )
-                                                                                                            }
-                                                                                                            disabled={
-                                                                                                                linkingDocumentId ===
-                                                                                                                reusableDocument._id
-                                                                                                            }
-                                                                                                            className="inline-flex items-center gap-2 bg-[#1F4E79] text-white px-3 py-2 rounded-lg text-sm font-semibold hover:bg-[#0B1F3A] disabled:opacity-50"
-                                                                                                        >
-                                                                                                            <FileText
-                                                                                                                size={
-                                                                                                                    16
-                                                                                                                }
-                                                                                                            />
-
-                                                                                                            {linkingDocumentId ===
-                                                                                                            reusableDocument._id
-                                                                                                                ? "Using..."
-                                                                                                                : "Use This Document"}
-                                                                                                        </button>
-                                                                                                    </div>
-                                                                                                )
-                                                                                            )}
-
-                                                                                        {(
-                                                                                            reusableDocuments[
-                                                                                                application.applicationId
-                                                                                            ] || []
-                                                                                        ).filter(
-                                                                                            (
-                                                                                                reusableDocument
-                                                                                            ) =>
-                                                                                                reusableDocument.documentType ===
-                                                                                                documentType
-                                                                                        ).length ===
-                                                                                            0 && (
-                                                                                            <p className="text-sm text-gray-500">
-                                                                                                No verified existing document is available for this document type.
-                                                                                            </p>
-                                                                                        )}
-                                                                                    </div>
-                                                                                )}
-                                                                            </div>
-                                                                        )}
+                                                                                            ).length ===
+                                                                                                0 && (
+                                                                                                    <p className="text-sm text-gray-500">
+                                                                                                        No verified existing document is available for this document type.
+                                                                                                    </p>
+                                                                                                )}
+                                                                                        </div>
+                                                                                    )}
+                                                                                </div>
+                                                                            )}
 
                                                                     </div>
 

@@ -55,17 +55,17 @@ function Footer() {
 
           <ul className="space-y-2">
 
-            <li>AI Guidance</li>
+            <li>Case & Application Tracking</li>
 
             <li>Document Repository</li>
-
-            <li>Case & Application Tracking</li>
 
             <li>Scholarship Assistance</li>
 
             <li>Widow Vocational Training</li>
 
             <li>Welfare Officer Support</li>
+
+            <li>Notifications & Reminders</li>
 
           </ul>
 

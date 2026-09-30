@@ -133,7 +133,7 @@ const AuthorityDashboard = () => {
 
             setError(
                 error.response?.data?.message ||
-                    "Unable to load Authority applications."
+                "Unable to load Authority applications."
             );
         } finally {
             setLoading(false);
@@ -189,7 +189,7 @@ const AuthorityDashboard = () => {
 
             setOpportunityError(
                 error.response?.data?.message ||
-                    "Unable to load published opportunities."
+                "Unable to load published opportunities."
             );
         } finally {
             setOpportunityLoading(false);
@@ -245,7 +245,7 @@ const AuthorityDashboard = () => {
 
             setWelfareApplicationError(
                 error.response?.data?.message ||
-                    "Unable to load welfare assistance applications."
+                "Unable to load welfare assistance applications."
             );
         } finally {
             setWelfareApplicationLoading(false);
@@ -291,25 +291,49 @@ const AuthorityDashboard = () => {
     // APPLICATION STATISTICS
     // ============================================================
 
-    const forwardedApplications = applications.filter(
-        (item) =>
-            item.status === "Forwarded to Authority"
-    ).length;
+    const forwardedApplications =
+        department === "Welfare Assistance Department"
+            ? 0
+            : applications.filter(
+                (item) =>
+                    item.status ===
+                    "Forwarded to Authority"
+            ).length;
 
-    const underReviewApplications = applications.filter(
-        (item) =>
-            item.status === "Under Authority Review"
-    ).length;
+    const underReviewApplications =
+        department === "Welfare Assistance Department"
+            ? welfareApplications.filter(
+                (item) =>
+                    item.status ===
+                    "Under Authority Review"
+            ).length
+            : applications.filter(
+                (item) =>
+                    item.status ===
+                    "Under Authority Review"
+            ).length;
 
-    const approvedApplications = applications.filter(
-        (item) =>
-            item.status === "Approved"
-    ).length;
+    const approvedApplications =
+        department === "Welfare Assistance Department"
+            ? welfareApplications.filter(
+                (item) =>
+                    item.status === "Approved"
+            ).length
+            : applications.filter(
+                (item) =>
+                    item.status === "Approved"
+            ).length;
 
-    const rejectedApplications = applications.filter(
-        (item) =>
-            item.status === "Rejected"
-    ).length;
+    const rejectedApplications =
+        department === "Welfare Assistance Department"
+            ? welfareApplications.filter(
+                (item) =>
+                    item.status === "Rejected"
+            ).length
+            : applications.filter(
+                (item) =>
+                    item.status === "Rejected"
+            ).length;
 
     // ============================================================
     // FILTER WELFARE OPPORTUNITIES
@@ -427,7 +451,7 @@ const AuthorityDashboard = () => {
 
             minimumMarks:
                 opportunity.minimumMarks !== null &&
-                opportunity.minimumMarks !== undefined
+                    opportunity.minimumMarks !== undefined
                     ? String(opportunity.minimumMarks)
                     : "",
 
@@ -599,9 +623,9 @@ const AuthorityDashboard = () => {
 
             alert(
                 response.data?.message ||
-                    (editingOpportunityId
-                        ? "Opportunity updated successfully."
-                        : "Opportunity published successfully.")
+                (editingOpportunityId
+                    ? "Opportunity updated successfully."
+                    : "Opportunity published successfully.")
             );
 
             resetOpportunityForm();
@@ -622,7 +646,7 @@ const AuthorityDashboard = () => {
 
             setOpportunityError(
                 error.response?.data?.message ||
-                    "Unable to save the opportunity."
+                "Unable to save the opportunity."
             );
         } finally {
             setSavingOpportunity(false);
@@ -925,7 +949,7 @@ const AuthorityDashboard = () => {
                                     size={18}
                                     className={
                                         loading ||
-                                        opportunityLoading
+                                            opportunityLoading
                                             ? "animate-spin"
                                             : ""
                                     }
@@ -960,11 +984,18 @@ const AuthorityDashboard = () => {
                                 <div>
 
                                     <p className="text-gray-500 text-sm">
-                                        Forwarded
+                                        {department === "Welfare Assistance Department"
+                                            ? "Submitted"
+                                            : "Forwarded"}
                                     </p>
 
                                     <p className="text-3xl font-bold text-[#0B1F3A] mt-2">
-                                        {forwardedApplications}
+                                        {department === "Welfare Assistance Department"
+                                            ? welfareApplications.filter(
+                                                (item) =>
+                                                    item.status === "Submitted"
+                                            ).length
+                                            : forwardedApplications}
                                     </p>
 
                                 </div>
@@ -1174,7 +1205,7 @@ const AuthorityDashboard = () => {
                                     <div className="w-11 h-11 rounded-xl bg-[#EEF5FF] flex items-center justify-center">
 
                                         {opportunityForm.opportunityType ===
-                                        "Vocational Training" ? (
+                                            "Vocational Training" ? (
                                             <BriefcaseBusiness
                                                 size={23}
                                                 className="text-[#1F4E79]"
@@ -2063,13 +2094,12 @@ const AuthorityDashboard = () => {
                                                 <p className="text-sm text-gray-500">
                                                     Status
                                                 </p>
-                                                <span className={`inline-flex px-4 py-2 mt-1 rounded-full text-sm font-semibold ${
-                                                    application.status === "Approved"
-                                                        ? "bg-green-50 text-green-700"
-                                                        : application.status === "Rejected"
+                                                <span className={`inline-flex px-4 py-2 mt-1 rounded-full text-sm font-semibold ${application.status === "Approved"
+                                                    ? "bg-green-50 text-green-700"
+                                                    : application.status === "Rejected"
                                                         ? "bg-red-50 text-red-700"
                                                         : "bg-yellow-50 text-yellow-700"
-                                                }`}>
+                                                    }`}>
                                                     {application.status}
                                                 </span>
                                             </div>
