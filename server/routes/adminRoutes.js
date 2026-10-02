@@ -29,6 +29,10 @@ import {
     assignOfficerToApplication,
     getAdminOfficerAssignedWork,
 
+    getAdminAuthorities,
+    createAdminAuthority,
+    updateAdminAuthority,
+
 } from "../controllers/adminController.js";
 
 import authMiddleware from "../middleware/authMiddleware.js";
@@ -167,6 +171,32 @@ router.get(
     authMiddleware,
     roleMiddleware("admin"),
     getAdminOfficerAssignedWork
+);
+
+
+// ============================================================
+// AUTHORITY MANAGEMENT
+// ============================================================
+
+router.get(
+    "/authorities",
+    authMiddleware,
+    roleMiddleware("admin"),
+    getAdminAuthorities
+);
+
+router.post(
+    "/authorities",
+    authMiddleware,
+    roleMiddleware("admin"),
+    createAdminAuthority
+);
+
+router.put(
+    "/authorities/:authorityId",
+    authMiddleware,
+    roleMiddleware("admin"),
+    updateAdminAuthority
 );
 
 

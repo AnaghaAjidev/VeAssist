@@ -1627,3 +1627,218 @@ export const getAdminApplications = async (
         });
     }
 };
+
+
+// ======================================================
+// AUTHORITY MANAGEMENT
+// ======================================================
+
+const validAuthorityDepartments = [
+    "Pension Department",
+    "Insurance Department",
+    "ECHS Department",
+    "Welfare Assistance Department",
+];
+
+
+// ======================================================
+// GET ALL AUTHORITIES
+// ======================================================
+
+export const getAdminAuthorities = async (req, res) => {
+    try {
+        const authorities = await User.find({
+            role: "authority",
+        })
+            .select("-password")
+            .sort({ createdAt: -1 });
+
+        return res.status(200).json({
+            count: authorities.length,
+            authorities,
+        });
+    } catch (error) {
+        console.error("Get authorities error:", error);
+
+        return res.status(500).json({
+            message: "Unable to load authorities.",
+        });
+    }
+};
+
+
+// ======================================================
+// CREATE AUTHORITY
+// ======================================================
+
+export const createAdminAuthority = async (req, res) => {
+    try {
+        const {
+            name,
+            email,
+            phone,
+            department,
+            designation,
+            password,
+        } = req.body;
+
+        if (
+            !name?.trim() ||
+            !email?.trim() ||
+            !phone?.trim() ||
+            !department ||
+            !designation?.trim() ||
+            !password
+        ) {
+            return res.status(400).json({
+                message: "All authority fields are required.",
+            });
+        }
+
+        if (!validAuthorityDepartments.includes(department)) {
+            return res.status(400).json({
+                message: "Invalid authority department.",
+            });
+        }
+
+        if (password.length < 6) {
+            return res.status(400).json({
+                message: "Password must contain at least 6 characters.",
+            });
+        }
+
+        const normalizedEmail = email.trim().toLowerCase();
+
+        const existingUser = await User.findOne({
+            email: normalizedEmail,
+        });
+
+        if (existingUser) {
+            return res.status(409).json({
+                message: "A user with this email already exists.",
+            });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const authority = await User.create({
+            name: name.trim(),
+            email: normalizedEmail,
+            phone: phone.trim(),
+            department,
+            designation: designation.trim(),
+            password: hashedPassword,
+            role: "authority",
+            isActive: true,
+        });
+
+        return res.status(201).json({
+            message: "Authority created successfully.",
+            authority: {
+                id: authority._id,
+                name: authority.name,
+                email: authority.email,
+                phone: authority.phone,
+                department: authority.department,
+                designation: authority.designation,
+                role: authority.role,
+                isActive: authority.isActive,
+            },
+        });
+    } catch (error) {
+        console.error("Create authority error:", error);
+
+        return res.status(500).json({
+            message: "Unable to create authority.",
+        });
+    }
+};
+
+
+// ======================================================
+// UPDATE AUTHORITY
+// ======================================================
+
+export const updateAdminAuthority = async (req, res) => {
+    try {
+        const { authorityId } = req.params;
+
+        const {
+            name,
+            email,
+            phone,
+            department,
+            designation,
+        } = req.body;
+
+        if (
+            !name?.trim() ||
+            !email?.trim() ||
+            !phone?.trim() ||
+            !department ||
+            !designation?.trim()
+        ) {
+            return res.status(400).json({
+                message: "All authority fields are required.",
+            });
+        }
+
+        if (!validAuthorityDepartments.includes(department)) {
+            return res.status(400).json({
+                message: "Invalid authority department.",
+            });
+        }
+
+        const authority = await User.findOne({
+            _id: authorityId,
+            role: "authority",
+        });
+
+        if (!authority) {
+            return res.status(404).json({
+                message: "Authority not found.",
+            });
+        }
+
+        const normalizedEmail = email.trim().toLowerCase();
+
+        const existingEmail = await User.findOne({
+            email: normalizedEmail,
+            _id: { $ne: authority._id },
+        });
+
+        if (existingEmail) {
+            return res.status(409).json({
+                message: "A user with this email already exists.",
+            });
+        }
+
+        authority.name = name.trim();
+        authority.email = normalizedEmail;
+        authority.phone = phone.trim();
+        authority.department = department;
+        authority.designation = designation.trim();
+
+        await authority.save();
+
+        return res.status(200).json({
+            message: "Authority updated successfully.",
+            authority: {
+                id: authority._id,
+                name: authority.name,
+                email: authority.email,
+                phone: authority.phone,
+                department: authority.department,
+                designation: authority.designation,
+                role: authority.role,
+                isActive: authority.isActive,
+            },
+        });
+    } catch (error) {
+        console.error("Update authority error:", error);
+
+        return res.status(500).json({
+            message: "Unable to update authority.",
+        });
+    }
+};

@@ -23,10 +23,12 @@ import {
     User,
     CalendarDays,
     ArrowRight,
+    ArrowLeft
 } from "lucide-react";
 
 import { useNavigate } from "react-router-dom";
 
+import logo from "../../assets/logo.png";
 
 const API_URL =
     "http://localhost:5000/api";
@@ -896,170 +898,154 @@ const AdminApplicationManagement = () => {
                 HEADER
             ================================================== */}
 
-            <header
+            {/* ==================================================
+    HEADER
+================================================== */}
+
+<header
+    className="
+        bg-[#0B1F3A]
+        text-white
+        shadow-md
+        sticky
+        top-0
+        z-40
+    "
+>
+    <div
+        className="
+            max-w-7xl
+            mx-auto
+            px-4
+            sm:px-6
+            lg:px-8
+            py-4
+        "
+    >
+        <div
+            className="
+                flex
+                items-center
+                justify-between
+                gap-4
+            "
+        >
+            {/* Logo and Title */}
+            <div
                 className="
-                    bg-[#0B1F3A]
-                    text-white
-                    shadow-md
-                    sticky
-                    top-0
-                    z-40
+                    flex
+                    items-center
+                    gap-3
                 "
             >
-
-                <div
+                <img
+                    src={logo}
+                    alt="VeAssist Logo"
                     className="
-                        max-w-7xl
-                        mx-auto
-                        px-4
-                        sm:px-6
-                        lg:px-8
-                        py-4
+                        w-11
+                        h-11
+                        object-contain
                     "
-                >
+                />
 
-                    <div
+                <div>
+                    <h1
                         className="
-                            flex
-                            items-center
-                            justify-between
-                            gap-4
+                            text-lg
+                            sm:text-xl
+                            font-bold
                         "
                     >
+                        Application Management
+                    </h1>
 
-                        <div
-                            className="
-                                flex
-                                items-center
-                                gap-3
-                            "
-                        >
-
-                            <div
-                                className="
-                                    w-11
-                                    h-11
-                                    rounded-xl
-                                    bg-white/10
-                                    flex
-                                    items-center
-                                    justify-center
-                                "
-                            >
-                                <ClipboardList
-                                    size={23}
-                                />
-                            </div>
-
-
-                            <div>
-
-                                <h1
-                                    className="
-                                        text-lg
-                                        sm:text-xl
-                                        font-bold
-                                    "
-                                >
-                                    Application Management
-                                </h1>
-
-                                <p
-                                    className="
-                                        text-xs
-                                        sm:text-sm
-                                        text-blue-100
-                                        mt-0.5
-                                    "
-                                >
-                                    Manage regular assistance applications
-                                </p>
-
-                            </div>
-
-                        </div>
-
-
-                        <div
-                            className="
-                                flex
-                                items-center
-                                gap-2
-                            "
-                        >
-
-                            <button
-                                type="button"
-                                onClick={() =>
-                                    fetchApplications(
-                                        true
-                                    )
-                                }
-                                disabled={refreshing}
-                                className="
-                                    flex
-                                    items-center
-                                    gap-2
-                                    px-3
-                                    sm:px-4
-                                    py-2
-                                    rounded-lg
-                                    bg-white/10
-                                    hover:bg-white/20
-                                    transition
-                                    text-sm
-                                    font-semibold
-                                    disabled:opacity-60
-                                "
-                            >
-
-                                <RefreshCw
-                                    size={16}
-                                    className={
-                                        refreshing
-                                            ? "animate-spin"
-                                            : ""
-                                    }
-                                />
-
-                                <span className="hidden sm:inline">
-                                    Refresh
-                                </span>
-
-                            </button>
-
-
-                            <button
-                                type="button"
-                                onClick={() =>
-                                    navigate(
-                                        "/admin/dashboard"
-                                    )
-                                }
-                                className="
-                                    px-3
-                                    sm:px-4
-                                    py-2
-                                    rounded-lg
-                                    bg-white
-                                    text-[#0B1F3A]
-                                    hover:bg-blue-50
-                                    transition
-                                    text-sm
-                                    font-semibold
-                                "
-                            >
-                                Dashboard
-                            </button>
-
-                        </div>
-
-                    </div>
-
+                    <p
+                        className="
+                            text-xs
+                            sm:text-sm
+                            text-blue-100
+                            mt-0.5
+                        "
+                    >
+                        Manage regular assistance applications
+                    </p>
                 </div>
+            </div>
 
-            </header>
+            {/* Action Buttons */}
+            <div
+                className="
+                    flex
+                    items-center
+                    gap-2
+                "
+            >
+                {/* Refresh Button */}
+                <button
+                    type="button"
+                    onClick={() => fetchApplications(true)}
+                    disabled={refreshing}
+                    className="
+                        flex
+                        items-center
+                        gap-2
+                        px-3
+                        sm:px-4
+                        py-2
+                        rounded-lg
+                        bg-white/10
+                        hover:bg-white/20
+                        transition
+                        text-sm
+                        font-semibold
+                        disabled:opacity-60
+                    "
+                >
+                    <RefreshCw
+                        size={16}
+                        className={
+                            refreshing
+                                ? "animate-spin"
+                                : ""
+                        }
+                    />
 
+                    <span className="hidden sm:inline">
+                        Refresh
+                    </span>
+                </button>
+
+                {/* Dashboard Button */}
+                <button
+                    type="button"
+                    onClick={() => navigate("/admin/dashboard")}
+                    className="
+                        flex
+                        items-center
+                        gap-2
+                        border
+                        border-slate-400
+                        px-3
+                        sm:px-4
+                        py-2
+                        rounded-lg
+                        text-sm
+                        font-semibold
+                        hover:bg-white
+                        hover:text-[#0B1F3A]
+                        transition
+                    "
+                >
+                    <ArrowLeft size={17} />
+
+                    <span className="hidden sm:inline">
+                        Dashboard
+                    </span>
+                </button>
+            </div>
+        </div>
+    </div>
+</header>
 
             {/* ==================================================
                 MAIN

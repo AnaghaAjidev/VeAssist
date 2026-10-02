@@ -26,6 +26,8 @@ import {
 
 import { useNavigate } from "react-router-dom";
 
+import logo from "../../assets/logo.png";
+
 
 const API_URL =
     "http://localhost:5000/api";
@@ -608,122 +610,99 @@ const AdminUserManagement = () => {
                 HEADER
             ================================================== */}
 
-            <header
-                className="
-                    bg-[#0B1F3A]
-                    text-white
-                    shadow-md
-                    sticky
-                    top-0
-                    z-30
-                "
-            >
+            {/* ==================================================
+    HEADER
+================================================== */}
 
-                <div
+<header
+    className="
+        bg-[#0B1F3A]
+        text-white
+        shadow-md
+        sticky
+        top-0
+        z-30
+    "
+>
+    <div
+        className="
+            max-w-7xl
+            mx-auto
+            px-5
+            md:px-6
+            py-4
+            flex
+            items-center
+            justify-between
+            gap-4
+        "
+    >
+        {/* Logo and Title */}
+        <div
+            className="
+                flex
+                items-center
+                gap-3
+            "
+        >
+            <img
+                src={logo}
+                alt="VeAssist Logo"
+                className="
+                    w-11
+                    h-11
+                    object-contain
+                "
+            />
+
+            <div>
+                <h1
                     className="
-                        max-w-7xl
-                        mx-auto
-                        px-5
-                        md:px-6
-                        py-4
-                        flex
-                        items-center
-                        justify-between
-                        gap-4
+                        text-xl
+                        md:text-2xl
+                        font-bold
+                        tracking-wide
                     "
                 >
+                    VeAssist
+                </h1>
 
-                    <div
-                        className="
-                            flex
-                            items-center
-                            gap-3
-                        "
-                    >
+                <p
+                    className="
+                        text-xs
+                        text-slate-300
+                    "
+                >
+                    Administration Portal
+                </p>
+            </div>
+        </div>
 
-                        <div
-                            className="
-                                w-10
-                                h-10
-                                rounded-xl
-                                bg-white/10
-                                border
-                                border-white/10
-                                flex
-                                items-center
-                                justify-center
-                            "
-                        >
-
-                            <Users
-                                size={21}
-                            />
-
-                        </div>
-
-
-                        <div>
-
-                            <h1
-                                className="
-                                    text-xl
-                                    md:text-2xl
-                                    font-bold
-                                    tracking-wide
-                                "
-                            >
-                                VeAssist
-                            </h1>
-
-                            <p
-                                className="
-                                    text-xs
-                                    text-slate-300
-                                "
-                            >
-                                Administration Portal
-                            </p>
-
-                        </div>
-
-                    </div>
-
-
-                    <button
-                        onClick={() =>
-                            navigate(
-                                "/admin/dashboard"
-                            )
-                        }
-                        className="
-                            flex
-                            items-center
-                            gap-2
-                            border
-                            border-slate-400
-                            px-4
-                            py-2
-                            rounded-lg
-                            text-sm
-                            hover:bg-white
-                            hover:text-[#0B1F3A]
-                            transition
-                        "
-                    >
-
-                        <ArrowLeft
-                            size={17}
-                        />
-
-                        <span className="hidden sm:inline">
-                            Dashboard
-                        </span>
-
-                    </button>
-
-                </div>
-
-            </header>
+        {/* Dashboard Button */}
+        <button
+            onClick={() => navigate("/admin/dashboard")}
+            className="
+                flex
+                items-center
+                gap-2
+                border
+                border-slate-400
+                px-4
+                py-2
+                rounded-lg
+                text-sm
+                hover:bg-white
+                hover:text-[#0B1F3A]
+                transition
+            "
+        >
+            <ArrowLeft size={17} />
+            <span className="hidden sm:inline">
+                Dashboard
+            </span>
+        </button>
+    </div>
+</header>
 
 
             {/* ==================================================
