@@ -1,3 +1,4 @@
+
 import express from "express";
 
 import {
@@ -29,9 +30,17 @@ import {
     assignOfficerToApplication,
     getAdminOfficerAssignedWork,
 
+    // ========================================================
+    // AUTHORITY MANAGEMENT
+    // ========================================================
     getAdminAuthorities,
     createAdminAuthority,
     updateAdminAuthority,
+
+    // ========================================================
+    // REPORTS
+    // ========================================================
+    getAdminReports,
 
 } from "../controllers/adminController.js";
 
@@ -197,6 +206,19 @@ router.put(
     authMiddleware,
     roleMiddleware("admin"),
     updateAdminAuthority
+);
+
+
+// ============================================================
+// REPORTS
+// ============================================================
+
+// Get regular assistance application reports
+router.get(
+    "/reports",
+    authMiddleware,
+    roleMiddleware("admin"),
+    getAdminReports
 );
 
 

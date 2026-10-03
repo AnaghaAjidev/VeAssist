@@ -1842,3 +1842,300 @@ export const updateAdminAuthority = async (req, res) => {
         });
     }
 };
+
+// ============================================================
+// ADMIN REPORTS
+// ============================================================
+
+export const getAdminReports = async (req, res) => {
+    try {
+        const {
+            search = "",
+            type = "",
+            status = "",
+            startDate = "",
+            endDate = "",
+        } = req.query;
+
+        const regularTypes = [
+            "Pension Assistance",
+            "Insurance Assistance",
+            "ECHS Assistance",
+        ];
+
+        const welfareTypes = [
+            "Scholarship",
+            "Vocational Training",
+        ];
+
+        const allTypes = [
+            ...regularTypes,
+            ...welfareTypes,
+        ];
+
+        const validStatuses = [
+            "Draft",
+            "Submitted",
+            "Under Review",
+            "Forwarded to Authority",
+            "Under Authority Review",
+            "Approved",
+            "Rejected",
+        ];
+
+        // ----------------------------------------------------
+        // VALIDATE FILTERS
+        // ----------------------------------------------------
+
+        if (type && type !== "All" && !allTypes.includes(type)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid application type.",
+            });
+        }
+
+        if (
+            status &&
+            status !== "All" &&
+            !validStatuses.includes(status)
+        ) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid application status.",
+            });
+        }
+
+        let dateFilter = {};
+
+        if (startDate || endDate) {
+            dateFilter = {};
+
+            if (startDate) {
+                const start = new Date(startDate);
+
+                if (Number.isNaN(start.getTime())) {
+                    return res.status(400).json({
+                        success: false,
+                        message: "Invalid start date.",
+                    });
+                }
+
+                start.setHours(0, 0, 0, 0);
+                dateFilter.$gte = start;
+            }
+
+            if (endDate) {
+                const end = new Date(endDate);
+
+                if (Number.isNaN(end.getTime())) {
+                    return res.status(400).json({
+                        success: false,
+                        message: "Invalid end date.",
+                    });
+                }
+
+                end.setHours(23, 59, 59, 999);
+                dateFilter.$lte = end;
+            }
+
+            if (
+                dateFilter.$gte &&
+                dateFilter.$lte &&
+                dateFilter.$gte > dateFilter.$lte
+            ) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Start date cannot be after end date.",
+                });
+            }
+        }
+
+        // ----------------------------------------------------
+        // FETCH REGULAR APPLICATIONS
+        // ----------------------------------------------------
+
+        let regularApplications = [];
+
+        if (!type || type === "All" || regularTypes.includes(type)) {
+            const regularFilter = {
+                applicationType: type && type !== "All"
+                    ? type
+                    : { $in: regularTypes },
+            };
+
+            if (status && status !== "All") {
+                regularFilter.status = status;
+            }
+
+            if (Object.keys(dateFilter).length) {
+                regularFilter.createdAt = dateFilter;
+            }
+
+            regularApplications = await Application.find(regularFilter)
+                .populate("caseId")
+                .populate("submittedBy", "name email")
+                .sort({ createdAt: -1 })
+                .lean();
+
+            regularApplications = regularApplications.map((app) => ({
+                _id: app._id,
+                caseId: app.caseId,
+                submittedBy: app.submittedBy,
+                applicationType: app.applicationType,
+                status: app.status,
+                createdAt: app.createdAt,
+            }));
+        }
+
+        // ----------------------------------------------------
+        // FETCH SCHOLARSHIP / VOCATIONAL APPLICATIONS
+        // ----------------------------------------------------
+
+        let welfareApplications = [];
+
+        if (!type || type === "All" || welfareTypes.includes(type)) {
+            const trackingFilter = {};
+
+            if (status && status !== "All") {
+                trackingFilter.status = status;
+            }
+
+            if (Object.keys(dateFilter).length) {
+                trackingFilter.createdAt = dateFilter;
+            }
+
+            const trackingRecords = await ScholarshipTracking.find(
+                trackingFilter
+            )
+                .populate("scholarship")
+                .populate("caseId")
+                .populate("familyUser", "name email")
+                .sort({ createdAt: -1 })
+                .lean();
+
+            welfareApplications = trackingRecords
+                .filter((record) => {
+                    const opportunityType =
+                        record.scholarship?.opportunityType;
+
+                    return welfareTypes.includes(opportunityType) &&
+                        (!type || type === "All" || opportunityType === type);
+                })
+                .map((record) => ({
+                    _id: record._id,
+                    applicationId: record.applicationId,
+                    caseId: record.caseId,
+                    submittedBy: {
+                        name:
+                            record.applicantDetails?.name ||
+                            record.familyUser?.name ||
+                            "",
+                        email:
+                            record.applicantDetails?.email ||
+                            record.familyUser?.email ||
+                            "",
+                    },
+                    applicationType:
+                        record.scholarship.opportunityType,
+                    title: record.scholarship.title,
+                    status: record.status,
+                    createdAt: record.createdAt,
+                    submittedAt: record.submittedAt,
+                }));
+        }
+
+        // ----------------------------------------------------
+        // COMBINE APPLICATIONS
+        // ----------------------------------------------------
+
+        let applications = [
+            ...regularApplications,
+            ...welfareApplications,
+        ];
+
+        // ----------------------------------------------------
+        // SEARCH
+        // ----------------------------------------------------
+
+        if (search.trim()) {
+            const term = search.trim().toLowerCase();
+
+            applications = applications.filter((app) => {
+                const caseData = app.caseId || {};
+                const applicant = app.submittedBy || {};
+
+                const values = [
+                    app._id,
+                    app.applicationId,
+                    app.title,
+                    app.applicationType,
+                    app.status,
+                    caseData._id,
+                    caseData.caseId,
+                    caseData.veteranName,
+                    caseData.familyName,
+                    applicant.name,
+                    applicant.email,
+                ];
+
+                return values.some((value) =>
+                    String(value || "")
+                        .toLowerCase()
+                        .includes(term)
+                );
+            });
+        }
+
+        // ----------------------------------------------------
+        // SORT
+        // ----------------------------------------------------
+
+        applications.sort(
+            (a, b) =>
+                new Date(b.createdAt || 0) -
+                new Date(a.createdAt || 0)
+        );
+
+        // ----------------------------------------------------
+        // SUMMARY
+        // ----------------------------------------------------
+
+        const summary = {
+            total: applications.length,
+
+            approved: applications.filter(
+                (app) => app.status === "Approved"
+            ).length,
+
+            pending: applications.filter((app) =>
+                [
+                    "Draft",
+                    "Submitted",
+                    "Under Review",
+                    "Forwarded to Authority",
+                    "Under Authority Review",
+                ].includes(app.status)
+            ).length,
+
+            rejected: applications.filter(
+                (app) => app.status === "Rejected"
+            ).length,
+        };
+
+        // ----------------------------------------------------
+        // RESPONSE
+        // ----------------------------------------------------
+
+        return res.status(200).json({
+            applications,
+            summary,
+        });
+    } catch (error) {
+        console.error("Admin reports error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Unable to generate admin reports.",
+        });
+    }
+};

@@ -34,6 +34,7 @@ import AdminUserManagement from "./pages/admin/AdminUserManagement";
 import AdminUserDetails from "./pages/admin/AdminUserDetails";
 import AdminApplicationManagement from "./pages/admin/AdminApplicationManagement";
 import AdminAuthorityManagement from "./pages/admin/AdminAuthorityManagement";
+import AdminReports from "./pages/admin/AdminReports";
 
 function App() {
   return (
@@ -84,6 +85,7 @@ function App() {
         <Route path="/admin/users/:userId" element={<AdminUserDetails />} />
         <Route path="/admin/applications" element={<AdminApplicationManagement />} />
         <Route path="/admin/authorities" element={<AdminAuthorityManagement />} />
+        <Route path="/admin/reports" element={<AdminReports />} />
 
       </Routes>
     </BrowserRouter>
