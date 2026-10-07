@@ -89,6 +89,8 @@ const AdminOfficerManagement = () => {
         phone: "",
         officerId: "",
         designation: "",
+        district: "",
+        office: "",
         password: "",
     });
 
@@ -103,6 +105,8 @@ const AdminOfficerManagement = () => {
         phone: "",
         officerId: "",
         designation: "",
+        district: "",
+        office: "",
     });
 
 
@@ -218,13 +222,14 @@ const AdminOfficerManagement = () => {
     // ======================================================
 
     const resetForm = () => {
-
         setForm({
             name: "",
             email: "",
             phone: "",
             officerId: "",
             designation: "",
+            district: "",
+            office: "",
             password: "",
         });
     };
@@ -258,96 +263,58 @@ const AdminOfficerManagement = () => {
     // CREATE WELFARE OFFICER
     // ======================================================
 
-    const handleCreateOfficer = async (
-        event
-    ) => {
-
+    const handleCreateOfficer = async (event) => {
         event.preventDefault();
 
         try {
-
             setSaving(true);
 
             await axios.post(
                 `${API_URL}/admin/officers`,
                 {
-                    name:
-                        form.name.trim(),
-
-                    email:
-                        form.email.trim(),
-
-                    phone:
-                        form.phone.trim(),
-
-                    officerId:
-                        form.officerId.trim(),
-
-                    designation:
-                        form.designation.trim(),
-
-                    password:
-                        form.password,
+                    name: form.name.trim(),
+                    email: form.email.trim(),
+                    phone: form.phone.trim(),
+                    officerId: form.officerId.trim(),
+                    designation: form.designation.trim(),
+                    district: form.district.trim(),
+                    office: form.office.trim(),
+                    password: form.password,
                 },
                 getAuthConfig()
             );
 
-
-            alert(
-                "Welfare Officer created successfully."
-            );
-
+            alert("Welfare Officer created successfully.");
 
             closeAddModal();
-
             await fetchOfficers();
-
         } catch (error) {
-
-            console.error(
-                "Create officer error:",
-                error
-            );
+            console.error("Create officer error:", error);
 
             alert(
                 error.response?.data?.message ||
                 "Unable to create Welfare Officer."
             );
-
         } finally {
-
             setSaving(false);
         }
     };
-
 
     // ======================================================
     // OPEN EDIT MODAL
     // ======================================================
 
-    const openEditModal = (
-        officer
-    ) => {
-
-        setSelectedOfficer(
-            officer
-        );
+    const openEditModal = (officer) => {
+        setSelectedOfficer(officer);
 
         setEditForm({
-            name:
-                officer.name || "",
-
-            email:
-                officer.email || "",
-
-            phone:
-                officer.phone || "",
-
-            officerId:
-                officer.officerId || "",
-
-            designation:
-                officer.designation || "",
+            name: officer.name || "",
+            email: officer.email || "",
+            phone: officer.phone || "",
+            officerId: officer.officerId || "",
+            designation: officer.designation || "",
+            district: officer.district || "",
+            office: officer.office || "",
         });
 
         setShowEditModal(true);
@@ -359,7 +326,6 @@ const AdminOfficerManagement = () => {
     // ======================================================
 
     const closeEditModal = () => {
-
         setSelectedOfficer(null);
 
         setEditForm({
@@ -368,6 +334,8 @@ const AdminOfficerManagement = () => {
             phone: "",
             officerId: "",
             designation: "",
+            district: "",
+            office: "",
         });
 
         setShowEditModal(false);
@@ -378,10 +346,7 @@ const AdminOfficerManagement = () => {
     // UPDATE WELFARE OFFICER
     // ======================================================
 
-    const handleUpdateOfficer = async (
-        event
-    ) => {
-
+    const handleUpdateOfficer = async (event) => {
         event.preventDefault();
 
         if (!selectedOfficer) {
@@ -389,54 +354,34 @@ const AdminOfficerManagement = () => {
         }
 
         try {
-
             setSaving(true);
 
             await axios.put(
                 `${API_URL}/admin/officers/${selectedOfficer._id}`,
                 {
-                    name:
-                        editForm.name.trim(),
-
-                    email:
-                        editForm.email.trim(),
-
-                    phone:
-                        editForm.phone.trim(),
-
-                    officerId:
-                        editForm.officerId.trim(),
-
-                    designation:
-                        editForm.designation.trim(),
+                    name: editForm.name.trim(),
+                    email: editForm.email.trim(),
+                    phone: editForm.phone.trim(),
+                    officerId: editForm.officerId.trim(),
+                    designation: editForm.designation.trim(),
+                    district: editForm.district.trim(),
+                    office: editForm.office.trim(),
                 },
                 getAuthConfig()
             );
 
-
-            alert(
-                "Welfare Officer details updated successfully."
-            );
-
+            alert("Welfare Officer details updated successfully.");
 
             closeEditModal();
-
             await fetchOfficers();
-
         } catch (error) {
-
-            console.error(
-                "Update officer error:",
-                error
-            );
+            console.error("Update officer error:", error);
 
             alert(
                 error.response?.data?.message ||
                 "Unable to update Welfare Officer."
             );
-
         } finally {
-
             setSaving(false);
         }
     };
@@ -594,38 +539,22 @@ const AdminOfficerManagement = () => {
     // FILTER WELFARE OFFICERS
     // ======================================================
 
-    const filteredOfficers =
-        officers.filter(
-            (officer) => {
+    const filteredOfficers = officers.filter((officer) => {
+        const search = searchTerm.toLowerCase().trim();
 
-                const search =
-                    searchTerm
-                        .toLowerCase()
-                        .trim();
+        if (!search) {
+            return true;
+        }
 
-                if (!search) {
-                    return true;
-                }
-
-                return (
-                    officer.name
-                        ?.toLowerCase()
-                        .includes(search) ||
-
-                    officer.email
-                        ?.toLowerCase()
-                        .includes(search) ||
-
-                    officer.officerId
-                        ?.toLowerCase()
-                        .includes(search) ||
-
-                    officer.designation
-                        ?.toLowerCase()
-                        .includes(search)
-                );
-            }
+        return (
+            officer.name?.toLowerCase().includes(search) ||
+            officer.email?.toLowerCase().includes(search) ||
+            officer.officerId?.toLowerCase().includes(search) ||
+            officer.designation?.toLowerCase().includes(search) ||
+            officer.district?.toLowerCase().includes(search) ||
+            officer.office?.toLowerCase().includes(search)
         );
+    });
 
 
     // ======================================================
@@ -665,16 +594,13 @@ const AdminOfficerManagement = () => {
             "
         >
 
-            {/* ==================================================
-                HEADER
-            ================================================== */}
 
             {/* ==================================================
     HEADER
 ================================================== */}
 
-<header
-    className="
+            <header
+                className="
         bg-[#0B1F3A]
         text-white
         shadow-md
@@ -682,9 +608,9 @@ const AdminOfficerManagement = () => {
         top-0
         z-30
     "
->
-    <div
-        className="
+            >
+                <div
+                    className="
             max-w-7xl
             mx-auto
             px-5
@@ -695,53 +621,53 @@ const AdminOfficerManagement = () => {
             justify-between
             gap-4
         "
-    >
-        {/* Logo and Title */}
-        <div
-            className="
+                >
+                    {/* Logo and Title */}
+                    <div
+                        className="
                 flex
                 items-center
                 gap-3
             "
-        >
-            <img
-                src={logo}
-                alt="VeAssist Logo"
-                className="
+                    >
+                        <img
+                            src={logo}
+                            alt="VeAssist Logo"
+                            className="
                     w-11
                     h-11
                     object-contain
                 "
-            />
+                        />
 
-            <div>
-                <h1
-                    className="
+                        <div>
+                            <h1
+                                className="
                         text-xl
                         md:text-2xl
                         font-bold
                         tracking-wide
                     "
-                >
-                    VeAssist
-                </h1>
+                            >
+                                VeAssist
+                            </h1>
 
-                <p
-                    className="
+                            <p
+                                className="
                         text-xs
                         text-slate-300
                     "
-                >
-                    Administration Portal
-                </p>
-            </div>
-        </div>
+                            >
+                                Administration Portal
+                            </p>
+                        </div>
+                    </div>
 
-        {/* Dashboard Button */}
-        <button
-            type="button"
-            onClick={() => navigate("/admin/dashboard")}
-            className="
+                    {/* Dashboard Button */}
+                    <button
+                        type="button"
+                        onClick={() => navigate("/admin/dashboard")}
+                        className="
                 flex
                 items-center
                 gap-2
@@ -755,14 +681,14 @@ const AdminOfficerManagement = () => {
                 hover:text-[#0B1F3A]
                 transition
             "
-        >
-            <ArrowLeft size={17} />
-            <span className="hidden sm:inline">
-                Dashboard
-            </span>
-        </button>
-    </div>
-</header>
+                    >
+                        <ArrowLeft size={17} />
+                        <span className="hidden sm:inline">
+                            Dashboard
+                        </span>
+                    </button>
+                </div>
+            </header>
 
             {/* ==================================================
                 MAIN
@@ -1008,7 +934,7 @@ const AdminOfficerManagement = () => {
                                         event.target.value
                                     )
                             }
-                            placeholder="Search by name, email, officer ID or designation..."
+                            placeholder="Search by name, email, officer ID, designation, district or office..."
                             className="
                                 w-full
                                 pl-11
@@ -1111,6 +1037,14 @@ const AdminOfficerManagement = () => {
                                         Designation
                                     </th>
 
+                                    <th className="text-left px-6 py-4 text-sm font-semibold">
+                                        District
+                                    </th>
+
+                                    <th className="text-left px-6 py-4 text-sm font-semibold">
+                                        Office
+                                    </th>
+
                                     <th
                                         className="
                                             text-left
@@ -1152,7 +1086,7 @@ const AdminOfficerManagement = () => {
                                     <tr>
 
                                         <td
-                                            colSpan="6"
+                                            colSpan="8"
                                             className="
                                                 px-6
                                                 py-12
@@ -1328,6 +1262,16 @@ const AdminOfficerManagement = () => {
 
                                                 </td>
 
+                                                {/* DISTRICT */}
+                                                <td className="px-6 py-4 text-gray-700">
+                                                    {officer.district || "—"}
+                                                </td>
+
+                                                {/* OFFICE */}
+                                                <td className="px-6 py-4 text-gray-700">
+                                                    {officer.office || "—"}
+                                                </td>
+
 
                                                 {/* STATUS */}
 
@@ -1394,145 +1338,85 @@ const AdminOfficerManagement = () => {
 
 
                                                 {/* ACTIONS */}
+                                                <td className="px-3 py-4">
+                                                    <div className="flex items-center gap-1.5 flex-nowrap">
 
-                                                <td
-                                                    className="
-                                                        px-6
-                                                        py-4
-                                                    "
-                                                >
-
-                                                    <div
-                                                        className="
-                                                            flex
-                                                            items-center
-                                                            gap-2
-                                                            flex-wrap
-                                                        "
-                                                    >
-
+                                                        {/* Edit */}
                                                         <button
                                                             type="button"
-                                                            onClick={() =>
-                                                                openEditModal(
-                                                                    officer
-                                                                )
-                                                            }
+                                                            onClick={() => openEditModal(officer)}
                                                             className="
-                                                                flex
-                                                                items-center
-                                                                gap-1.5
-                                                                px-3
-                                                                py-2
-                                                                rounded-lg
-                                                                bg-blue-50
-                                                                text-[#1F4E79]
-                                                                hover:bg-blue-100
-                                                                transition
-                                                                text-sm
-                                                                font-semibold
-                                                            "
+                flex items-center gap-1
+                px-2 py-1.5
+                rounded-lg
+                bg-blue-50
+                text-[#1F4E79]
+                hover:bg-blue-100
+                transition
+                text-xs
+                font-semibold
+                whitespace-nowrap
+            "
                                                         >
-
-                                                            <Edit
-                                                                size={15}
-                                                            />
-
+                                                            <Edit size={13} />
                                                             Edit
-
                                                         </button>
 
-
+                                                        {/* Activate / Deactivate */}
                                                         <button
                                                             type="button"
-                                                            disabled={
-                                                                updatingStatusId ===
-                                                                officer._id
-                                                            }
-                                                            onClick={() =>
-                                                                handleToggleStatus(
-                                                                    officer
-                                                                )
-                                                            }
+                                                            disabled={updatingStatusId === officer._id}
+                                                            onClick={() => handleToggleStatus(officer)}
                                                             className={`
-                                                                flex
-                                                                items-center
-                                                                gap-1.5
-                                                                px-3
-                                                                py-2
-                                                                rounded-lg
-                                                                transition
-                                                                text-sm
-                                                                font-semibold
-                                                                ${officer.isActive ===
-                                                                    false
+                flex items-center gap-1
+                px-2 py-1.5
+                rounded-lg
+                transition
+                text-xs
+                font-semibold
+                whitespace-nowrap
+                ${officer.isActive === false
                                                                     ? "bg-green-50 text-green-700 hover:bg-green-100"
                                                                     : "bg-red-50 text-red-700 hover:bg-red-100"
                                                                 }
-                                                            `}
+            `}
                                                         >
-
-                                                            {officer.isActive ===
-                                                                false ? (
+                                                            {officer.isActive === false ? (
                                                                 <>
-                                                                    <UserCheck
-                                                                        size={
-                                                                            15
-                                                                        }
-                                                                    />
-
+                                                                    <UserCheck size={13} />
                                                                     Activate
                                                                 </>
                                                             ) : (
                                                                 <>
-                                                                    <UserX
-                                                                        size={
-                                                                            15
-                                                                        }
-                                                                    />
-
+                                                                    <UserX size={13} />
                                                                     Deactivate
                                                                 </>
                                                             )}
-
                                                         </button>
 
-
+                                                        {/* Assigned Work */}
                                                         <button
                                                             type="button"
-                                                            onClick={() =>
-                                                                openAssignedWorkModal(
-                                                                    officer
-                                                                )
-                                                            }
+                                                            onClick={() => openAssignedWorkModal(officer)}
                                                             className="
-                                                                flex
-                                                                items-center
-                                                                gap-1.5
-                                                                px-3
-                                                                py-2
-                                                                rounded-lg
-                                                                bg-slate-100
-                                                                text-slate-700
-                                                                hover:bg-slate-200
-                                                                transition
-                                                                text-sm
-                                                                font-semibold
-                                                            "
+                flex items-center gap-1
+                px-2 py-1.5
+                rounded-lg
+                bg-slate-100
+                text-slate-700
+                hover:bg-slate-200
+                transition
+                text-xs
+                font-semibold
+                whitespace-nowrap
+            "
                                                         >
-
-                                                            <ClipboardList
-                                                                size={15}
-                                                            />
-
+                                                            <ClipboardList size={13} />
                                                             Assigned Work
-
                                                         </button>
 
                                                     </div>
-
                                                 </td>
-
                                             </tr>
 
                                         )
@@ -1647,294 +1531,138 @@ const AdminOfficerManagement = () => {
                             className="p-6"
                         >
 
-                            <div
-                                className="
-                                    grid
-                                    grid-cols-1
-                                    md:grid-cols-2
-                                    gap-5
-                                "
-                            >
 
-
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 {/* NAME */}
-
                                 <div>
-
-                                    <label
-                                        className="
-                                            block
-                                            text-sm
-                                            font-semibold
-                                            text-gray-700
-                                            mb-2
-                                        "
-                                    >
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
                                         Name
                                     </label>
-
                                     <input
                                         type="text"
                                         name="name"
-                                        value={
-                                            form.name
-                                        }
-                                        onChange={
-                                            handleChange
-                                        }
+                                        value={form.name}
+                                        onChange={handleChange}
                                         required
                                         placeholder="Officer name"
-                                        className="
-                                            w-full
-                                            border
-                                            border-gray-300
-                                            rounded-lg
-                                            px-4
-                                            py-3
-                                            outline-none
-                                            focus:ring-2
-                                            focus:ring-blue-200
-                                            focus:border-[#1F4E79]
-                                        "
+                                        className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-blue-200 focus:border-[#1F4E79]"
                                     />
-
                                 </div>
 
-
                                 {/* EMAIL */}
-
                                 <div>
-
-                                    <label
-                                        className="
-                                            block
-                                            text-sm
-                                            font-semibold
-                                            text-gray-700
-                                            mb-2
-                                        "
-                                    >
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
                                         Email
                                     </label>
-
                                     <input
                                         type="email"
                                         name="email"
-                                        value={
-                                            form.email
-                                        }
-                                        onChange={
-                                            handleChange
-                                        }
+                                        value={form.email}
+                                        onChange={handleChange}
                                         required
                                         placeholder="officer@example.com"
-                                        className="
-                                            w-full
-                                            border
-                                            border-gray-300
-                                            rounded-lg
-                                            px-4
-                                            py-3
-                                            outline-none
-                                            focus:ring-2
-                                            focus:ring-blue-200
-                                            focus:border-[#1F4E79]
-                                        "
+                                        className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-blue-200 focus:border-[#1F4E79]"
                                     />
-
                                 </div>
 
-
                                 {/* PHONE */}
-
                                 <div>
-
-                                    <label
-                                        className="
-                                            block
-                                            text-sm
-                                            font-semibold
-                                            text-gray-700
-                                            mb-2
-                                        "
-                                    >
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
                                         Phone
                                     </label>
-
                                     <input
                                         type="tel"
                                         name="phone"
-                                        value={
-                                            form.phone
-                                        }
-                                        onChange={
-                                            handleChange
-                                        }
+                                        value={form.phone}
+                                        onChange={handleChange}
                                         required
                                         placeholder="Phone number"
-                                        className="
-                                            w-full
-                                            border
-                                            border-gray-300
-                                            rounded-lg
-                                            px-4
-                                            py-3
-                                            outline-none
-                                            focus:ring-2
-                                            focus:ring-blue-200
-                                            focus:border-[#1F4E79]
-                                        "
+                                        className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-blue-200 focus:border-[#1F4E79]"
                                     />
-
                                 </div>
 
-
                                 {/* OFFICER ID */}
-
                                 <div>
-
-                                    <label
-                                        className="
-                                            block
-                                            text-sm
-                                            font-semibold
-                                            text-gray-700
-                                            mb-2
-                                        "
-                                    >
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
                                         Employee / Officer ID
                                     </label>
-
                                     <input
                                         type="text"
                                         name="officerId"
-                                        value={
-                                            form.officerId
-                                        }
-                                        onChange={
-                                            handleChange
-                                        }
+                                        value={form.officerId}
+                                        onChange={handleChange}
                                         required
                                         placeholder="Officer ID"
-                                        className="
-                                            w-full
-                                            border
-                                            border-gray-300
-                                            rounded-lg
-                                            px-4
-                                            py-3
-                                            outline-none
-                                            focus:ring-2
-                                            focus:ring-blue-200
-                                            focus:border-[#1F4E79]
-                                        "
+                                        className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-blue-200 focus:border-[#1F4E79]"
                                     />
-
                                 </div>
 
-
                                 {/* DESIGNATION */}
-
                                 <div>
-
-                                    <label
-                                        className="
-                                            block
-                                            text-sm
-                                            font-semibold
-                                            text-gray-700
-                                            mb-2
-                                        "
-                                    >
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
                                         Designation
                                     </label>
-
                                     <input
                                         type="text"
                                         name="designation"
-                                        value={
-                                            form.designation
-                                        }
-                                        onChange={
-                                            handleChange
-                                        }
+                                        value={form.designation}
+                                        onChange={handleChange}
                                         required
                                         placeholder="Designation"
-                                        className="
-                                            w-full
-                                            border
-                                            border-gray-300
-                                            rounded-lg
-                                            px-4
-                                            py-3
-                                            outline-none
-                                            focus:ring-2
-                                            focus:ring-blue-200
-                                            focus:border-[#1F4E79]
-                                        "
+                                        className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-blue-200 focus:border-[#1F4E79]"
                                     />
-
                                 </div>
 
+                                {/* DISTRICT */}
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                        District
+                                    </label>
+                                    <input
+                                        type="text"
+                                        name="district"
+                                        value={form.district}
+                                        onChange={handleChange}
+                                        required
+                                        placeholder="Enter district"
+                                        className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-blue-200 focus:border-[#1F4E79]"
+                                    />
+                                </div>
+
+                                {/* OFFICE */}
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                        Office
+                                    </label>
+                                    <input
+                                        type="text"
+                                        name="office"
+                                        value={form.office}
+                                        onChange={handleChange}
+                                        required
+                                        placeholder="Enter office name or location"
+                                        className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-blue-200 focus:border-[#1F4E79]"
+                                    />
+                                </div>
 
                                 {/* PASSWORD */}
-
-                                <div
-                                    className="
-                                        md:col-span-2
-                                    "
-                                >
-
-                                    <label
-                                        className="
-                                            block
-                                            text-sm
-                                            font-semibold
-                                            text-gray-700
-                                            mb-2
-                                        "
-                                    >
+                                <div className="md:col-span-2">
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
                                         Password
                                     </label>
-
                                     <input
                                         type="password"
                                         name="password"
-                                        value={
-                                            form.password
-                                        }
-                                        onChange={
-                                            handleChange
-                                        }
+                                        value={form.password}
+                                        onChange={handleChange}
                                         required
-                                        minLength={6}
                                         placeholder="Initial password"
-                                        className="
-                                            w-full
-                                            border
-                                            border-gray-300
-                                            rounded-lg
-                                            px-4
-                                            py-3
-                                            outline-none
-                                            focus:ring-2
-                                            focus:ring-blue-200
-                                            focus:border-[#1F4E79]
-                                        "
+                                        className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-blue-200 focus:border-[#1F4E79]"
                                     />
-
-                                    <p
-                                        className="
-                                            text-xs
-                                            text-gray-500
-                                            mt-2
-                                        "
-                                    >
+                                    <p className="text-xs text-gray-500 mt-2">
                                         The Welfare Officer can use this password to log in.
                                     </p>
-
                                 </div>
-
                             </div>
 
 
@@ -2823,6 +2551,76 @@ const AdminOfficerManagement = () => {
                                         "
                                     />
 
+                                </div>
+
+                                {/* DISTRICT */}
+                                <div>
+                                    <label
+                                        className="
+                                            block
+                                            text-sm
+                                            font-semibold
+                                            text-gray-700
+                                            mb-2
+                                        "
+                                    >
+                                        District
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        name="district"
+                                        value={editForm.district}
+                                        onChange={handleEditChange}
+                                        required
+                                        className="
+                                            w-full
+                                            border
+                                            border-gray-300
+                                            rounded-lg
+                                            px-4
+                                            py-3
+                                            outline-none
+                                            focus:ring-2
+                                            focus:ring-blue-200
+                                            focus:border-[#1F4E79]
+                                        "
+                                    />
+                                </div>
+
+                                {/* OFFICE */}
+                                <div>
+                                    <label
+                                        className="
+                                            block
+                                            text-sm
+                                            font-semibold
+                                            text-gray-700
+                                            mb-2
+                                        "
+                                    >
+                                        Office
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        name="office"
+                                        value={editForm.office}
+                                        onChange={handleEditChange}
+                                        required
+                                        className="
+                                            w-full
+                                            border
+                                            border-gray-300
+                                            rounded-lg
+                                            px-4
+                                            py-3
+                                            outline-none
+                                            focus:ring-2
+                                            focus:ring-blue-200
+                                            focus:border-[#1F4E79]
+                                        "
+                                    />
                                 </div>
 
                             </div>

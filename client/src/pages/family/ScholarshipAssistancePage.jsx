@@ -15,6 +15,18 @@ const API_URL = "http://localhost:5000/api";
 function ScholarshipAssistancePage() {
     const navigate = useNavigate();
 
+    const minimumAge = 18;
+
+    const today = new Date();
+
+    const maxDateOfBirth = new Date(
+        today.getFullYear() - minimumAge,
+        today.getMonth(),
+        today.getDate()
+    )
+        .toISOString()
+        .split("T")[0];
+
     const [scholarships, setScholarships] = useState([]);
     const [myApplications, setMyApplications] = useState([]);
     const [familyCases, setFamilyCases] = useState([]);
@@ -127,6 +139,26 @@ function ScholarshipAssistancePage() {
             setError(err.message);
         }
     };
+
+    useEffect(() => {
+        const selectedCase = familyCases.find(
+            (item) => item.caseId === selectedCaseId
+        );
+
+        if (selectedCase) {
+            setForm((prev) => ({
+                ...prev,
+                veteranName:
+                    selectedCase.veteranDetails?.name || "",
+
+                serviceNumber:
+                    selectedCase.veteranDetails?.serviceNumber || "",
+
+                serviceStatus:
+                    selectedCase.veteranDetails?.serviceStatus || "",
+            }));
+        }
+    }, [selectedCaseId, familyCases]);
 
     // =========================================================
     // FETCH SCHOLARSHIPS
@@ -780,34 +812,36 @@ function ScholarshipAssistancePage() {
 
                                             {/* DEADLINE */}
 
-                                            {scholarship.applicationDeadline && (
-                                                <div className="
-                                                    flex
-                                                    items-center
-                                                    gap-3
-                                                    text-[#40566F]
-                                                    mt-3
-                                                ">
+{scholarship.applicationDeadline && (
+    <div className="mt-4 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
 
-                                                    <CalendarDays
-                                                        size={20}
-                                                        className="
-                                                            text-[#52677F]
-                                                        "
-                                                    />
+        <div className="flex items-center gap-3">
 
-                                                    <span>
-                                                        Deadline:{" "}
-                                                        {new Date(
-                                                            scholarship.applicationDeadline
-                                                        ).toLocaleDateString(
-                                                            "en-GB"
-                                                        )}
-                                                    </span>
+            <CalendarDays
+                size={20}
+                className="text-red-600"
+            />
 
-                                                </div>
-                                            )}
+            <div>
 
+                <p className="text-xs font-semibold text-red-600 uppercase">
+                    Application Deadline
+                </p>
+
+                <p className="text-base font-bold text-red-700 mt-1">
+                    {new Date(
+                        scholarship.applicationDeadline
+                    ).toLocaleDateString(
+                        "en-GB"
+                    )}
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+)}
                                             {/* SMALL APPLICATION STATUS */}
 
                                             {application && (
@@ -1138,10 +1172,9 @@ function ScholarshipAssistancePage() {
                                     p-5
                                     rounded-lg
                                     border
-                                    ${
-                                        eligibility.eligible
-                                            ? "bg-green-50 border-green-200"
-                                            : "bg-red-50 border-red-200"
+                                    ${eligibility.eligible
+                                        ? "bg-green-50 border-green-200"
+                                        : "bg-red-50 border-red-200"
                                     }
                                 `}
                             >
@@ -1294,9 +1327,15 @@ function ScholarshipAssistancePage() {
                                                 name="dateOfBirth"
                                                 value={form.dateOfBirth}
                                                 onChange={handleChange}
+                                                // max={maxDateOfBirth}
                                                 className="w-full border rounded-lg px-4 py-3"
                                                 required
                                             />
+
+                                            <p className="text-sm text-gray-500 mt-1">
+                                                Applicant must be at least 18 years old.
+                                            </p>
+                                            
                                         </div>
 
                                         <div>
@@ -1495,10 +1534,9 @@ function ScholarshipAssistancePage() {
                                             <input
                                                 type="text"
                                                 name="veteranName"
-                                                placeholder="Enter veteran name"
                                                 value={form.veteranName}
-                                                onChange={handleChange}
-                                                className="w-full border rounded-lg px-4 py-3"
+                                                readOnly
+                                                className="w-full border rounded-lg px-4 py-3 bg-gray-100 cursor-not-allowed"
                                                 required
                                             />
                                         </div>
@@ -1511,10 +1549,9 @@ function ScholarshipAssistancePage() {
                                             <input
                                                 type="text"
                                                 name="serviceNumber"
-                                                placeholder="Enter service number"
                                                 value={form.serviceNumber}
-                                                onChange={handleChange}
-                                                className="w-full border rounded-lg px-4 py-3"
+                                                readOnly
+                                                className="w-full border rounded-lg px-4 py-3 bg-gray-100 cursor-not-allowed"
                                                 required
                                             />
                                         </div>
@@ -1527,11 +1564,9 @@ function ScholarshipAssistancePage() {
                                             <input
                                                 type="text"
                                                 name="serviceBranch"
-                                                placeholder="e.g. Indian Navy"
                                                 value={form.serviceBranch}
                                                 onChange={handleChange}
                                                 className="w-full border rounded-lg px-4 py-3"
-                                                required
                                             />
                                         </div>
 
@@ -1543,7 +1578,6 @@ function ScholarshipAssistancePage() {
                                             <input
                                                 type="text"
                                                 name="rank"
-                                                placeholder="Enter rank"
                                                 value={form.rank}
                                                 onChange={handleChange}
                                                 className="w-full border rounded-lg px-4 py-3"
@@ -1558,10 +1592,10 @@ function ScholarshipAssistancePage() {
                                             <input
                                                 type="text"
                                                 name="serviceStatus"
-                                                placeholder="e.g. Retired"
                                                 value={form.serviceStatus}
-                                                onChange={handleChange}
-                                                className="w-full border rounded-lg px-4 py-3"
+                                                readOnly
+                                                className="w-full border rounded-lg px-4 py-3 bg-gray-100 cursor-not-allowed"
+                                                required
                                             />
                                         </div>
 
@@ -1773,7 +1807,7 @@ function ScholarshipAssistancePage() {
                                         </div>
                                     )}
 
-                                                                        {/* =================================================
+                                    {/* =================================================
                                         APPLICATION HISTORY
                                     ================================================= */}
 
@@ -1847,13 +1881,13 @@ function ScholarshipAssistancePage() {
                                                                             text-[#0B1F3A]
                                                                         ">
                                                                             {historyItem.status ===
-                                                                            "Submitted"
+                                                                                "Submitted"
                                                                                 ? "Application Submitted"
                                                                                 : historyItem.status ===
-                                                                                  "Approved"
+                                                                                    "Approved"
                                                                                     ? "Application Approved"
                                                                                     : historyItem.status ===
-                                                                                      "Rejected"
+                                                                                        "Rejected"
                                                                                         ? "Application Rejected"
                                                                                         : historyItem.status}
                                                                         </p>
@@ -1899,7 +1933,7 @@ function ScholarshipAssistancePage() {
                                             </div>
                                         )}
 
-                                                                            {/* =================================================
+                                    {/* =================================================
                                         GOVERNMENT PROCESSING
                                     ================================================= */}
 
@@ -2075,7 +2109,7 @@ function ScholarshipAssistancePage() {
 
                                                         const isUploading =
                                                             uploadingDocument[
-                                                                uploadKey
+                                                            uploadKey
                                                             ];
 
                                                         const isRejected =
@@ -2088,9 +2122,9 @@ function ScholarshipAssistancePage() {
 
                                                         const isPending =
                                                             document?.status ===
-                                                                "Pending" ||
+                                                            "Pending" ||
                                                             document?.status ===
-                                                                "Under Review";
+                                                            "Under Review";
 
                                                         return (
                                                             <div
@@ -2161,14 +2195,13 @@ function ScholarshipAssistancePage() {
                                                                                     rounded-full
                                                                                     text-xs
                                                                                     font-semibold
-                                                                                    ${
-                                                                                        isVerified
-                                                                                            ? "bg-green-100 text-green-700"
-                                                                                            : isRejected
-                                                                                                ? "bg-red-100 text-red-700"
-                                                                                                : document
-                                                                                                    ? "bg-amber-100 text-amber-700"
-                                                                                                    : "bg-slate-200 text-slate-600"
+                                                                                    ${isVerified
+                                                                                        ? "bg-green-100 text-green-700"
+                                                                                        : isRejected
+                                                                                            ? "bg-red-100 text-red-700"
+                                                                                            : document
+                                                                                                ? "bg-amber-100 text-amber-700"
+                                                                                                : "bg-slate-200 text-slate-600"
                                                                                     }
                                                                                 `}
                                                                             >
@@ -2339,7 +2372,7 @@ function ScholarshipAssistancePage() {
                                                                                     accept=".pdf,.jpg,.jpeg,.png"
                                                                                     disabled={
                                                                                         uploadingDocument[
-                                                                                            `${document._id}-reupload`
+                                                                                        `${document._id}-reupload`
                                                                                         ]
                                                                                     }
                                                                                     onChange={(

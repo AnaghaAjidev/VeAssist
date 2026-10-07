@@ -476,103 +476,96 @@ const AdminDashboard = () => {
     // ======================================================
 
     const QuickAction = ({
-        icon,
-        title,
-        description,
-        onClick,
-        disabled = false,
-    }) => {
-
-        return (
-
-            <button
-                onClick={onClick}
-                disabled={disabled}
+    icon,
+    title,
+    description,
+    onClick,
+    disabled = false,
+    className = "",
+}) => {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            disabled={disabled}
+            className={`
+                group
+                w-full
+                text-left
+                bg-white
+                border
+                border-slate-200
+                rounded-2xl
+                p-5
+                shadow-sm
+                hover:shadow-md
+                hover:border-[#9DB6CF]
+                transition-all
+                duration-200
+                disabled:opacity-50
+                disabled:cursor-not-allowed
+                ${className}
+            `}
+        >
+            <div
                 className="
-                    group
-                    w-full
-                    text-left
-                    bg-white
-                    border
-                    border-slate-200
-                    rounded-2xl
-                    p-5
-                    shadow-sm
-                    hover:shadow-md
-                    hover:border-[#9DB6CF]
-                    transition-all
-                    duration-200
-                    disabled:opacity-50
-                    disabled:cursor-not-allowed
+                    flex
+                    items-start
+                    justify-between
+                    gap-4
                 "
             >
-
                 <div
                     className="
+                        w-11
+                        h-11
+                        rounded-xl
+                        bg-[#EAF1F8]
+                        text-[#1F4E79]
                         flex
-                        items-start
-                        justify-between
-                        gap-4
+                        items-center
+                        justify-center
+                        group-hover:bg-[#0B1F3A]
+                        group-hover:text-white
+                        transition
                     "
                 >
-
-                    <div
-                        className="
-                            w-11
-                            h-11
-                            rounded-xl
-                            bg-[#EAF1F8]
-                            text-[#1F4E79]
-                            flex
-                            items-center
-                            justify-center
-                            group-hover:bg-[#0B1F3A]
-                            group-hover:text-white
-                            transition
-                        "
-                    >
-                        {icon}
-                    </div>
-
-
-                    <ArrowUpRight
-                        size={18}
-                        className="
-                            text-slate-300
-                            group-hover:text-[#1F4E79]
-                            transition
-                        "
-                    />
-
+                    {icon}
                 </div>
 
-
-                <h4
+                <ArrowUpRight
+                    size={18}
                     className="
-                        font-bold
-                        text-[#0B1F3A]
-                        mt-4
+                        text-slate-300
+                        group-hover:text-[#1F4E79]
+                        transition
                     "
-                >
-                    {title}
-                </h4>
+                />
+            </div>
 
+            <h4
+                className="
+                    font-bold
+                    text-[#0B1F3A]
+                    mt-4
+                "
+            >
+                {title}
+            </h4>
 
-                <p
-                    className="
-                        text-xs
-                        text-slate-500
-                        mt-1
-                        leading-relaxed
-                    "
-                >
-                    {description}
-                </p>
-
-            </button>
-        );
-    };
-
+            <p
+                className="
+                    text-xs
+                    text-slate-500
+                    mt-1
+                    leading-relaxed
+                "
+            >
+                {description}
+            </p>
+        </button>
+    );
+};
 
     // ======================================================
     // PROGRESS ROW
@@ -1405,109 +1398,90 @@ const AdminDashboard = () => {
 
 
                 {/* ==================================================
-                    QUICK ACTIONS
-                ================================================== */}
+    QUICK ACTIONS
+================================================== */}
 
-                <section className="mb-8">
+<section className="mb-8">
 
-                    <SectionTitle
-                        icon={
-                            <ArrowUpRight
-                                size={20}
-                            />
-                        }
-                        title="Quick Actions"
-                        description="Frequently used administration tools"
-                    />
+    <SectionTitle
+        icon={<ArrowUpRight size={20} />}
+        title="Quick Actions"
+        description="Frequently used administration tools"
+    />
 
+    <div
+        className="
+            grid
+            grid-cols-1
+            sm:grid-cols-2
+            lg:grid-cols-6
+            gap-4
+        "
+    >
 
-                    <div
-                        className="
-        grid
-        grid-cols-1
-        sm:grid-cols-2
-        lg:grid-cols-5
-        gap-4
-    "
-                    >
+        {/* USER MANAGEMENT */}
 
-                        {/* USER MANAGEMENT */}
+        <QuickAction
+            className="lg:col-span-2"
+            icon={<Users size={21} />}
+            title="User Management"
+            description="View users, manage roles and authority departments."
+            onClick={() => navigate("/admin/users")}
+        />
 
-                        <QuickAction
-                            className="lg:col-span-2"
-                            icon={
-                                <Users size={21} />
-                            }
-                            title="User Management"
-                            description="View users, manage roles and authority departments."
-                            onClick={() =>
-                                navigate("/admin/users")
-                            }
-                        />
+        {/* OFFICER MANAGEMENT */}
 
+        <QuickAction
+            className="lg:col-span-2"
+            icon={<UserCheck size={21} />}
+            title="Officer Management"
+            description="Create and manage Welfare Officers."
+            onClick={() => navigate("/admin/officers")}
+        />
 
-                        {/* OFFICER MANAGEMENT */}
+        {/* REGULAR APPLICATION MANAGEMENT */}
 
-                        <QuickAction
-                            className="lg:col-span-2"
-                            icon={
-                                <UserCheck size={21} />
-                            }
-                            title="Officer Management"
-                            description="Create and manage Welfare Officers."
-                            onClick={() =>
-                                navigate("/admin/officers")
-                            }
-                        />
+        <QuickAction
+            className="lg:col-span-2"
+            icon={<ClipboardList size={21} />}
+            title="Application Management"
+            description="View regular assistance applications and assign Welfare Officers."
+            onClick={() => navigate("/admin/applications")}
+        />
 
+        {/* ASSISTANCE CASE MANAGEMENT */}
 
-                        {/* APPLICATION MANAGEMENT */}
+        <QuickAction
+            className="lg:col-span-2"
+            icon={<FolderOpen size={21} />}
+            title="Assistance Case Management"
+            description="View assistance cases and assign Welfare Officers."
+            onClick={() => navigate("/admin/cases")}
+        />
 
-                        <QuickAction
-                            className="lg:col-span-2"
-                            icon={
-                                <ClipboardList size={21} />
-                            }
-                            title="Application Management"
-                            description="View regular assistance applications and assign Welfare Officers."
-                            onClick={() =>
-                                navigate("/admin/applications")
-                            }
-                        />
+        {/* AUTHORITY MANAGEMENT */}
 
+        <QuickAction
+            className="lg:col-span-2"
+            icon={<ShieldCheck size={21} />}
+            title="Authority Management"
+            description="Manage authority departments and accounts."
+            onClick={() => navigate("/admin/authorities")}
+        />
 
-                        {/* AUTHORITY MANAGEMENT */}
+        {/* REPORTS & ANALYTICS */}
 
-                        <QuickAction
-                            className="lg:col-span-2 lg:col-start-2"
-                            icon={
-                                <ShieldCheck size={21} />
-                            }
-                            title="Authority Management"
-                            description="Manage authority departments and accounts."
-                            onClick={() =>
-                                navigate("/admin/authorities")
-                            }
-                        />
+        <QuickAction
+            className="lg:col-span-2"
+            icon={<BarChart3 size={21} />}
+            title="Reports & Analytics"
+            description="View system reports and administration statistics."
+            onClick={() => navigate("/admin/reports")}
+        />
 
+    </div>
 
-                        {/* REPORTS & ANALYTICS */}
-
-                        <QuickAction
-                            className="lg:col-span-2 lg:col-start-4"
-                            icon={
-                                <BarChart3 size={21} />
-                            }
-                            title="Reports & Analytics"
-                            description="View system reports and administration statistics."
-                            onClick={() =>
-                                navigate("/admin/reports")
-                            }
-                        />
-
-                    </div>
-
-                </section>
+</section>
 
 
                 {/* ==================================================

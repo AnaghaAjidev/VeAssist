@@ -1,8 +1,8 @@
+
 import Communication from "../models/Communication.js";
 import AssistanceCase from "../models/AssistanceCase.js";
 import User from "../models/User.js";
 import { createNotification } from "../services/notificationService.js";
-
 
 // ======================================================
 // SEND COMMUNICATION
@@ -44,12 +44,6 @@ export const sendCommunication = async (req, res) => {
         }
 
         // --------------------------------------------------
-        // Determine recipient
-        // --------------------------------------------------
-
-        let recipient;
-
-        // --------------------------------------------------
         // FAMILY → WELFARE OFFICER
         // --------------------------------------------------
 
@@ -65,38 +59,25 @@ export const sendCommunication = async (req, res) => {
                 });
             }
 
-            // Create one communication record
+            // Create communication and notification
             // for each Welfare Officer
+
             for (const officer of officers) {
-                const communication =
-                    await Communication.create({
-                        caseId:
-                            assistanceCase._id,
-
-                        sender:
-                            req.user.userId,
-
-                        recipient:
-                            officer._id,
-
-                        subject,
-
-                        message,
-                    });
+                await Communication.create({
+                    caseId: assistanceCase._id,
+                    sender: req.user.userId,
+                    recipient: officer._id,
+                    subject,
+                    message,
+                });
 
                 await createNotification({
                     recipient: officer._id,
-
-                    title:
-                        "New Case Communication",
-
-                    message:
-                        `${subject}\n\n${message}`,
-
+                    title: "New Case Communication",
+                    subject,
+                    message,
                     type: "Communication",
-
-                    relatedCase:
-                        assistanceCase._id,
+                    relatedCase: assistanceCase._id,
                 });
             }
 
@@ -111,36 +92,31 @@ export const sendCommunication = async (req, res) => {
         // --------------------------------------------------
 
         if (req.user.role === "officer") {
-            recipient =
+            const recipient =
                 assistanceCase.familyUser;
 
+            if (!recipient) {
+                return res.status(404).json({
+                    message:
+                        "Family user not found for this case.",
+                });
+            }
+
             await Communication.create({
-                caseId:
-                    assistanceCase._id,
-
-                sender:
-                    req.user.userId,
-
+                caseId: assistanceCase._id,
+                sender: req.user.userId,
                 recipient,
-
                 subject,
-
                 message,
             });
 
             await createNotification({
                 recipient,
-
-                title:
-                    "New Case Communication",
-
-                message:
-                    `${subject}\n\n${message}`,
-
+                title: "New Case Communication",
+                subject,
+                message,
                 type: "Communication",
-
-                relatedCase:
-                    assistanceCase._id,
+                relatedCase: assistanceCase._id,
             });
 
             return res.status(201).json({
@@ -166,7 +142,6 @@ export const sendCommunication = async (req, res) => {
         });
     }
 };
-
 
 // ======================================================
 // GET COMMUNICATIONS FOR A CASE
@@ -202,7 +177,7 @@ export const getCaseCommunications = async (
         if (
             req.user.role === "family" &&
             assistanceCase.familyUser.toString() !==
-            req.user.userId
+                req.user.userId
         ) {
             return res.status(403).json({
                 message:
@@ -230,8 +205,7 @@ export const getCaseCommunications = async (
 
         const communications =
             await Communication.find({
-                caseId:
-                    assistanceCase._id,
+                caseId: assistanceCase._id,
             })
                 .populate(
                     "sender",

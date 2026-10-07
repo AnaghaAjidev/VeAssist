@@ -744,7 +744,7 @@ const [recentActivities, setRecentActivities] =
                     </p>
 
                     <h2 className="text-3xl md:text-4xl font-bold text-[#0B1F3A]">
-                        Welcome back, {userName}
+                        Welcome, {userName}
                     </h2>
 
                     <p className="text-gray-600 mt-3 text-lg">

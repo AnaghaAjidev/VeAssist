@@ -795,18 +795,14 @@ export const reviewDocument = async (req, res) => {
 
 
         // ==================================================
-        // REGULAR APPLICATION - WELFARE OFFICER
+        // REGULAR CASE DOCUMENT - WELFARE OFFICER
         // ==================================================
-        //
-        // Scholarship/Vocational documents are identified
-        // by welfareApplicationId and must not be reviewed
-        // by a Welfare Officer.
+        // Officer assignment is stored on AssistanceCase.
+        // Scholarship/vocational documents use the separate
+        // Welfare Authority workflow and are excluded here.
         // ==================================================
 
         if (req.user.role === "officer") {
-
-            // Officer must NOT review Welfare Assistance
-            // documents.
             if (document.welfareApplicationId) {
                 return res.status(403).json({
                     message:
@@ -814,45 +810,40 @@ export const reviewDocument = async (req, res) => {
                 });
             }
 
-            // Regular document must belong to an application.
-            if (!document.applicationId) {
-                return res.status(403).json({
-                    message:
-                        "This document is not associated with a regular application.",
-                });
-            }
-
-            const application =
-                await Application.findById(
-                    document.applicationId
-                );
-
-            if (!application) {
-                return res.status(404).json({
-                    message:
-                        "Associated application not found.",
-                });
-            }
-
-            // The application must have an assigned
-            // Welfare Officer.
-            if (!application.assignedOfficer) {
-                return res.status(403).json({
-                    message:
-                        "This application has no assigned Welfare Officer.",
-                });
-            }
-
-            // Only the assigned Welfare Officer can
-            // review the document.
             if (
-                application.assignedOfficer.toString() !==
-                req.user.userId.toString()
+                !assistanceCase.assignedOfficer ||
+                assistanceCase.assignedOfficer.toString() !==
+                    req.user.userId.toString()
             ) {
                 return res.status(403).json({
                     message:
-                        "You are not authorized to review this application's documents.",
+                        "You are not authorized to review documents for this assistance case.",
                 });
+            }
+
+            // If linked to a regular application, verify that
+            // the application belongs to this same case.
+            if (document.applicationId) {
+                const application = await Application.findById(
+                    document.applicationId
+                );
+
+                if (!application) {
+                    return res.status(404).json({
+                        message: "Associated application not found.",
+                    });
+                }
+
+                if (
+                    application.caseId &&
+                    application.caseId.toString() !==
+                        assistanceCase._id.toString()
+                ) {
+                    return res.status(403).json({
+                        message:
+                            "This document does not belong to the assigned assistance case.",
+                    });
+                }
             }
         }
 
@@ -981,34 +972,16 @@ export const getOfficerCaseDocuments = async (
         // ==================================================
         // WELFARE OFFICER AUTHORIZATION
         // ==================================================
-        //
-        // A Welfare Officer can access regular application
-        // documents only when that officer is assigned to
-        // a regular application belonging to this case.
-        //
-        // Admin can access the documents without assignment.
+        // Assistance cases are assigned directly to officers
+        // through AssistanceCase.assignedOfficer.
         // ==================================================
 
         if (req.user.role === "officer") {
-
-            const regularApplication =
-                await Application.findOne({
-                    caseId:
-                        assistanceCase._id,
-
-                    applicationType: {
-                        $in: [
-                            "Pension Assistance",
-                            "Insurance Assistance",
-                            "ECHS Assistance",
-                        ],
-                    },
-
-                    assignedOfficer:
-                        req.user.userId,
-                });
-
-            if (!regularApplication) {
+            if (
+                !assistanceCase.assignedOfficer ||
+                assistanceCase.assignedOfficer.toString() !==
+                    req.user.userId.toString()
+            ) {
                 return res.status(403).json({
                     message:
                         "You are not authorized to access documents for this assistance case.",

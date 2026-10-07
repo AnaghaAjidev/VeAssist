@@ -16,6 +16,60 @@ const userSchema = new mongoose.Schema(
             trim: true,
         },
 
+        phone: {
+            type: String,
+            trim: true,
+            default: "",
+        },
+
+        dob: {
+            type: Date,
+            required: function () {
+                return this.role === "family";
+            },
+        },
+
+        address: {
+            type: String,
+            required: function () {
+                return this.role === "family";
+            },
+            trim: true,
+        },
+
+        deceasedPersonName: {
+            type: String,
+            required: function () {
+                return this.role === "family";
+            },
+            trim: true,
+        },
+
+        serviceNumber: {
+            type: String,
+            required: function () {
+                return this.role === "family";
+            },
+            trim: true,
+            uppercase: true,
+        },
+
+        relationship: {
+            type: String,
+            required: function () {
+                return this.role === "family";
+            },
+            enum: ["Spouse", "Son", "Daughter", "Father", "Mother", "Other"],
+        },
+
+        relationshipStatus: {
+            type: String,
+            required: function () {
+                return this.role === "family";
+            },
+            trim: true,
+        },
+
         password: {
             type: String,
             required: true,
@@ -47,12 +101,6 @@ const userSchema = new mongoose.Schema(
         // OFFICER DETAILS
         // ==================================================
 
-        phone: {
-            type: String,
-            trim: true,
-            default: "",
-        },
-
         officerId: {
             type: String,
             trim: true,
@@ -64,6 +112,32 @@ const userSchema = new mongoose.Schema(
             type: String,
             trim: true,
             default: "",
+        },
+
+        district: {
+            type: String,
+            trim: true,
+            default: "",
+        },
+
+        office: {
+            type: String,
+            trim: true,
+            default: "",
+        },
+
+        // ==================================================
+        // PASSWORD RESET
+        // ==================================================
+
+        resetPasswordToken: {
+            type: String,
+            default: null,
+        },
+
+        resetPasswordExpires: {
+            type: Date,
+            default: null,
         },
 
         // ==================================================

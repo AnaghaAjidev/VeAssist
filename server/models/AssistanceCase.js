@@ -14,6 +14,12 @@ const assistanceCaseSchema = new mongoose.Schema(
             required: true,
         },
 
+        assignedOfficer: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            default: null,
+        },
+
         veteranDetails: {
             name: {
                 type: String,

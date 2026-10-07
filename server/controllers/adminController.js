@@ -780,20 +780,16 @@ export const updateAdminUserStatus = async (
 };
 
 
+
 // ============================================================
 // CREATE WELFARE OFFICER
 // ============================================================
 
-export const createAdminOfficer = async (
-    req,
-    res
-) => {
+export const createAdminOfficer = async (req, res) => {
     try {
-
         if (req.user.role !== "admin") {
             return res.status(403).json({
-                message:
-                    "You are not authorized to create Welfare Officers.",
+                message: "You are not authorized to create Welfare Officers.",
             });
         }
 
@@ -803,171 +799,93 @@ export const createAdminOfficer = async (
             phone,
             officerId,
             designation,
+            district,
+            office,
             password,
         } = req.body;
 
-
-        // ----------------------------------------------------
-        // REQUIRED FIELD VALIDATION
-        // ----------------------------------------------------
-
+        // Validate required fields
         if (
-            !name ||
-            !email ||
-            !phone ||
-            !officerId ||
-            !designation ||
+            !name?.trim() ||
+            !email?.trim() ||
+            !phone?.trim() ||
+            !officerId?.trim() ||
+            !designation?.trim() ||
+            !district?.trim() ||
+            !office?.trim() ||
             !password
         ) {
             return res.status(400).json({
-                message:
-                    "All Welfare Officer fields are required.",
+                message: "All Welfare Officer fields are required.",
             });
         }
 
+        // Check duplicate email
+        const normalizedEmail = email.trim().toLowerCase();
 
-        // ----------------------------------------------------
-        // CHECK EXISTING EMAIL
-        // ----------------------------------------------------
-
-        const existingEmail =
-            await User.findOne({
-                email:
-                    email
-                        .trim()
-                        .toLowerCase(),
-            });
+        const existingEmail = await User.findOne({
+            email: normalizedEmail,
+        });
 
         if (existingEmail) {
             return res.status(409).json({
-                message:
-                    "A user with this email already exists.",
+                message: "A user with this email already exists.",
             });
         }
 
+        // Check duplicate Officer ID
+        const normalizedOfficerId = officerId.trim();
 
-        // ----------------------------------------------------
-        // CHECK EXISTING OFFICER ID
-        // ----------------------------------------------------
-
-        const existingOfficer =
-            await User.findOne({
-                officerId:
-                    officerId.trim(),
-            });
+        const existingOfficer = await User.findOne({
+            officerId: normalizedOfficerId,
+        });
 
         if (existingOfficer) {
             return res.status(409).json({
-                message:
-                    "This Officer ID is already in use.",
+                message: "This Officer ID is already in use.",
             });
         }
 
+        // Hash password
+        const hashedPassword = await bcrypt.hash(password, 10);
 
-        // ----------------------------------------------------
-        // PASSWORD HASHING
-        // ----------------------------------------------------
-
-        const hashedPassword =
-            await bcrypt.hash(
-                password,
-                10
-            );
-
-
-        // ----------------------------------------------------
-        // CREATE WELFARE OFFICER
-        // ----------------------------------------------------
-
-        const officer =
-            await User.create({
-
-                name:
-                    name.trim(),
-
-                email:
-                    email
-                        .trim()
-                        .toLowerCase(),
-
-                password:
-                    hashedPassword,
-
-                role:
-                    "officer",
-
-                // Welfare Officers are not assigned to
-                // Pension / Insurance / ECHS departments.
-                // Application type determines the authority
-                // later in the workflow.
-                department:
-                    null,
-
-                phone:
-                    phone.trim(),
-
-                officerId:
-                    officerId.trim(),
-
-                designation:
-                    designation.trim(),
-
-                isActive:
-                    true,
-            });
-
-
-        // ----------------------------------------------------
-        // RESPONSE
-        // ----------------------------------------------------
-
-        return res.status(201).json({
-            message:
-                "Welfare Officer created successfully.",
-
-            officer: {
-                id:
-                    officer._id,
-
-                name:
-                    officer.name,
-
-                email:
-                    officer.email,
-
-                phone:
-                    officer.phone,
-
-                officerId:
-                    officer.officerId,
-
-                department:
-                    officer.department,
-
-                designation:
-                    officer.designation,
-
-                role:
-                    officer.role,
-
-                isActive:
-                    officer.isActive,
-
-                createdAt:
-                    officer.createdAt,
-            },
+        // Create officer
+        const officer = await User.create({
+            name: name.trim(),
+            email: normalizedEmail,
+            password: hashedPassword,
+            role: "officer",
+            department: null,
+            phone: phone.trim(),
+            officerId: normalizedOfficerId,
+            designation: designation.trim(),
+            district: district.trim(),
+            office: office.trim(),
+            isActive: true,
         });
 
+        return res.status(201).json({
+            message: "Welfare Officer created successfully.",
+            officer: {
+                id: officer._id,
+                name: officer.name,
+                email: officer.email,
+                phone: officer.phone,
+                officerId: officer.officerId,
+                designation: officer.designation,
+                district: officer.district,
+                office: officer.office,
+                department: officer.department,
+                role: officer.role,
+                isActive: officer.isActive,
+                createdAt: officer.createdAt,
+            },
+        });
     } catch (error) {
-
-        console.error(
-            "Create Welfare Officer error:",
-            error
-        );
+        console.error("Create Welfare Officer error:", error);
 
         return res.status(500).json({
-            message:
-                "Unable to create Welfare Officer.",
+            message: "Unable to create Welfare Officer.",
         });
     }
 };
@@ -1022,32 +940,20 @@ export const getAdminOfficers = async (
 };
 
 
+
 // ============================================================
 // UPDATE WELFARE OFFICER
 // ============================================================
 
-export const updateAdminOfficer = async (
-    req,
-    res
-) => {
+export const updateAdminOfficer = async (req, res) => {
     try {
-
-        // ==================================================
-        // ADMIN ACCESS CHECK
-        // ==================================================
-
         if (req.user.role !== "admin") {
             return res.status(403).json({
-                message:
-                    "You are not authorized to update Welfare Officers.",
+                message: "You are not authorized to update Welfare Officers.",
             });
         }
 
-
-        const {
-            officerId,
-        } = req.params;
-
+        const { officerId: officerMongoId } = req.params;
 
         const {
             name,
@@ -1055,178 +961,211 @@ export const updateAdminOfficer = async (
             phone,
             officerId: newOfficerId,
             designation,
+            district,
+            office,
         } = req.body;
 
-
-        // ==================================================
-        // REQUIRED FIELD VALIDATION
-        // ==================================================
-
+        // Validate required fields
         if (
-            !name ||
-            !email ||
-            !phone ||
-            !newOfficerId ||
-            !designation
+            !name?.trim() ||
+            !email?.trim() ||
+            !phone?.trim() ||
+            !newOfficerId?.trim() ||
+            !designation?.trim() ||
+            !district?.trim() ||
+            !office?.trim()
         ) {
             return res.status(400).json({
-                message:
-                    "All Welfare Officer fields are required.",
+                message: "All Welfare Officer fields are required.",
             });
         }
 
-
-        // ==================================================
-        // FIND WELFARE OFFICER
-        // ==================================================
-
-        const officer =
-            await User.findOne({
-                _id: officerId,
-                role: "officer",
-            });
+        // Find officer
+        const officer = await User.findOne({
+            _id: officerMongoId,
+            role: "officer",
+        });
 
         if (!officer) {
             return res.status(404).json({
-                message:
-                    "Welfare Officer not found.",
+                message: "Welfare Officer not found.",
             });
         }
 
+        const normalizedEmail = email.trim().toLowerCase();
+        const normalizedOfficerId = newOfficerId.trim();
 
-        // ==================================================
-        // CHECK DUPLICATE EMAIL
-        // ==================================================
-
-        const existingEmail =
-            await User.findOne({
-                email:
-                    email
-                        .trim()
-                        .toLowerCase(),
-
-                _id: {
-                    $ne:
-                        officer._id,
-                },
-            });
+        // Check duplicate email, excluding this officer
+        const existingEmail = await User.findOne({
+            email: normalizedEmail,
+            _id: { $ne: officer._id },
+        });
 
         if (existingEmail) {
             return res.status(409).json({
-                message:
-                    "A user with this email already exists.",
+                message: "A user with this email already exists.",
             });
         }
 
-
-        // ==================================================
-        // CHECK DUPLICATE OFFICER ID
-        // ==================================================
-
-        const existingOfficer =
-            await User.findOne({
-                officerId:
-                    newOfficerId.trim(),
-
-                _id: {
-                    $ne:
-                        officer._id,
-                },
-            });
-
-        if (existingOfficer) {
-            return res.status(409).json({
-                message:
-                    "This Officer ID is already in use.",
-            });
-        }
-
-
-        // ==================================================
-        // UPDATE WELFARE OFFICER
-        // ==================================================
-
-        officer.name =
-            name.trim();
-
-        officer.email =
-            email
-                .trim()
-                .toLowerCase();
-
-        officer.phone =
-            phone.trim();
-
-        officer.officerId =
-            newOfficerId.trim();
-
-        officer.designation =
-            designation.trim();
-
-
-        // Welfare Officers are not assigned to
-        // Pension / Insurance / ECHS departments.
-        // Application type determines the authority
-        // later in the workflow.
-
-        officer.department =
-            null;
-
-
-        await officer.save();
-
-
-        // ==================================================
-        // RESPONSE
-        // ==================================================
-
-        return res.status(200).json({
-            message:
-                "Welfare Officer updated successfully.",
-
-            officer: {
-                id:
-                    officer._id,
-
-                name:
-                    officer.name,
-
-                email:
-                    officer.email,
-
-                phone:
-                    officer.phone,
-
-                officerId:
-                    officer.officerId,
-
-                department:
-                    officer.department,
-
-                designation:
-                    officer.designation,
-
-                role:
-                    officer.role,
-
-                isActive:
-                    officer.isActive,
-
-                updatedAt:
-                    officer.updatedAt,
-            },
+        // Check duplicate Officer ID, excluding this officer
+        const existingOfficerId = await User.findOne({
+            officerId: normalizedOfficerId,
+            _id: { $ne: officer._id },
         });
 
-    } catch (error) {
+        if (existingOfficerId) {
+            return res.status(409).json({
+                message: "This Officer ID is already in use.",
+            });
+        }
 
-        console.error(
-            "Update Welfare Officer error:",
-            error
-        );
+        // Update officer details
+        officer.name = name.trim();
+        officer.email = normalizedEmail;
+        officer.phone = phone.trim();
+        officer.officerId = normalizedOfficerId;
+        officer.designation = designation.trim();
+        officer.district = district.trim();
+        officer.office = office.trim();
+
+        // Welfare Officers do not belong to authority departments
+        officer.department = null;
+
+        await officer.save({ validateModifiedOnly: true });
+
+        return res.status(200).json({
+            message: "Welfare Officer updated successfully.",
+            officer: {
+                id: officer._id,
+                name: officer.name,
+                email: officer.email,
+                phone: officer.phone,
+                officerId: officer.officerId,
+                designation: officer.designation,
+                district: officer.district,
+                office: officer.office,
+                department: officer.department,
+                role: officer.role,
+                isActive: officer.isActive,
+            },
+        });
+    } catch (error) {
+        console.error("Update Welfare Officer error:", error);
 
         return res.status(500).json({
-            message:
-                "Unable to update Welfare Officer.",
+            message: "Unable to update Welfare Officer.",
+        });
+    }
+};
+
+
+// ============================================================
+// ASSISTANCE CASE MANAGEMENT
+// ============================================================
+
+// GET ALL ASSISTANCE CASES FOR ADMIN
+export const getAdminCases = async (req, res) => {
+    try {
+        if (req.user.role !== "admin") {
+            return res.status(403).json({
+                message: "You are not authorized to view assistance cases.",
+            });
+        }
+
+        const cases = await AssistanceCase.find()
+            .populate("familyUser", "name email")
+            .populate(
+                "assignedOfficer",
+                "name email officerId designation isActive"
+            )
+            .sort({ createdAt: -1 });
+
+        return res.status(200).json({
+            count: cases.length,
+            cases,
+        });
+    } catch (error) {
+        console.error("Get admin cases error:", error);
+
+        return res.status(500).json({
+            message: "Unable to load assistance cases.",
+        });
+    }
+};
+
+
+// ASSIGN OR REASSIGN OFFICER TO AN ASSISTANCE CASE
+export const assignOfficerToCase = async (req, res) => {
+    try {
+        if (req.user.role !== "admin") {
+            return res.status(403).json({
+                message: "You are not authorized to assign officers.",
+            });
+        }
+
+        const { caseId } = req.params;
+        const { officerId } = req.body;
+
+        if (!officerId) {
+            return res.status(400).json({
+                message: "Officer ID is required.",
+            });
+        }
+
+        // Find the assistance case using its public case ID
+        const assistanceCase = await AssistanceCase.findOne({
+            caseId,
+        });
+
+        if (!assistanceCase) {
+            return res.status(404).json({
+                message: "Assistance case not found.",
+            });
+        }
+
+        // Find the selected welfare officer
+        const officer = await User.findOne({
+            _id: officerId,
+            role: "officer",
+        });
+
+        if (!officer) {
+            return res.status(404).json({
+                message: "Selected Welfare Officer was not found.",
+            });
+        }
+
+        if (officer.isActive === false) {
+            return res.status(400).json({
+                message: "Cannot assign an inactive Welfare Officer.",
+            });
+        }
+
+        // Assign or reassign the officer
+        assistanceCase.assignedOfficer = officer._id;
+
+        await assistanceCase.save();
+
+        return res.status(200).json({
+            message: "Welfare Officer assigned successfully.",
+            assistanceCase: {
+                id: assistanceCase._id,
+                caseId: assistanceCase.caseId,
+                status: assistanceCase.status,
+                assignedOfficer: {
+                    id: officer._id,
+                    name: officer.name,
+                    email: officer.email,
+                    officerId: officer.officerId,
+                    designation: officer.designation,
+                },
+            },
+        });
+    } catch (error) {
+        console.error("Assign officer to case error:", error);
+
+        return res.status(500).json({
+            message: "Unable to assign Welfare Officer to the case.",
         });
     }
 };

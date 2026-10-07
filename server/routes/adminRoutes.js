@@ -1,4 +1,3 @@
-
 import express from "express";
 
 import {
@@ -22,6 +21,12 @@ import {
     createAdminOfficer,
     getAdminOfficers,
     updateAdminOfficer,
+
+    // ========================================================
+    // ASSISTANCE CASE MANAGEMENT
+    // ========================================================
+    getAdminCases,
+    assignOfficerToCase,
 
     // ========================================================
     // REGULAR APPLICATION MANAGEMENT
@@ -74,7 +79,6 @@ router.get(
     getAdminUsers
 );
 
-
 // Get individual user details
 router.get(
     "/users/:userId",
@@ -82,7 +86,6 @@ router.get(
     roleMiddleware("admin"),
     getAdminUserDetails
 );
-
 
 // Change user role
 router.put(
@@ -92,7 +95,6 @@ router.put(
     updateAdminUserRole
 );
 
-
 // Delete user
 router.delete(
     "/users/:userId",
@@ -100,7 +102,6 @@ router.delete(
     roleMiddleware("admin"),
     deleteAdminUser
 );
-
 
 // Activate / deactivate user
 router.patch(
@@ -123,7 +124,6 @@ router.post(
     createAdminOfficer
 );
 
-
 // Get all Welfare Officers
 router.get(
     "/officers",
@@ -132,13 +132,33 @@ router.get(
     getAdminOfficers
 );
 
-
 // Update Welfare Officer
 router.put(
     "/officers/:officerId",
     authMiddleware,
     roleMiddleware("admin"),
     updateAdminOfficer
+);
+
+
+// ============================================================
+// ASSISTANCE CASE MANAGEMENT
+// ============================================================
+
+// Get all assistance cases
+router.get(
+    "/cases",
+    authMiddleware,
+    roleMiddleware("admin"),
+    getAdminCases
+);
+
+// Assign a welfare officer to an assistance case
+router.patch(
+    "/cases/:caseId/assign-officer",
+    authMiddleware,
+    roleMiddleware("admin"),
+    assignOfficerToCase
 );
 
 
@@ -154,13 +174,7 @@ router.get(
     getAdminApplications
 );
 
-
-// ============================================================
-// REGULAR APPLICATION → WELFARE OFFICER ASSIGNMENT
-// ============================================================
-
-// Admin assigns a Welfare Officer to a
-// regular Pension / Insurance / ECHS application.
+// Assign a welfare officer to a regular application
 router.patch(
     "/applications/:applicationId/assign-officer",
     authMiddleware,
@@ -173,8 +187,7 @@ router.patch(
 // VIEW WELFARE OFFICER ASSIGNED WORK
 // ============================================================
 
-// Admin can view applications assigned to
-// a particular Welfare Officer.
+// View applications assigned to a particular officer
 router.get(
     "/officers/:officerId/assigned-work",
     authMiddleware,
@@ -187,6 +200,7 @@ router.get(
 // AUTHORITY MANAGEMENT
 // ============================================================
 
+// Get all authorities
 router.get(
     "/authorities",
     authMiddleware,
@@ -194,6 +208,7 @@ router.get(
     getAdminAuthorities
 );
 
+// Create authority
 router.post(
     "/authorities",
     authMiddleware,
@@ -201,6 +216,7 @@ router.post(
     createAdminAuthority
 );
 
+// Update authority
 router.put(
     "/authorities/:authorityId",
     authMiddleware,

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import ForgotPasswordPage from "./ForgotPasswordPage";
 import { Link, useNavigate } from "react-router-dom";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import axios from "axios";
@@ -8,6 +9,9 @@ function LoginPage() {
     const navigate = useNavigate();
 
     const [showPassword, setShowPassword] = useState(false);
+
+    const [showForgotPassword, setShowForgotPassword] =
+        useState(false);
 
     const [formData, setFormData] = useState({
         email: "",
@@ -152,12 +156,13 @@ function LoginPage() {
                                     Password
                                 </label>
 
-                                <Link
-                                    to="/forgot-password"
-                                    className="text-sm text-[#1F4E79] hover:text-[#0B1F3A]"
+                                <button
+                                    type="button"
+                                    onClick={() => setShowForgotPassword(true)}
+                                    className="text-sm font-medium text-blue-600 hover:underline"
                                 >
                                     Forgot Password?
-                                </Link>
+                                </button>
 
                             </div>
 
@@ -220,10 +225,16 @@ function LoginPage() {
                         </Link>
 
                     </p>
-
                 </div>
 
             </div>
+
+            {/* Forgot Password Popup */}
+            {showForgotPassword && (
+                <ForgotPasswordPage
+                    onClose={() => setShowForgotPassword(false)}
+                />
+            )}
 
         </div>
     );

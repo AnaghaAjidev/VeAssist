@@ -236,6 +236,31 @@ function WidowVocationalTrainingPage() {
     };
 
     // ============================================================
+    // AUTO-FILL VETERAN DETAILS FROM SELECTED ASSISTANCE CASE
+    // ============================================================
+
+    useEffect(() => {
+        const selectedCase = familyCases.find(
+            (item) => item.caseId === selectedCaseId
+        );
+
+        if (selectedCase) {
+            setForm((prev) => ({
+                ...prev,
+
+                veteranName:
+                    selectedCase.veteranDetails?.name || "",
+
+                serviceNumber:
+                    selectedCase.veteranDetails?.serviceNumber || "",
+
+                serviceStatus:
+                    selectedCase.veteranDetails?.serviceStatus || "",
+            }));
+        }
+    }, [selectedCaseId, familyCases]);
+
+    // ============================================================
     // FETCH APPLICATION DOCUMENTS
     // ============================================================
 
@@ -1001,25 +1026,36 @@ function WidowVocationalTrainingPage() {
 
                                         {/* DEADLINE */}
 
-                                        {program.applicationDeadline && (
-                                            <div className="flex items-center gap-3 text-[#40566F] mt-3">
+{program.applicationDeadline && (
+    <div className="mt-4 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
 
-                                                <CalendarDays
-                                                    size={20}
-                                                    className="text-[#52677F]"
-                                                />
+        <div className="flex items-center gap-3">
 
-                                                <span>
-                                                    Deadline:{" "}
-                                                    {new Date(
-                                                        program.applicationDeadline
-                                                    ).toLocaleDateString(
-                                                        "en-GB"
-                                                    )}
-                                                </span>
+            <CalendarDays
+                size={20}
+                className="text-red-600"
+            />
 
-                                            </div>
-                                        )}
+            <div>
+
+                <p className="text-xs font-semibold text-red-600 uppercase">
+                    Application Deadline
+                </p>
+
+                <p className="text-base font-bold text-red-700 mt-1">
+                    {new Date(
+                        program.applicationDeadline
+                    ).toLocaleDateString(
+                        "en-GB"
+                    )}
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+)}
 
                                         {/* APPLICATION STATUS */}
 
@@ -1371,25 +1407,19 @@ function WidowVocationalTrainingPage() {
                                 <input
                                     type="text"
                                     name="veteranName"
-                                    placeholder="Veteran Name"
-                                    value={
-                                        form.veteranName
-                                    }
-                                    onChange={handleChange}
-                                    className="border rounded-lg px-4 py-3"
+                                    value={form.veteranName}
+                                    readOnly
+                                    className="border rounded-lg px-4 py-3 bg-slate-50 text-gray-600 cursor-not-allowed"
+                                    required
                                 />
 
                                 {/* SERVICE NUMBER */}
-
                                 <input
                                     type="text"
                                     name="serviceNumber"
-                                    placeholder="Service Number"
-                                    value={
-                                        form.serviceNumber
-                                    }
-                                    onChange={handleChange}
-                                    className="border rounded-lg px-4 py-3"
+                                    value={form.serviceNumber}
+                                    readOnly
+                                    className="border rounded-lg px-4 py-3 bg-slate-50 text-gray-600 cursor-not-allowed"
                                 />
 
                                 {/* RANK */}
@@ -1825,29 +1855,21 @@ function WidowVocationalTrainingPage() {
 
                                     <div className="grid md:grid-cols-2 gap-4 mt-4">
 
+                                        {/* VETERAN NAME */}
                                         <input
                                             type="text"
                                             name="veteranName"
-                                            placeholder="Veteran Name"
-                                            value={
-                                                form.veteranName
-                                            }
-                                            onChange={
-                                                handleChange
-                                            }
-                                            className="border rounded-lg px-4 py-3"
-                                            required
+                                            value={form.veteranName}
+                                            readOnly
+                                            className="border rounded-lg px-4 py-3 bg-slate-50 text-gray-600 cursor-not-allowed"
                                         />
 
                                         <input
                                             type="text"
                                             name="serviceNumber"
-                                            placeholder="Service Number"
-                                            value={
-                                                form.serviceNumber
-                                            }
-                                            onChange={handleChange}
-                                            className="border rounded-lg px-4 py-3"
+                                            value={form.serviceNumber}
+                                            readOnly
+                                            className="border rounded-lg px-4 py-3 bg-slate-50 text-gray-600 cursor-not-allowed"
                                         />
 
                                         <input
@@ -1880,14 +1902,9 @@ function WidowVocationalTrainingPage() {
                                         <input
                                             type="text"
                                             name="serviceStatus"
-                                            placeholder="Service Status"
-                                            value={
-                                                form.serviceStatus
-                                            }
-                                            onChange={
-                                                handleChange
-                                            }
-                                            className="border rounded-lg px-4 py-3"
+                                            value={form.serviceStatus}
+                                            readOnly
+                                            className="border rounded-lg px-4 py-3 bg-slate-50 text-gray-600 cursor-not-allowed"
                                         />
 
                                     </div>

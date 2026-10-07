@@ -183,6 +183,9 @@ export const checkVocationalTrainingEligibility = async (
             });
         }
 
+        const caseServiceNumber =
+            assistanceCase.veteranDetails?.serviceNumber || "";
+
         const reasons = [];
 
         // --------------------------------------------------------
@@ -259,25 +262,9 @@ export const checkVocationalTrainingEligibility = async (
             );
         }
 
-        if (
-            !serviceNumber ||
-            String(serviceNumber).trim() === ""
-        ) {
+        if (!caseServiceNumber) {
             reasons.push(
-                "Service number is required."
-            );
-        }
-
-        if (
-            serviceNumber &&
-            assistanceCase.veteranDetails?.serviceNumber &&
-            String(serviceNumber).trim().toUpperCase() !==
-            String(
-                assistanceCase.veteranDetails.serviceNumber
-            ).trim().toUpperCase()
-        ) {
-            reasons.push(
-                "The entered service number does not match the service number associated with the selected assistance case."
+                "Service number is not available in the selected assistance case."
             );
         }
 
@@ -358,17 +345,20 @@ export const applyForVocationalTraining = async (
         }
 
         const assistanceCase =
-            await AssistanceCase.findOne({
-                caseId,
-                familyUser: req.user.userId,
-            });
+    await AssistanceCase.findOne({
+        caseId,
+        familyUser: req.user.userId,
+    });
 
-        if (!assistanceCase) {
-            return res.status(404).json({
-                message:
-                    "Assistance case not found for this family.",
-            });
-        }
+if (!assistanceCase) {
+    return res.status(404).json({
+        message:
+            "Assistance case not found for this family.",
+    });
+}
+
+const caseServiceNumber =
+    assistanceCase.veteranDetails?.serviceNumber || "";
 
         // ========================================================
         // APPLICATION DATA
@@ -631,30 +621,30 @@ export const applyForVocationalTraining = async (
         }
 
         // ========================================================
-// SERVICE NUMBER VALIDATION
-// ========================================================
+        // SERVICE NUMBER VALIDATION
+        // ========================================================
 
-if (
-    !serviceNumber ||
-    String(serviceNumber).trim() === ""
-) {
-    reasons.push(
-        "Service number is required."
-    );
-}
+        if (
+            !serviceNumber ||
+            String(serviceNumber).trim() === ""
+        ) {
+            reasons.push(
+                "Service number is required."
+            );
+        }
 
-if (
-    serviceNumber &&
-    assistanceCase.veteranDetails?.serviceNumber &&
-    String(serviceNumber).trim().toUpperCase() !==
-    String(
-        assistanceCase.veteranDetails.serviceNumber
-    ).trim().toUpperCase()
-) {
-    reasons.push(
-        "The entered service number does not match the service number associated with the selected assistance case."
-    );
-}
+        if (
+            serviceNumber &&
+            assistanceCase.veteranDetails?.serviceNumber &&
+            String(serviceNumber).trim().toUpperCase() !==
+            String(
+                assistanceCase.veteranDetails.serviceNumber
+            ).trim().toUpperCase()
+        ) {
+            reasons.push(
+                "The entered service number does not match the service number associated with the selected assistance case."
+            );
+        }
 
         if (!trainingCompletionDate) {
             reasons.push(
@@ -770,7 +760,7 @@ if (
                     veteranName || "",
 
                 serviceNumber:
-                    serviceNumber || "",
+    caseServiceNumber,
 
                 serviceBranch:
                     serviceBranch || "",
@@ -912,7 +902,7 @@ if (
                             veteranName || "",
 
                         serviceNumber:
-                            serviceNumber || "",
+    caseServiceNumber,
 
                         serviceBranch:
                             serviceBranch || "",

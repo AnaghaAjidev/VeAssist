@@ -53,6 +53,11 @@ const scholarshipSchema = new mongoose.Schema(
             default: null,
         },
 
+        minimumAge: {
+            type: Number,
+            default: 18,
+        },
+
         eligibleCourseYears: [
             {
                 type: Number,
@@ -117,7 +122,7 @@ const scholarshipSchema = new mongoose.Schema(
             ],
             default: "Higher Education",
         },
-
+        
         // Used to distinguish Scholarship and Training opportunities
         opportunityType: {
             type: String,

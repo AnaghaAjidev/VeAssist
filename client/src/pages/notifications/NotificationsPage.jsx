@@ -457,55 +457,42 @@ const NotificationsPage = () => {
 
                                         {/* CONTENT */}
                                         <div className="flex-1">
-
                                             <div
-                                                className="flex
-                                                flex-col md:flex-row
-                                                md:items-start
-                                                md:justify-between
-                                                gap-3"
+                                                className="flex flex-col md:flex-row
+        md:items-start md:justify-between gap-3"
                                             >
-
                                                 <div>
-
-                                                    <div
-                                                        className="flex
-                                                        items-center gap-2"
-                                                    >
-
+                                                    {/* Notification Title and Unread Indicator */}
+                                                    <div className="flex items-center gap-2">
                                                         <h3
-                                                            className={`text-lg
-                                                            ${notification.isRead
+                                                            className={`text-lg ${notification.isRead
                                                                     ? "font-semibold text-gray-700"
                                                                     : "font-bold text-[#0B1F3A]"
                                                                 }`}
                                                         >
-                                                            {
-                                                                notification.title
-                                                            }
+                                                            {notification.title}
                                                         </h3>
 
                                                         {!notification.isRead && (
                                                             <span
-                                                                className="w-2.5 h-2.5
-                                                                rounded-full
-                                                                bg-[#D4AF37]"
+                                                                className="w-2.5 h-2.5 rounded-full bg-[#D4AF37]"
                                                             />
                                                         )}
-
                                                     </div>
 
-                                                    <p
-                                                        className="text-gray-600
-                                                        mt-2 leading-relaxed"
-                                                    >
-                                                        {
-                                                            notification.message
-                                                        }
-                                                    </p>
+                                                    {/* Subject and Message */}
+                                                    <div className="mt-2 flex flex-col gap-1">
+                                                        {notification.subject && (
+                                                            <p className="font-semibold text-[#1F4E79]">
+                                                                {notification.subject}
+                                                            </p>
+                                                        )}
 
+                                                        <p className="text-gray-600 leading-relaxed">
+                                                            {notification.message}
+                                                        </p>
+                                                    </div>
                                                 </div>
-
 
                                                 {/* READ BUTTON */}
                                                 {!notification.isRead && (

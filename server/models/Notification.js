@@ -14,6 +14,12 @@ const notificationSchema = new mongoose.Schema(
       trim: true,
     },
 
+    subject: {
+    type: String,
+    trim: true,
+    default: "",
+},
+
     message: {
       type: String,
       required: true,

@@ -1,5 +1,6 @@
 import AssistanceCase from "../models/AssistanceCase.js";
 import { createNotification } from "../services/notificationService.js";
+import User from "../models/User.js";
 
 // CREATE DEATH ASSISTANCE CASE
 export const createCase = async (req, res) => {
@@ -17,6 +18,56 @@ export const createCase = async (req, res) => {
             });
         }
 
+        // Validate that the required veteran details are present
+        if (
+            !veteranDetails.name ||
+            !veteranDetails.serviceNumber ||
+            !veteranDetails.serviceStatus ||
+            !veteranDetails.pensionStatus
+        ) {
+            return res.status(400).json({
+                message: "Please provide all required veteran details.",
+            });
+        }
+
+        // Get the logged-in family user's registration details
+        const familyUser = await User.findById(req.user.userId);
+
+        if (!familyUser || familyUser.role !== "family") {
+            return res.status(403).json({
+                message: "Only registered family users can create a case.",
+            });
+        }
+
+        // Validate the registered service number
+        const registeredServiceNumber = familyUser.serviceNumber
+            ?.trim()
+            .toUpperCase();
+
+        const submittedServiceNumber = veteranDetails.serviceNumber
+            ?.trim()
+            .toUpperCase();
+
+        if (!registeredServiceNumber) {
+            return res.status(400).json({
+                message: "No service number is linked to your account.",
+            });
+        }
+
+        if (submittedServiceNumber !== registeredServiceNumber) {
+            return res.status(400).json({
+                message:
+                    "The service number does not match your registered service number.",
+            });
+        }
+
+        // Use the registered veteran name and service number
+        const verifiedVeteranDetails = {
+            ...veteranDetails,
+            name: familyUser.deceasedPersonName,
+            serviceNumber: registeredServiceNumber,
+        };
+
         // Generate unique Case ID
         const year = new Date().getFullYear();
 
@@ -32,9 +83,10 @@ export const createCase = async (req, res) => {
 
             familyUser: req.user.userId,
 
-            veteranDetails,
+            veteranDetails: verifiedVeteranDetails,
             deathDetails,
             familyDetails,
+
 
             tasks: [
                 {
@@ -136,7 +188,7 @@ export const getCaseById = async (req, res) => {
         const { caseId } = req.params;
 
         const assistanceCase = await AssistanceCase.findOne({
-            caseId: caseId,
+            caseId,
             familyUser: req.user.userId,
         });
 
@@ -146,20 +198,20 @@ export const getCaseById = async (req, res) => {
             });
         }
 
-        res.status(200).json({
+        return res.status(200).json({
             case: assistanceCase,
         });
 
     } catch (error) {
         console.error("Get case error:", error);
 
-        res.status(500).json({
+        return res.status(500).json({
             message: "Unable to retrieve assistance case.",
         });
     }
 };
 
-// UPDATE CASE TASK
+
 // UPDATE CASE TASK
 export const updateCaseTask = async (req, res) => {
     try {
@@ -178,12 +230,10 @@ export const updateCaseTask = async (req, res) => {
             });
         }
 
-        // ---------------------------------------------------------
-        // Find the case
-        // ---------------------------------------------------------
-
+        // Find case assigned to the logged-in officer
         const assistanceCase = await AssistanceCase.findOne({
             caseId,
+            assignedOfficer: req.user.userId,
         });
 
         if (!assistanceCase) {
@@ -192,10 +242,7 @@ export const updateCaseTask = async (req, res) => {
             });
         }
 
-        // ---------------------------------------------------------
         // Find the task
-        // ---------------------------------------------------------
-
         const task = assistanceCase.tasks.id(taskId);
 
         if (!task) {
@@ -204,10 +251,7 @@ export const updateCaseTask = async (req, res) => {
             });
         }
 
-        // ---------------------------------------------------------
         // Update task status
-        // ---------------------------------------------------------
-
         task.status = status;
 
         if (status === "Completed") {
@@ -216,10 +260,7 @@ export const updateCaseTask = async (req, res) => {
             task.completedAt = null;
         }
 
-        // ---------------------------------------------------------
         // Calculate case progress
-        // ---------------------------------------------------------
-
         const totalTasks = assistanceCase.tasks.length;
 
         const completedTasks = assistanceCase.tasks.filter(
@@ -229,16 +270,13 @@ export const updateCaseTask = async (req, res) => {
         const progress =
             totalTasks > 0
                 ? Math.round(
-                      (completedTasks / totalTasks) * 100
-                  )
+                    (completedTasks / totalTasks) * 100
+                )
                 : 0;
 
         assistanceCase.progress = progress;
 
-        // ---------------------------------------------------------
         // Update overall case status
-        // ---------------------------------------------------------
-
         if (progress === 100) {
             assistanceCase.status = "Completed";
         } else if (
@@ -248,10 +286,7 @@ export const updateCaseTask = async (req, res) => {
             assistanceCase.status = "In Progress";
         }
 
-        // ---------------------------------------------------------
         // Add timeline event
-        // ---------------------------------------------------------
-
         assistanceCase.timeline.push({
             event: "Task Updated",
             description: `${task.title} marked as ${status}.`,
@@ -260,23 +295,15 @@ export const updateCaseTask = async (req, res) => {
 
         await assistanceCase.save();
 
-        // ---------------------------------------------------------
-        // TASK UPDATE NOTIFICATION
         // Notify the family about the task status change
-        // ---------------------------------------------------------
-
         try {
             await createNotification({
                 recipient: assistanceCase.familyUser,
-
                 title: "Task Updated",
-
                 message:
                     `Task "${task.title}" for Case ` +
                     `${assistanceCase.caseId} has been marked as ${status}.`,
-
                 type: "Task Update",
-
                 relatedCase: assistanceCase._id,
             });
         } catch (notificationError) {
@@ -286,20 +313,13 @@ export const updateCaseTask = async (req, res) => {
             );
         }
 
-        // ---------------------------------------------------------
-        // Response
-        // ---------------------------------------------------------
-
         return res.status(200).json({
             message: "Case task updated successfully.",
             case: assistanceCase,
         });
 
     } catch (error) {
-        console.error(
-            "Update case task error:",
-            error
-        );
+        console.error("Update case task error:", error);
 
         return res.status(500).json({
             message: "Unable to update case task.",
@@ -307,25 +327,29 @@ export const updateCaseTask = async (req, res) => {
     }
 };
 
+
 // GET ALL CASES FOR WELFARE OFFICER
 export const getOfficerCases = async (req, res) => {
     try {
-        const cases = await AssistanceCase.find()
+        const cases = await AssistanceCase.find({
+            assignedOfficer: req.user.userId,
+        })
             .populate("familyUser", "name email")
             .sort({ createdAt: -1 });
 
-        res.status(200).json({
+        return res.status(200).json({
             cases,
         });
 
     } catch (error) {
         console.error("Get officer cases error:", error);
 
-        res.status(500).json({
+        return res.status(500).json({
             message: "Unable to retrieve assistance cases.",
         });
     }
 };
+
 
 // GET SINGLE CASE FOR WELFARE OFFICER
 export const getOfficerCaseById = async (req, res) => {
@@ -334,6 +358,7 @@ export const getOfficerCaseById = async (req, res) => {
 
         const assistanceCase = await AssistanceCase.findOne({
             caseId,
+            assignedOfficer: req.user.userId,
         }).populate("familyUser", "name email");
 
         if (!assistanceCase) {
@@ -342,14 +367,14 @@ export const getOfficerCaseById = async (req, res) => {
             });
         }
 
-        res.status(200).json({
+        return res.status(200).json({
             case: assistanceCase,
         });
 
     } catch (error) {
         console.error("Get officer case error:", error);
 
-        res.status(500).json({
+        return res.status(500).json({
             message: "Unable to retrieve assistance case.",
         });
     }

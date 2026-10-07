@@ -282,6 +282,9 @@ export const applyForScholarship = async (
             });
         }
 
+        const caseServiceNumber =
+            assistanceCase.veteranDetails?.serviceNumber || "";
+
         // ========================================================
         // APPLICATION FORM FIELDS
         // ========================================================
@@ -467,6 +470,55 @@ export const applyForScholarship = async (
             );
         }
 
+
+        // --------------------------------------------------------
+        // Minimum Age Validation
+        // --------------------------------------------------------
+
+        if (!dateOfBirth) {
+            reasons.push(
+                "Date of birth is required."
+            );
+        } else {
+            const dob = new Date(dateOfBirth);
+
+            if (Number.isNaN(dob.getTime())) {
+                reasons.push(
+                    "Invalid date of birth."
+                );
+            } else {
+                const today = new Date();
+
+                let age =
+                    today.getFullYear() -
+                    dob.getFullYear();
+
+                const monthDifference =
+                    today.getMonth() -
+                    dob.getMonth();
+
+                if (
+                    monthDifference < 0 ||
+                    (
+                        monthDifference === 0 &&
+                        today.getDate() < dob.getDate()
+                    )
+                ) {
+                    age--;
+                }
+
+                const minimumAge =
+                    scholarship.minimumAge ?? 18;
+
+                if (age < minimumAge) {
+                    reasons.push(
+                        `Applicant must be at least ${minimumAge} years old.`
+                    );
+                }
+            }
+        }
+
+
         // --------------------------------------------------------
         // Deadline
         // --------------------------------------------------------
@@ -482,6 +534,7 @@ export const applyForScholarship = async (
                 "The application deadline has passed."
             );
         }
+
 
         // --------------------------------------------------------
         // Return eligibility errors
@@ -608,7 +661,7 @@ export const applyForScholarship = async (
                     veteranName || "",
 
                 serviceNumber:
-                    serviceNumber || "",
+                    caseServiceNumber,
 
                 serviceBranch:
                     serviceBranch || "",
@@ -753,7 +806,7 @@ export const applyForScholarship = async (
                             veteranName || "",
 
                         serviceNumber:
-                            serviceNumber || "",
+                            caseServiceNumber,
 
                         serviceBranch:
                             serviceBranch || "",
@@ -1212,6 +1265,7 @@ export const createScholarship = async (
             eligibleRelationships,
             eligibleGenders,
             minimumMarks,
+            minimumAge,
             eligibleCourseYears,
             eligibleCourses,
             benefits,
@@ -1284,6 +1338,13 @@ export const createScholarship = async (
                         minimumMarks !== ""
                         ? Number(minimumMarks)
                         : null,
+
+                minimumAge:
+                    minimumAge !== undefined &&
+                        minimumAge !== null &&
+                        minimumAge !== ""
+                        ? Number(minimumAge)
+                        : 18,
 
                 eligibleCourseYears:
                     eligibleCourseYears || [],
@@ -1444,6 +1505,7 @@ export const updateScholarship = async (
             "eligibleRelationships",
             "eligibleGenders",
             "minimumMarks",
+            "minimumAge",
             "eligibleCourseYears",
             "eligibleCourses",
             "benefits",

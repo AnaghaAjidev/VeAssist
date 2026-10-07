@@ -74,20 +74,17 @@ export const getUserById = async (req, res) => {
 // UPDATE USER ROLE / DEPARTMENT
 // ======================================================
 
+
 export const updateUserRole = async (req, res) => {
     try {
-
         const { userId } = req.params;
 
         const {
             role,
             department,
+            district,
+            office,
         } = req.body;
-
-
-        // --------------------------------------------------
-        // VALID ROLES
-        // --------------------------------------------------
 
         const validRoles = [
             "family",
@@ -96,20 +93,6 @@ export const updateUserRole = async (req, res) => {
             "admin",
         ];
 
-        if (
-            !validRoles.includes(role)
-        ) {
-            return res.status(400).json({
-                message:
-                    "Invalid user role.",
-            });
-        }
-
-
-        // --------------------------------------------------
-        // AUTHORITY DEPARTMENTS
-        // --------------------------------------------------
-
         const validDepartments = [
             "Pension Department",
             "Insurance Department",
@@ -117,107 +100,85 @@ export const updateUserRole = async (req, res) => {
             "Welfare Assistance Department",
         ];
 
-
-        // --------------------------------------------------
-        // DEPARTMENT VALIDATION
-        // --------------------------------------------------
+        if (!validRoles.includes(role)) {
+            return res.status(400).json({
+                message: "Invalid user role.",
+            });
+        }
 
         if (
             role === "authority" &&
             department &&
-            !validDepartments.includes(
-                department
+            !validDepartments.includes(department)
+        ) {
+            return res.status(400).json({
+                message: "Invalid authority department.",
+            });
+        }
+
+        if (
+            role === "officer" &&
+            (
+                typeof district !== "string" ||
+                !district.trim() ||
+                typeof office !== "string" ||
+                !office.trim()
             )
         ) {
             return res.status(400).json({
                 message:
-                    "Invalid authority department.",
+                    "District and office are required for Welfare Officers.",
             });
         }
 
-
-        // --------------------------------------------------
-        // FIND USER
-        // --------------------------------------------------
-
-        const user =
-            await User.findById(userId);
+        const user = await User.findById(userId);
 
         if (!user) {
             return res.status(404).json({
-                message:
-                    "User not found.",
+                message: "User not found.",
             });
         }
 
-
-        // --------------------------------------------------
-        // PREVENT ADMIN FROM CHANGING OWN ROLE
-        // --------------------------------------------------
-
-        if (
-            user._id.toString() ===
-            req.user.userId
-        ) {
+        if (user._id.toString() === req.user.userId) {
             return res.status(400).json({
-                message:
-                    "You cannot change your own role.",
+                message: "You cannot change your own role.",
             });
         }
-
-
-        // --------------------------------------------------
-        // UPDATE ROLE
-        // --------------------------------------------------
 
         user.role = role;
 
-
-        // --------------------------------------------------
-        // DEPARTMENT
-        // --------------------------------------------------
-
         if (role === "authority") {
-
-            user.department =
-                department || null;
-
+            user.department = department || null;
         } else {
-
             user.department = null;
         }
 
+        if (role === "officer") {
+            user.district = district.trim();
+            user.office = office.trim();
+        } else {
+            user.district = "";
+            user.office = "";
+        }
 
         await user.save();
 
-
-        // --------------------------------------------------
-        // RESPONSE
-        // --------------------------------------------------
-
-        const updatedUser =
-            await User.findById(userId)
-                .select("-password");
+        const updatedUser = await User.findById(userId)
+            .select("-password");
 
         return res.status(200).json({
-            message:
-                "User role updated successfully.",
+            message: "User role updated successfully.",
             user: updatedUser,
         });
-
     } catch (error) {
-
-        console.error(
-            "Update user role error:",
-            error
-        );
+        console.error("Update user role error:", error);
 
         return res.status(500).json({
-            message:
-                "Unable to update user role.",
+            message: "Unable to update user role.",
         });
     }
 };
+
 
 
 // ======================================================
