@@ -812,36 +812,36 @@ function ScholarshipAssistancePage() {
 
                                             {/* DEADLINE */}
 
-{scholarship.applicationDeadline && (
-    <div className="mt-4 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+                                            {scholarship.applicationDeadline && (
+                                                <div className="mt-4 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
 
-        <div className="flex items-center gap-3">
+                                                    <div className="flex items-center gap-3">
 
-            <CalendarDays
-                size={20}
-                className="text-red-600"
-            />
+                                                        <CalendarDays
+                                                            size={20}
+                                                            className="text-red-600"
+                                                        />
 
-            <div>
+                                                        <div>
 
-                <p className="text-xs font-semibold text-red-600 uppercase">
-                    Application Deadline
-                </p>
+                                                            <p className="text-xs font-semibold text-red-600 uppercase">
+                                                                Application Deadline
+                                                            </p>
 
-                <p className="text-base font-bold text-red-700 mt-1">
-                    {new Date(
-                        scholarship.applicationDeadline
-                    ).toLocaleDateString(
-                        "en-GB"
-                    )}
-                </p>
+                                                            <p className="text-base font-bold text-red-700 mt-1">
+                                                                {new Date(
+                                                                    scholarship.applicationDeadline
+                                                                ).toLocaleDateString(
+                                                                    "en-GB"
+                                                                )}
+                                                            </p>
 
-            </div>
+                                                        </div>
 
-        </div>
+                                                    </div>
 
-    </div>
-)}
+                                                </div>
+                                            )}
                                             {/* SMALL APPLICATION STATUS */}
 
                                             {application && (
@@ -1335,7 +1335,7 @@ function ScholarshipAssistancePage() {
                                             <p className="text-sm text-gray-500 mt-1">
                                                 Applicant must be at least 18 years old.
                                             </p>
-                                            
+
                                         </div>
 
                                         <div>

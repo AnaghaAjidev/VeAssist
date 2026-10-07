@@ -12,6 +12,7 @@ import {
     MessageCircle,
     Send,
     LogOut,
+    Calendar,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import NotificationBell from "../../components/common/NotificationBell";
@@ -41,13 +42,19 @@ const FamilyDashboard = () => {
     const [loadingOverview, setLoadingOverview] = useState(true);
 
     const [scholarshipApplicationCount, setScholarshipApplicationCount] =
-    useState(0);
+        useState(0);
 
-const [vocationalApplicationCount, setVocationalApplicationCount] =
-    useState(0);
+    const [vocationalApplicationCount, setVocationalApplicationCount] =
+        useState(0);
 
-const [recentActivities, setRecentActivities] =
-    useState([]);
+    const [recentActivities, setRecentActivities] =
+        useState([]);
+
+    const [upcomingDeadlines, setUpcomingDeadlines] =
+        useState([]);
+
+    const [showDeadlines, setShowDeadlines] =
+        useState(false);
 
     // ============================================================
     // LOAD CASES + APPLICATION OVERVIEW
@@ -161,14 +168,36 @@ const [recentActivities, setRecentActivities] =
                     }
                 }
 
-                                // ------------------------------------------------
-                // Load Scholarship + Vocational Applications
+                // ------------------------------------------------
+                // Load Upcoming Scholarship / Training Deadlines
                 // ------------------------------------------------
 
-                let scholarshipCount = 0;
-                let vocationalCount = 0;
-                let welfarePendingDocuments = 0;
-                let activityList = [];
+                let opportunities = [];
+
+                try {
+                    const opportunitiesResponse = await axios.get(
+                        "http://localhost:5000/api/scholarships",
+                        {
+                            headers: {
+                                Authorization: `Bearer ${token}`,
+                            },
+                        }
+                    );
+
+                    opportunities =
+                        opportunitiesResponse.data.scholarships || [];
+
+                } catch (error) {
+                    console.error(
+                        "Load upcoming deadlines error:",
+                        error
+                    );
+                }
+
+
+                // ------------------------------------------------
+                // Load Scholarship + Vocational Applications
+                // ------------------------------------------------
 
                 try {
                     const welfareResponse = await axios.get(
@@ -183,6 +212,56 @@ const [recentActivities, setRecentActivities] =
                     const welfareApplications =
                         welfareResponse.data.scholarships || [];
 
+
+                    // ------------------------------------------------
+                    // Remove deadlines for already submitted applications
+                    // ------------------------------------------------
+
+                    const submittedOpportunityIds = new Set(
+                        welfareApplications
+                            .filter(
+                                (application) =>
+                                    application.status &&
+                                    application.status !== "Draft"
+                            )
+                            .map(
+                                (application) =>
+                                    application.scholarship?._id
+                            )
+                            .filter(Boolean)
+                    );
+
+
+                    // ------------------------------------------------
+                    // Calculate upcoming deadlines
+                    // ------------------------------------------------
+
+                    const today = new Date();
+
+                    const filteredUpcomingDeadlines = opportunities
+                        .filter(
+                            (item) =>
+                                item.isActive &&
+                                item.applicationDeadline &&
+                                new Date(item.applicationDeadline) >= today &&
+                                !submittedOpportunityIds.has(item._id)
+                        )
+                        .sort(
+                            (a, b) =>
+                                new Date(a.applicationDeadline) -
+                                new Date(b.applicationDeadline)
+                        );
+
+
+                    setUpcomingDeadlines(
+                        filteredUpcomingDeadlines
+                    );
+
+
+                    // ------------------------------------------------
+                    // Scholarship Applications
+                    // ------------------------------------------------
+
                     const scholarshipApplications =
                         welfareApplications.filter(
                             (application) =>
@@ -190,6 +269,11 @@ const [recentActivities, setRecentActivities] =
                                     ?.opportunityType ===
                                 "Scholarship"
                         );
+
+
+                    // ------------------------------------------------
+                    // Vocational Training Applications
+                    // ------------------------------------------------
 
                     const vocationalApplications =
                         welfareApplications.filter(
@@ -199,11 +283,13 @@ const [recentActivities, setRecentActivities] =
                                 "Vocational Training"
                         );
 
+
                     scholarshipCount =
                         scholarshipApplications.length;
 
                     vocationalCount =
                         vocationalApplications.length;
+
 
                     // ------------------------------------------------
                     // Welfare application documents
@@ -254,6 +340,7 @@ const [recentActivities, setRecentActivities] =
 
                             welfarePendingDocuments +=
                                 pendingDocuments.length;
+
                         } catch (error) {
                             console.error(
                                 "Load welfare application documents error:",
@@ -261,172 +348,74 @@ const [recentActivities, setRecentActivities] =
                             );
                         }
 
+
                         // ------------------------------------------------
                         // Application history
                         // ------------------------------------------------
 
                         if (
-    application.applicationHistory &&
-    application.applicationHistory.length > 0
-) {
+                            application.applicationHistory &&
+                            application.applicationHistory.length > 0
+                        ) {
+                            application.applicationHistory.forEach(
+                                (historyItem) => {
 
-    application.applicationHistory.forEach(
-        (historyItem) => {
+                                    activityList.push({
+                                        title:
+                                            application.scholarship
+                                                ?.title ||
+                                            "Welfare Assistance Application",
 
-            activityList.push({
-                title:
-                    application.scholarship
-                        ?.title ||
-                    "Welfare Assistance Application",
+                                        status:
+                                            historyItem.status,
 
-                status:
-                    historyItem.status,
+                                        remarks:
+                                            historyItem.remarks || "",
 
-                remarks:
-                    historyItem.remarks || "",
+                                        date:
+                                            historyItem.date ||
+                                            application.updatedAt ||
+                                            application.createdAt,
+                                    });
 
-                date:
-                    historyItem.date ||
-                    application.updatedAt ||
-                    application.createdAt,
-            });
+                                }
+                            );
 
-        }
-    );
+                        } else if (
+                            application.status &&
+                            application.status !== "Draft"
+                        ) {
 
-} else if (
-    application.status &&
-    application.status !== "Draft"
-) {
+                            // ------------------------------------------------
+                            // Fallback for older welfare applications
+                            // ------------------------------------------------
 
-    // ------------------------------------------------
-    // Fallback for older welfare applications
-    // ------------------------------------------------
+                            activityList.push({
+                                title:
+                                    application.scholarship
+                                        ?.title ||
+                                    "Welfare Assistance Application",
 
-    activityList.push({
-        title:
-            application.scholarship
-                ?.title ||
-            "Welfare Assistance Application",
+                                status:
+                                    application.status,
 
-        status:
-            application.status,
+                                remarks:
+                                    application.authorityRemarks ||
+                                    "",
 
-        remarks:
-            application.authorityRemarks ||
-            "",
-
-        date:
-            application.updatedAt ||
-            application.submittedAt ||
-            application.createdAt,
-    });
-
-}
+                                date:
+                                    application.updatedAt ||
+                                    application.submittedAt ||
+                                    application.createdAt,
+                            });
+                        }
                     }
+
                 } catch (error) {
                     console.error(
                         "Load welfare applications error:",
                         error
                     );
-                }
-
-                // ------------------------------------------------
-                // Add normal application history
-                // ------------------------------------------------
-
-                for (
-                    const assistanceCase of familyCases
-                ) {
-                    try {
-                        const applicationsResponse =
-                            await axios.get(
-                                `http://localhost:5000/api/applications/my/${assistanceCase.caseId}`,
-                                {
-                                    headers: {
-                                        Authorization: `Bearer ${token}`,
-                                    },
-                                }
-                            );
-
-                        const applications =
-                            applicationsResponse.data
-                                .applications || [];
-
-                        applications.forEach(
-    (application) => {
-
-        if (
-            application.applicationHistory &&
-            application.applicationHistory.length > 0
-        ) {
-
-            application.applicationHistory.forEach(
-                (historyItem) => {
-
-                    activityList.push({
-                        title:
-                            application.title ||
-                            application.applicationType ||
-                            "Assistance Application",
-
-                        status:
-                            historyItem.status,
-
-                        remarks:
-                            historyItem.remarks ||
-                            "",
-
-                        date:
-                            historyItem.date ||
-                            application.updatedAt ||
-                            application.createdAt,
-                    });
-
-                }
-            );
-
-        } else if (
-            application.status &&
-            application.status !== "Draft"
-        ) {
-
-            // ------------------------------------------------
-            // Fallback for older applications
-            // created before Application History was added
-            // ------------------------------------------------
-
-            activityList.push({
-                title:
-                    application.title ||
-                    application.applicationType ||
-                    "Assistance Application",
-
-                status:
-                    application.status,
-
-                remarks:
-                    application.authorityRemarks ||
-                    application.remarks ||
-                    "",
-
-                date:
-                    application.updatedAt ||
-                    application.submittedAt ||
-                    application.createdAt,
-            });
-
-        }
-
-    }
-);
-
-                    } catch (error) {
-                        console.error(
-                            "Load application history error:",
-                            error
-                        );
-                    }
                 }
 
                 // ------------------------------------------------
@@ -691,11 +680,225 @@ const [recentActivities, setRecentActivities] =
 
                     </div>
 
-                    {/* USER + LOGOUT */}
+
                     {/* USER + NOTIFICATIONS + LOGOUT */}
                     <div className="flex items-center gap-5">
 
                         <NotificationBell />
+
+                        {/* DEADLINE BUTTON */}
+
+                        <div className="relative">
+
+                            <button
+                                onClick={() =>
+                                    setShowDeadlines((prev) => !prev)
+                                }
+                                className="relative w-10 h-10 rounded-full
+                   flex items-center justify-center
+                   hover:bg-white/10 transition"
+                                title="Upcoming Deadlines"
+                            >
+
+                                <Calendar
+                                    size={23}
+                                    className="text-white"
+                                />
+
+                                {upcomingDeadlines.length > 0 && (
+                                    <span
+                                        className="absolute -top-1 -right-1
+                           min-w-[18px] h-[18px]
+                           px-1 rounded-full
+                           bg-red-500 text-white
+                           text-[10px] font-bold
+                           flex items-center justify-center"
+                                    >
+                                        {upcomingDeadlines.length}
+                                    </span>
+                                )}
+
+                            </button>
+
+
+                            {/* DEADLINE DROPDOWN */}
+
+                            {showDeadlines && (
+                                <div
+                                    className="absolute right-0 top-12
+                       w-[360px] bg-white
+                       rounded-2xl shadow-xl
+                       border border-slate-200
+                       z-50 overflow-hidden"
+                                >
+
+                                    {/* HEADER */}
+
+                                    <div
+                                        className="flex items-center
+                           justify-between
+                           px-5 py-4
+                           border-b border-slate-200"
+                                    >
+
+                                        <div className="flex items-center gap-2">
+
+                                            <Calendar
+                                                size={20}
+                                                className="text-[#1F4E79]"
+                                            />
+
+                                            <h3 className="font-bold text-[#0B1F3A]">
+                                                Upcoming Deadlines
+                                            </h3>
+
+                                        </div>
+
+                                        <button
+                                            onClick={() =>
+                                                setShowDeadlines(false)
+                                            }
+                                            className="text-gray-400
+                               hover:text-gray-700
+                               text-xl"
+                                        >
+                                            ×
+                                        </button>
+
+                                    </div>
+
+
+                                    {/* DEADLINES */}
+
+                                    <div className="max-h-[400px] overflow-y-auto">
+
+                                        {upcomingDeadlines.length === 0 ? (
+
+                                            <div className="px-5 py-8 text-center">
+
+                                                <Calendar
+                                                    size={32}
+                                                    className="mx-auto text-gray-300"
+                                                />
+
+                                                <p className="text-gray-500 mt-3">
+                                                    No upcoming deadlines.
+                                                </p>
+
+                                            </div>
+
+                                        ) : (
+
+                                            upcomingDeadlines.map((item) => {
+
+                                                const deadline =
+                                                    new Date(
+                                                        item.applicationDeadline
+                                                    );
+
+                                                const today = new Date();
+
+                                                const daysRemaining =
+                                                    Math.ceil(
+                                                        (
+                                                            deadline - today
+                                                        ) /
+                                                        (1000 * 60 * 60 * 24)
+                                                    );
+
+                                                return (
+                                                    <div
+                                                        key={item._id}
+                                                        className="px-5 py-4
+                                           border-b
+                                           border-slate-100
+                                           last:border-b-0"
+                                                    >
+
+                                                        <div className="flex items-start gap-3">
+
+                                                            {/* ICON */}
+
+                                                            <div
+                                                                className="w-10 h-10
+                                                   rounded-lg
+                                                   bg-red-50
+                                                   flex items-center
+                                                   justify-center
+                                                   flex-shrink-0"
+                                                            >
+
+                                                                <Calendar
+                                                                    size={20}
+                                                                    className="text-red-600"
+                                                                />
+
+                                                            </div>
+
+
+                                                            {/* CONTENT */}
+
+                                                            <div className="flex-1">
+
+                                                                <p
+                                                                    className="text-xs
+                                                       font-semibold
+                                                       text-[#1F4E79]"
+                                                                >
+                                                                    {item.opportunityType ===
+                                                                        "Vocational Training"
+                                                                        ? "Vocational Training"
+                                                                        : "Scholarship"}
+                                                                </p>
+
+                                                                <p
+                                                                    className="font-semibold
+                                                       text-[#0B1F3A]
+                                                       mt-1"
+                                                                >
+                                                                    {item.title}
+                                                                </p>
+
+                                                                <p
+                                                                    className="text-sm
+                                                       text-red-600
+                                                       font-semibold
+                                                       mt-2"
+                                                                >
+                                                                    Deadline:{" "}
+                                                                    {deadline.toLocaleDateString(
+                                                                        "en-GB"
+                                                                    )}
+                                                                </p>
+
+                                                                <p
+                                                                    className="text-xs
+                                                       text-gray-500
+                                                       mt-1"
+                                                                >
+                                                                    {daysRemaining === 0
+                                                                        ? "Deadline is today"
+                                                                        : daysRemaining === 1
+                                                                            ? "1 day remaining"
+                                                                            : `${daysRemaining} days remaining`}
+                                                                </p>
+
+                                                            </div>
+
+                                                        </div>
+
+                                                    </div>
+                                                );
+                                            })
+
+                                        )}
+
+                                    </div>
+
+                                </div>
+                            )}
+
+                        </div>
 
                         <div className="hidden sm:block text-right">
 
@@ -924,7 +1127,6 @@ const [recentActivities, setRecentActivities] =
                     </div>
 
                 </section>
-
 
                 {/* ==================================================
                     MY ASSISTANCE JOURNEY
@@ -1790,155 +1992,155 @@ const [recentActivities, setRecentActivities] =
                 {/* ==================================================
     RECENT ACTIVITY
 ================================================== */}
-<section className="mt-12 mb-8">
+                <section className="mt-12 mb-8">
 
-    <div className="mb-6">
+                    <div className="mb-6">
 
-        <h3 className="text-2xl font-bold text-[#0B1F3A]">
-            Recent Activity
-        </h3>
+                        <h3 className="text-2xl font-bold text-[#0B1F3A]">
+                            Recent Activity
+                        </h3>
 
-        <p className="text-gray-600 mt-1">
-            Recent updates from your assistance applications.
-        </p>
+                        <p className="text-gray-600 mt-1">
+                            Recent updates from your assistance applications.
+                        </p>
 
-    </div>
+                    </div>
 
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
 
-        {loadingOverview ? (
+                        {loadingOverview ? (
 
-            <div className="text-center py-6">
+                            <div className="text-center py-6">
 
-                <p className="text-gray-500">
-                    Loading recent activity...
-                </p>
+                                <p className="text-gray-500">
+                                    Loading recent activity...
+                                </p>
 
-            </div>
+                            </div>
 
-        ) : recentActivities.length === 0 ? (
+                        ) : recentActivities.length === 0 ? (
 
-            <div className="text-center py-8">
+                            <div className="text-center py-8">
 
-                <div
-                    className="w-14 h-14 mx-auto rounded-full
+                                <div
+                                    className="w-14 h-14 mx-auto rounded-full
                     bg-[#EEF5FF]
                     flex items-center justify-center mb-4"
-                >
+                                >
 
-                    <ShieldCheck
-                        size={28}
-                        className="text-[#1F4E79]"
-                    />
+                                    <ShieldCheck
+                                        size={28}
+                                        className="text-[#1F4E79]"
+                                    />
 
-                </div>
+                                </div>
 
-                <h3 className="text-lg font-bold text-[#0B1F3A]">
-                    No Recent Activity
-                </h3>
+                                <h3 className="text-lg font-bold text-[#0B1F3A]">
+                                    No Recent Activity
+                                </h3>
 
-                <p className="text-gray-500 mt-2">
-                    Your assistance activities and updates will
-                    appear here.
-                </p>
+                                <p className="text-gray-500 mt-2">
+                                    Your assistance activities and updates will
+                                    appear here.
+                                </p>
 
-            </div>
+                            </div>
 
-        ) : (
+                        ) : (
 
-            <div className="space-y-4">
+                            <div className="space-y-4">
 
-                {recentActivities.map(
-                    (activity, index) => (
+                                {recentActivities.map(
+                                    (activity, index) => (
 
-                        <div
-                            key={`${activity.status}-${activity.date}-${index}`}
-                            className="flex items-start gap-4
+                                        <div
+                                            key={`${activity.status}-${activity.date}-${index}`}
+                                            className="flex items-start gap-4
                             border-b border-slate-100
                             last:border-b-0
                             pb-4
                             last:pb-0"
-                        >
+                                        >
 
-                            <div
-                                className="w-10 h-10 rounded-full
+                                            <div
+                                                className="w-10 h-10 rounded-full
                                 bg-[#EEF5FF]
                                 flex items-center justify-center
                                 shrink-0"
-                            >
+                                            >
 
-                                <ShieldCheck
-                                    size={20}
-                                    className="text-[#1F4E79]"
-                                />
+                                                <ShieldCheck
+                                                    size={20}
+                                                    className="text-[#1F4E79]"
+                                                />
 
-                            </div>
+                                            </div>
 
-                            <div className="flex-1">
+                                            <div className="flex-1">
 
-                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+                                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
 
-                                    <p className="font-semibold text-[#0B1F3A]">
-                                        {activity.title}
-                                    </p>
+                                                    <p className="font-semibold text-[#0B1F3A]">
+                                                        {activity.title}
+                                                    </p>
 
-                                    <p className="text-xs text-gray-500">
-                                        {new Date(
-                                            activity.date
-                                        ).toLocaleDateString(
-                                            "en-IN",
-                                            {
-                                                day: "2-digit",
-                                                month: "short",
-                                                year: "numeric",
-                                            }
-                                        )}
-                                    </p>
+                                                    <p className="text-xs text-gray-500">
+                                                        {new Date(
+                                                            activity.date
+                                                        ).toLocaleDateString(
+                                                            "en-IN",
+                                                            {
+                                                                day: "2-digit",
+                                                                month: "short",
+                                                                year: "numeric",
+                                                            }
+                                                        )}
+                                                    </p>
 
-                                </div>
+                                                </div>
 
-                                <p className="text-sm text-[#1F4E79] mt-1 font-medium">
-                                    {activity.status ===
-                                    "Submitted"
-                                        ? "Application Submitted"
-                                        : activity.status ===
-                                          "Under Review"
-                                        ? "Under Welfare Officer Review"
-                                        : activity.status ===
-                                          "Forwarded to Authority"
-                                        ? "Forwarded to Authority"
-                                        : activity.status ===
-                                          "Under Authority Review"
-                                        ? "Under Authority Review"
-                                        : activity.status ===
-                                          "Approved"
-                                        ? "Application Approved"
-                                        : activity.status ===
-                                          "Rejected"
-                                        ? "Application Rejected"
-                                        : activity.status}
-                                </p>
+                                                <p className="text-sm text-[#1F4E79] mt-1 font-medium">
+                                                    {activity.status ===
+                                                        "Submitted"
+                                                        ? "Application Submitted"
+                                                        : activity.status ===
+                                                            "Under Review"
+                                                            ? "Under Welfare Officer Review"
+                                                            : activity.status ===
+                                                                "Forwarded to Authority"
+                                                                ? "Forwarded to Authority"
+                                                                : activity.status ===
+                                                                    "Under Authority Review"
+                                                                    ? "Under Authority Review"
+                                                                    : activity.status ===
+                                                                        "Approved"
+                                                                        ? "Application Approved"
+                                                                        : activity.status ===
+                                                                            "Rejected"
+                                                                            ? "Application Rejected"
+                                                                            : activity.status}
+                                                </p>
 
-                                {activity.remarks && (
-                                    <p className="text-sm text-gray-600 mt-1">
-                                        {activity.remarks}
-                                    </p>
+                                                {activity.remarks && (
+                                                    <p className="text-sm text-gray-600 mt-1">
+                                                        {activity.remarks}
+                                                    </p>
+                                                )}
+
+                                            </div>
+
+                                        </div>
+
+                                    )
                                 )}
 
                             </div>
 
-                        </div>
+                        )}
 
-                    )
-                )}
+                    </div>
 
-            </div>
-
-        )}
-
-    </div>
-
-</section>
+                </section>
 
             </main>
 

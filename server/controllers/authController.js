@@ -221,6 +221,9 @@ export const login = async (req, res) => {
                 role: user.role,
                 department: user.department || null,
 
+                officerName: user.officerName || "",
+                officerPhone: user.officerPhone || "",
+
                 // Registered family details
                 deceasedPersonName: user.deceasedPersonName || "",
                 serviceNumber: user.serviceNumber || "",

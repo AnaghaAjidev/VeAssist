@@ -78,6 +78,7 @@ const AuthorityDashboard = () => {
     const user = storedUser ? JSON.parse(storedUser) : null;
 
     const userName = user?.name || "Authority";
+    const officerName = user?.officerName || "";
 
     // ============================================================
     // FETCH AUTHORITY APPLICATIONS
@@ -853,6 +854,12 @@ const AuthorityDashboard = () => {
                             <p className="text-xs text-slate-300">
                                 {department || "Authority"}
                             </p>
+
+                            {officerName && (
+                                <p className="text-xs text-slate-300">
+                                    Officer: {officerName}
+                                </p>
+                            )}
 
                         </div>
 

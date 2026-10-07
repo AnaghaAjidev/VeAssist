@@ -345,20 +345,20 @@ export const applyForVocationalTraining = async (
         }
 
         const assistanceCase =
-    await AssistanceCase.findOne({
-        caseId,
-        familyUser: req.user.userId,
-    });
+            await AssistanceCase.findOne({
+                caseId,
+                familyUser: req.user.userId,
+            });
 
-if (!assistanceCase) {
-    return res.status(404).json({
-        message:
-            "Assistance case not found for this family.",
-    });
-}
+        if (!assistanceCase) {
+            return res.status(404).json({
+                message:
+                    "Assistance case not found for this family.",
+            });
+        }
 
-const caseServiceNumber =
-    assistanceCase.veteranDetails?.serviceNumber || "";
+        const caseServiceNumber =
+            assistanceCase.veteranDetails?.serviceNumber || "";
 
         // ========================================================
         // APPLICATION DATA
@@ -760,7 +760,7 @@ const caseServiceNumber =
                     veteranName || "",
 
                 serviceNumber:
-    caseServiceNumber,
+                    caseServiceNumber,
 
                 serviceBranch:
                     serviceBranch || "",
@@ -902,7 +902,7 @@ const caseServiceNumber =
                             veteranName || "",
 
                         serviceNumber:
-    caseServiceNumber,
+                            caseServiceNumber,
 
                         serviceBranch:
                             serviceBranch || "",

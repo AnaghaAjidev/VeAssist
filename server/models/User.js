@@ -114,6 +114,18 @@ const userSchema = new mongoose.Schema(
             default: "",
         },
 
+        officerName: {
+            type: String,
+            trim: true,
+            default: "",
+        },
+
+        officerPhone: {
+            type: String,
+            trim: true,
+            default: "",
+        },
+
         district: {
             type: String,
             trim: true,

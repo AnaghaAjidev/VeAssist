@@ -46,6 +46,8 @@ const AdminAuthorityManagement = () => {
         phone: "",
         department: "",
         designation: "",
+        officerName: "",
+        officerPhone: "",
         password: "",
     };
 
@@ -58,6 +60,8 @@ const AdminAuthorityManagement = () => {
         phone: "",
         department: "",
         designation: "",
+        officerName: "",
+        officerPhone: "",
     });
 
     // AUTH CONFIG
@@ -150,6 +154,10 @@ const AdminAuthorityManagement = () => {
                     phone: form.phone.trim(),
                     department: form.department,
                     designation: form.designation.trim(),
+
+                    officerName: form.officerName.trim(),
+                    officerPhone: form.officerPhone.trim(),
+
                     password: form.password,
                 },
                 getAuthConfig()
@@ -181,6 +189,9 @@ const AdminAuthorityManagement = () => {
             phone: authority.phone || "",
             department: authority.department || "",
             designation: authority.designation || "",
+
+            officerName: authority.officerName || "",
+            officerPhone: authority.officerPhone || "",
         });
 
         setShowEditModal(true);
@@ -195,6 +206,8 @@ const AdminAuthorityManagement = () => {
             phone: "",
             department: "",
             designation: "",
+            officerName: "",
+            officerPhone: "",
         });
 
         setShowEditModal(false);
@@ -219,6 +232,8 @@ const AdminAuthorityManagement = () => {
                     phone: editForm.phone.trim(),
                     department: editForm.department,
                     designation: editForm.designation.trim(),
+                    officerName: editForm.officerName.trim(),
+                    officerPhone: editForm.officerPhone.trim(),
                 },
                 getAuthConfig()
             );
@@ -311,32 +326,32 @@ const AdminAuthorityManagement = () => {
     return (
         <div className="min-h-screen bg-[#F4F8FC]">
             {/* HEADER */}
-           
-<header className="bg-[#0B1F3A] text-white shadow-md">
-    <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-            <img
-                src={logo}
-                alt="VeAssist Logo"
-                className="w-11 h-11 object-contain"
-            />
 
-            <div>
-                <h1 className="text-2xl font-bold">
-                    VeAssist
-                </h1>
-                <p className="text-sm text-blue-100">
-                    Administration Portal
-                </p>
-            </div>
-        </div>
+            <header className="bg-[#0B1F3A] text-white shadow-md">
+                <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <img
+                            src={logo}
+                            alt="VeAssist Logo"
+                            className="w-11 h-11 object-contain"
+                        />
 
-        
-<button
-    onClick={() =>
-        navigate("/admin/dashboard")
-    }
-    className="
+                        <div>
+                            <h1 className="text-2xl font-bold">
+                                VeAssist
+                            </h1>
+                            <p className="text-sm text-blue-100">
+                                Administration Portal
+                            </p>
+                        </div>
+                    </div>
+
+
+                    <button
+                        onClick={() =>
+                            navigate("/admin/dashboard")
+                        }
+                        className="
         flex
         items-center
         gap-2
@@ -350,16 +365,16 @@ const AdminAuthorityManagement = () => {
         hover:text-[#0B1F3A]
         transition
     "
->
-    <ArrowLeft size={17} />
+                    >
+                        <ArrowLeft size={17} />
 
-    <span className="hidden sm:inline">
-        Dashboard
-    </span>
-</button>
+                        <span className="hidden sm:inline">
+                            Dashboard
+                        </span>
+                    </button>
 
-    </div>
-</header>
+                </div>
+            </header>
 
 
             {/* MAIN */}
@@ -504,9 +519,19 @@ const AdminAuthorityManagement = () => {
                                                 <p className="font-semibold text-[#0B1F3A]">
                                                     {authority.name}
                                                 </p>
+
                                                 <p className="text-sm text-gray-500">
                                                     {authority.email}
                                                 </p>
+
+                                                {authority.officerName && (
+                                                    <p className="text-sm text-gray-500 mt-1">
+                                                        Officer:{" "}
+                                                        <span className="font-medium text-gray-700">
+                                                            {authority.officerName}
+                                                        </span>
+                                                    </p>
+                                                )}
                                             </td>
 
                                             <td className="px-6 py-4 text-gray-700">
@@ -553,11 +578,10 @@ const AdminAuthorityManagement = () => {
                                                         onClick={() =>
                                                             handleToggleStatus(authority)
                                                         }
-                                                        className={`flex items-center gap-1.5 px-3 py-2 rounded-lg transition text-sm font-semibold disabled:opacity-60 ${
-                                                            authority.isActive === false
-                                                                ? "bg-green-50 text-green-700 hover:bg-green-100"
-                                                                : "bg-red-50 text-red-700 hover:bg-red-100"
-                                                        }`}
+                                                        className={`flex items-center gap-1.5 px-3 py-2 rounded-lg transition text-sm font-semibold disabled:opacity-60 ${authority.isActive === false
+                                                            ? "bg-green-50 text-green-700 hover:bg-green-100"
+                                                            : "bg-red-50 text-red-700 hover:bg-red-100"
+                                                            }`}
                                                     >
                                                         {authority.isActive === false ? (
                                                             <>
@@ -710,6 +734,37 @@ const AdminAuthorityManagement = () => {
                                         className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-blue-200 focus:border-[#1F4E79]"
                                     />
                                 </div>
+
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                        Officer Name
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        name="officerName"
+                                        value={form.officerName}
+                                        onChange={handleChange}
+                                        placeholder="Officer name"
+                                        className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-blue-200 focus:border-[#1F4E79]"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                        Officer Phone
+                                    </label>
+
+                                    <input
+                                        type="tel"
+                                        name="officerPhone"
+                                        value={form.officerPhone}
+                                        onChange={handleChange}
+                                        placeholder="Officer phone number"
+                                        className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-blue-200 focus:border-[#1F4E79]"
+                                    />
+                                </div>
+
                             </div>
 
                             <div className="flex justify-end gap-3 mt-7 pt-5 border-t">
@@ -843,6 +898,37 @@ const AdminAuthorityManagement = () => {
                                         className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-blue-200 focus:border-[#1F4E79]"
                                     />
                                 </div>
+
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                        Officer Name
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        name="officerName"
+                                        value={editForm.officerName}
+                                        onChange={handleEditChange}
+                                        placeholder="Officer name"
+                                        className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-blue-200 focus:border-[#1F4E79]"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                        Officer Phone
+                                    </label>
+
+                                    <input
+                                        type="tel"
+                                        name="officerPhone"
+                                        value={editForm.officerPhone}
+                                        onChange={handleEditChange}
+                                        placeholder="Officer phone number"
+                                        className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-blue-200 focus:border-[#1F4E79]"
+                                    />
+                                </div>
+
                             </div>
 
                             <div className="flex justify-end gap-3 mt-7 pt-5 border-t">

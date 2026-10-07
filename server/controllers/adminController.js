@@ -1618,6 +1618,8 @@ export const createAdminAuthority = async (req, res) => {
             phone,
             department,
             designation,
+            officerName,
+            officerPhone,
             password,
         } = req.body;
 
@@ -1666,6 +1668,10 @@ export const createAdminAuthority = async (req, res) => {
             phone: phone.trim(),
             department,
             designation: designation.trim(),
+
+            officerName: officerName?.trim() || "",
+            officerPhone: officerPhone?.trim() || "",
+
             password: hashedPassword,
             role: "authority",
             isActive: true,
@@ -1680,6 +1686,10 @@ export const createAdminAuthority = async (req, res) => {
                 phone: authority.phone,
                 department: authority.department,
                 designation: authority.designation,
+
+                officerName: authority.officerName,
+                officerPhone: authority.officerPhone,
+
                 role: authority.role,
                 isActive: authority.isActive,
             },
@@ -1708,6 +1718,8 @@ export const updateAdminAuthority = async (req, res) => {
             phone,
             department,
             designation,
+            officerName,
+            officerPhone,
         } = req.body;
 
         if (
@@ -1758,6 +1770,9 @@ export const updateAdminAuthority = async (req, res) => {
         authority.department = department;
         authority.designation = designation.trim();
 
+        authority.officerName = officerName?.trim() || "";
+        authority.officerPhone = officerPhone?.trim() || "";
+
         await authority.save();
 
         return res.status(200).json({
@@ -1769,6 +1784,10 @@ export const updateAdminAuthority = async (req, res) => {
                 phone: authority.phone,
                 department: authority.department,
                 designation: authority.designation,
+
+                officerName: authority.officerName,
+                officerPhone: authority.officerPhone,
+
                 role: authority.role,
                 isActive: authority.isActive,
             },
