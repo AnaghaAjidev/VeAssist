@@ -466,8 +466,8 @@ const NotificationsPage = () => {
                                                     <div className="flex items-center gap-2">
                                                         <h3
                                                             className={`text-lg ${notification.isRead
-                                                                    ? "font-semibold text-gray-700"
-                                                                    : "font-bold text-[#0B1F3A]"
+                                                                ? "font-semibold text-gray-700"
+                                                                : "font-bold text-[#0B1F3A]"
                                                                 }`}
                                                         >
                                                             {notification.title}

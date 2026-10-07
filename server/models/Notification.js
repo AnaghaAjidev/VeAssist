@@ -15,10 +15,10 @@ const notificationSchema = new mongoose.Schema(
     },
 
     subject: {
-    type: String,
-    trim: true,
-    default: "",
-},
+      type: String,
+      trim: true,
+      default: "",
+    },
 
     message: {
       type: String,
