@@ -3,45 +3,58 @@
 // ============================================================
 
 const OVERPASS_URLS = [
-    "https://overpass.private.coffee/api/interpreter",
     "https://overpass-api.de/api/interpreter",
+    "https://maps.mail.ru/osm/tools/overpass/api/interpreter"
 ];
 
 
 // ============================================================
-// CATEGORY TAGS
+// NORMAL CATEGORY TAGS
+// ECHS IS INTENTIONALLY NOT INCLUDED HERE
 // ============================================================
 
 const CATEGORY_TAGS = {
 
     Hospitals: [
         ["amenity", "hospital"],
+        ["healthcare", "hospital"],
     ],
 
     Pharmacies: [
         ["amenity", "pharmacy"],
+        ["healthcare", "pharmacy"],
     ],
 
     Clinics: [
         ["amenity", "clinic"],
         ["amenity", "doctors"],
+        ["healthcare", "clinic"],
+        ["healthcare", "doctor"],
     ],
 
-    Police: [
-        ["amenity", "police"],
+    "Welfare Offices": [
+        ["amenity", "social_facility"],
+        ["office", "government"],
+        ["office", "association"],
+        ["office", "charity"],
+        ["office", "ngo"],
     ],
 
     "Diagnostic Centres": [
         ["healthcare", "laboratory"],
+        ["healthcare", "medical_imaging"],
+        ["healthcare", "sample_collection"],
         ["healthcare", "diagnostic"],
+        ["healthcare:speciality", "diagnostic_radiology"],
+        ["healthcare:speciality", "clinical_pathology"],
     ],
 
     "Government Offices": [
         ["office", "government"],
     ],
 
-    "Welfare Offices": [
-        ["social_facility", "government"],
+    Police: [
+        ["amenity", "police"],
     ],
 
     Banks: [
@@ -51,16 +64,11 @@ const CATEGORY_TAGS = {
     "Post Offices": [
         ["amenity", "post_office"],
     ],
-
-    Emergency: [
-        ["amenity", "fire_station"],
-        ["emergency", "ambulance_station"],
-    ],
 };
 
 
 // ============================================================
-// SIMPLE IN-MEMORY CACHE
+// CACHE
 // ============================================================
 
 const locationCache = new Map();
@@ -69,7 +77,7 @@ const CACHE_DURATION = 60 * 1000;
 
 
 // ============================================================
-// DISTANCE CALCULATION
+// DISTANCE
 // ============================================================
 
 const calculateDistance = (
@@ -121,7 +129,7 @@ const formatDistance = (distance) => {
 
 
 // ============================================================
-// BUILD ADDRESS
+// ADDRESS
 // ============================================================
 
 const buildAddress = (tags) => {
@@ -161,7 +169,7 @@ const buildAddress = (tags) => {
 
 
 // ============================================================
-// DETERMINE CATEGORY
+// CATEGORY DETECTION
 // ============================================================
 
 const getCategory = (tags) => {
@@ -180,10 +188,21 @@ const getCategory = (tags) => {
         ""
     ).toLowerCase();
 
+    const socialFor = (
+        tags["social_facility:for"] ||
+        ""
+    ).toLowerCase();
 
-    // --------------------------------------------------------
+    const healthcareSpeciality = (
+        tags["healthcare:speciality"] ||
+        ""
+    ).toLowerCase();
+
+
+    // ========================================================
     // ECHS
-    // --------------------------------------------------------
+    // This is also used when ECHS data is returned separately.
+    // ========================================================
 
     if (
         name.includes("echs") ||
@@ -192,107 +211,203 @@ const getCategory = (tags) => {
         name.includes("exservicemen") ||
         name.includes("veteran") ||
         operator.includes("echs") ||
-        operator.includes("ex-servicemen")
+        operator.includes("ex-servicemen") ||
+        operator.includes("veteran")
     ) {
         return "ECHS";
     }
 
 
-    // --------------------------------------------------------
-    // NORMAL CATEGORIES
-    // --------------------------------------------------------
+    // ========================================================
+    // WELFARE
+    // ========================================================
 
-    if (tags.amenity === "hospital") {
+    if (
+        name.includes("welfare") ||
+        name.includes("social welfare") ||
+        name.includes("sainik board") ||
+        name.includes("zila sainik") ||
+        name.includes("district sainik") ||
+        name.includes("ex-servicemen welfare") ||
+        name.includes("ex servicemen welfare") ||
+        name.includes("veteran welfare") ||
+        operator.includes("welfare") ||
+        operator.includes("sainik board") ||
+        operator.includes("ex-servicemen") ||
+        socialFor.includes("veteran")
+    ) {
+        return "Welfare Offices";
+    }
+
+
+    // ========================================================
+    // DIAGNOSTIC CENTRES
+    // ========================================================
+
+    if (
+        tags.healthcare === "laboratory" ||
+        tags.healthcare === "medical_imaging" ||
+        tags.healthcare === "sample_collection" ||
+        tags.healthcare === "diagnostic" ||
+        healthcareSpeciality.includes("diagnostic_radiology") ||
+        healthcareSpeciality.includes("clinical_pathology") ||
+        name.includes("diagnostic") ||
+        name.includes("diagnostics") ||
+        name.includes("laboratory") ||
+        name.includes("lab") ||
+        name.includes("pathology") ||
+        name.includes("imaging")
+    ) {
+        return "Diagnostic Centres";
+    }
+
+
+    // ========================================================
+    // HOSPITALS
+    // ========================================================
+
+    if (
+        tags.amenity === "hospital" ||
+        tags.healthcare === "hospital"
+    ) {
         return "Hospitals";
     }
 
-    if (tags.amenity === "pharmacy") {
+
+    // ========================================================
+    // PHARMACIES
+    // ========================================================
+
+    if (
+        tags.amenity === "pharmacy" ||
+        tags.healthcare === "pharmacy"
+    ) {
         return "Pharmacies";
     }
 
+
+    // ========================================================
+    // CLINICS
+    // ========================================================
+
     if (
         tags.amenity === "clinic" ||
-        tags.amenity === "doctors"
+        tags.amenity === "doctors" ||
+        tags.healthcare === "clinic" ||
+        tags.healthcare === "doctor"
     ) {
         return "Clinics";
     }
+
+
+    // ========================================================
+    // POLICE
+    // ========================================================
 
     if (tags.amenity === "police") {
         return "Police";
     }
 
-    if (
-        tags.healthcare === "laboratory" ||
-        tags.healthcare === "diagnostic"
-    ) {
-        return "Diagnostic Centres";
-    }
+
+    // ========================================================
+    // BANKS
+    // ========================================================
 
     if (tags.amenity === "bank") {
         return "Banks";
     }
 
+
+    // ========================================================
+    // POST OFFICES
+    // ========================================================
+
     if (tags.amenity === "post_office") {
         return "Post Offices";
     }
 
-    if (
-        tags.amenity === "fire_station" ||
-        tags.emergency === "ambulance_station"
-    ) {
-        return "Emergency";
-    }
 
-    if (tags.social_facility === "government") {
-        return "Welfare Offices";
-    }
+    // ========================================================
+    // GOVERNMENT OFFICES
+    // ========================================================
 
     if (tags.office === "government") {
         return "Government Offices";
     }
+
 
     return "Other";
 };
 
 
 // ============================================================
-// BUILD OVERPASS QUERY
+// BUILD NORMAL OVERPASS QUERY
+// ============================================================
+const buildOverpassQuery = (latitude, longitude, radius) => {
+    return `
+        [out:json][timeout:25];
+
+        (
+            node(around:${radius},${latitude},${longitude})
+                ["amenity"~"hospital|pharmacy|clinic|doctors|social_facility|police|bank|post_office"];
+
+            way(around:${radius},${latitude},${longitude})
+                ["amenity"~"hospital|pharmacy|clinic|doctors|social_facility|police|bank|post_office"];
+
+            node(around:${radius},${latitude},${longitude})
+                ["healthcare"~"hospital|pharmacy|clinic|doctor|laboratory|medical_imaging|sample_collection|diagnostic"];
+
+            way(around:${radius},${latitude},${longitude})
+                ["healthcare"~"hospital|pharmacy|clinic|doctor|laboratory|medical_imaging|sample_collection|diagnostic"];
+
+            node(around:${radius},${latitude},${longitude})
+                ["office"~"government|association|charity|ngo"];
+
+            way(around:${radius},${latitude},${longitude})
+                ["office"~"government|association|charity|ngo"];
+        );
+
+        out center tags;
+    `;
+};
+
+// ============================================================
+// BUILD ECHS QUERY
 // ============================================================
 
-const buildOverpassQuery = (
+const buildECHSQuery = (
     latitude,
     longitude,
     radius
 ) => {
 
-    const queries = [];
-
-    Object.values(CATEGORY_TAGS).forEach(
-        (tags) => {
-
-            tags.forEach(
-                ([key, value]) => {
-
-                    queries.push(`
-                        nwr(
-                            around:${radius},
-                            ${latitude},
-                            ${longitude}
-                        )["${key}"="${value}"];
-                    `);
-
-                }
-            );
-
-        }
-    );
-
-
     return `
-        [out:json][timeout:25];
+        [out:json][timeout:20];
 
         (
-            ${queries.join("\n")}
+            nwr(
+                around:${radius},
+                ${latitude},
+                ${longitude}
+            )["name"~"echs|ex-servicemen|ex servicemen|exservicemen|veteran",i];
+
+            nwr(
+                around:${radius},
+                ${latitude},
+                ${longitude}
+            )["official_name"~"echs|ex-servicemen|ex servicemen|exservicemen|veteran",i];
+
+            nwr(
+                around:${radius},
+                ${latitude},
+                ${longitude}
+            )["operator"~"echs|ex-servicemen|ex servicemen|exservicemen|veteran",i];
+
+            nwr(
+                around:${radius},
+                ${latitude},
+                ${longitude}
+            )["social_facility:for"~"veteran",i];
         );
 
         out center tags;
@@ -311,12 +426,14 @@ const requestOverpass = async (query) => {
 
     for (const url of OVERPASS_URLS) {
 
-        const controller = new AbortController();
+        const controller =
+            new AbortController();
 
-        const timeout = setTimeout(
-            () => controller.abort(),
-            30000
-        );
+        const timeout =
+            setTimeout(
+                () => controller.abort(),
+                30000
+            );
 
 
         try {
@@ -327,27 +444,29 @@ const requestOverpass = async (query) => {
             );
 
 
-            const response = await fetch(
-                url,
-                {
-                    method: "POST",
+            const response =
+                await fetch(
+                    url,
+                    {
+                        method: "POST",
 
-                    headers: {
-                        "Content-Type":
-                            "application/x-www-form-urlencoded; charset=UTF-8",
+                        headers: {
+                            "Content-Type":
+                                "application/x-www-form-urlencoded; charset=UTF-8",
 
-                        "User-Agent":
-                            "VeAssist/1.0",
-                    },
+                            "User-Agent":
+                                "VeAssist/1.0",
+                        },
 
-                    body:
-                        new URLSearchParams({
-                            data: query,
-                        }).toString(),
+                        body:
+                            new URLSearchParams({
+                                data: query,
+                            }).toString(),
 
-                    signal: controller.signal,
-                }
-            );
+                        signal:
+                            controller.signal,
+                    }
+                );
 
 
             clearTimeout(timeout);
@@ -416,7 +535,163 @@ const requestOverpass = async (query) => {
 
 
 // ============================================================
-// GET NEARBY LOCATIONS
+// FORMAT LOCATION RESULTS
+// ============================================================
+
+const formatLocationResults = (
+    data,
+    latitude,
+    longitude,
+    categoryFilter = null
+) => {
+
+    const results = [];
+
+    const seenIds = new Set();
+
+
+    for (const element of data.elements || []) {
+
+        const tags =
+            element.tags || {};
+
+
+        const elementLatitude =
+            element.lat ??
+            element.center?.lat;
+
+
+        const elementLongitude =
+            element.lon ??
+            element.center?.lon;
+
+
+        if (
+            elementLatitude === undefined ||
+            elementLatitude === null ||
+            elementLongitude === undefined ||
+            elementLongitude === null
+        ) {
+            continue;
+        }
+
+
+        const locationName =
+            tags.name ||
+            tags["name:en"] ||
+            tags.official_name ||
+            tags["official_name:en"];
+
+
+        if (!locationName) {
+            continue;
+        }
+
+
+        const id =
+            `${element.type}-${element.id}`;
+
+
+        if (seenIds.has(id)) {
+            continue;
+        }
+
+
+        seenIds.add(id);
+
+
+        const category =
+            getCategory(tags);
+
+
+        if (
+            categoryFilter &&
+            category !== categoryFilter
+        ) {
+            continue;
+        }
+
+
+        // Don't show unrelated OSM social facilities
+        // in the normal "All" result.
+        if (
+            !categoryFilter &&
+            category === "Other"
+        ) {
+            continue;
+        }
+
+
+        const distance =
+            calculateDistance(
+                latitude,
+                longitude,
+                elementLatitude,
+                elementLongitude
+            );
+
+
+        results.push({
+
+            id,
+
+            name:
+                locationName,
+
+            category,
+
+            latitude:
+                elementLatitude,
+
+            longitude:
+                elementLongitude,
+
+            distance:
+                formatDistance(distance),
+
+            distanceValue:
+                distance,
+
+            address:
+                buildAddress(tags),
+
+            phone:
+                tags.phone ||
+                tags["contact:phone"] ||
+                "",
+
+            website:
+                tags.website ||
+                tags["contact:website"] ||
+                "",
+
+            openStatus:
+                tags.opening_hours ||
+                "Opening hours not available",
+
+            emergency:
+                false,
+
+            operator:
+                tags.operator ||
+                "",
+        });
+    }
+
+
+    results.sort(
+        (a, b) =>
+            a.distanceValue -
+            b.distanceValue
+    );
+
+
+    return results;
+};
+
+
+// ============================================================
+// NORMAL NEARBY LOCATIONS
 // ============================================================
 
 const getNearbyLocations = async (
@@ -433,12 +708,10 @@ const getNearbyLocations = async (
             Number(req.query.longitude);
 
         let radius =
-            Number(req.query.radius || 5000);
+            Number(
+                req.query.radius || 5000
+            );
 
-
-        // ----------------------------------------------------
-        // VALIDATE LOCATION
-        // ----------------------------------------------------
 
         if (
             Number.isNaN(latitude) ||
@@ -449,29 +722,21 @@ const getNearbyLocations = async (
                 message:
                     "Valid latitude and longitude are required.",
             });
-
         }
 
-
-        // ----------------------------------------------------
-        // LIMIT RADIUS
-        // ----------------------------------------------------
 
         if (radius < 1000) {
             radius = 1000;
         }
+
 
         if (radius > 5000) {
             radius = 5000;
         }
 
 
-        // ----------------------------------------------------
-        // CACHE KEY
-        // ----------------------------------------------------
-
         const cacheKey =
-            `${latitude.toFixed(4)}_${longitude.toFixed(4)}_${radius}`;
+            `normal_${latitude.toFixed(4)}_${longitude.toFixed(4)}_${radius}`;
 
 
         const cached =
@@ -484,21 +749,17 @@ const getNearbyLocations = async (
                 CACHE_DURATION
         ) {
 
-            console.log(
-                "Returning cached nearby locations."
-            );
-
-
             return res.json({
-                locations: cached.locations,
+                locations:
+                    cached.locations,
+
+                count:
+                    cached.locations.length,
+
                 cached: true,
             });
         }
 
-
-        // ----------------------------------------------------
-        // BUILD QUERY
-        // ----------------------------------------------------
 
         const query =
             buildOverpassQuery(
@@ -508,185 +769,40 @@ const getNearbyLocations = async (
             );
 
 
-        // ----------------------------------------------------
-        // CALL OVERPASS
-        // ----------------------------------------------------
-
         const data =
             await requestOverpass(query);
 
 
-        const results = [];
+        const results =
+            formatLocationResults(
+                data,
+                latitude,
+                longitude
+            );
 
-        const seenIds = new Set();
-
-
-        // ----------------------------------------------------
-        // PROCESS RESULTS
-        // ----------------------------------------------------
-
-        for (const element of data.elements || []) {
-
-            const tags =
-                element.tags || {};
-
-
-            const elementLatitude =
-                element.lat ??
-                element.center?.lat;
-
-
-            const elementLongitude =
-                element.lon ??
-                element.center?.lon;
-
-
-            if (
-                elementLatitude === undefined ||
-                elementLatitude === null ||
-                elementLongitude === undefined ||
-                elementLongitude === null
-            ) {
-
-                continue;
-            }
-
-
-            // ------------------------------------------------
-            // REAL NAME
-            // ------------------------------------------------
-
-            const locationName =
-                tags.name ||
-                tags["name:en"] ||
-                tags.official_name ||
-                tags["official_name:en"];
-
-
-            // Skip unnamed places
-            if (!locationName) {
-                continue;
-            }
-
-
-            // ------------------------------------------------
-            // DUPLICATE CHECK
-            // ------------------------------------------------
-
-            const id =
-                `${element.type}-${element.id}`;
-
-
-            if (seenIds.has(id)) {
-                continue;
-            }
-
-
-            seenIds.add(id);
-
-
-            // ------------------------------------------------
-            // DISTANCE
-            // ------------------------------------------------
-
-            const distance =
-                calculateDistance(
-                    latitude,
-                    longitude,
-                    elementLatitude,
-                    elementLongitude
-                );
-
-
-            // ------------------------------------------------
-            // RESULT
-            // ------------------------------------------------
-
-            results.push({
-
-                id,
-
-                name:
-                    locationName,
-
-                category:
-                    getCategory(tags),
-
-                latitude:
-                    elementLatitude,
-
-                longitude:
-                    elementLongitude,
-
-                distance:
-                    formatDistance(distance),
-
-                distanceValue:
-                    distance,
-
-                address:
-                    buildAddress(tags),
-
-                phone:
-                    tags.phone ||
-                    tags["contact:phone"] ||
-                    "",
-
-                website:
-                    tags.website ||
-                    tags["contact:website"] ||
-                    "",
-
-                openStatus:
-                    tags.opening_hours ||
-                    "Opening hours not available",
-
-                emergency:
-                    tags.emergency === "yes",
-
-                operator:
-                    tags.operator ||
-                    "",
-            });
-        }
-
-
-        // ----------------------------------------------------
-        // SORT NEAREST FIRST
-        // ----------------------------------------------------
-
-        results.sort(
-            (a, b) =>
-                a.distanceValue -
-                b.distanceValue
-        );
-
-
-        // ----------------------------------------------------
-        // CACHE RESULT
-        // ----------------------------------------------------
 
         locationCache.set(
             cacheKey,
             {
-                timestamp: Date.now(),
-                locations: results,
+                timestamp:
+                    Date.now(),
+
+                locations:
+                    results,
             }
         );
 
 
-        // ----------------------------------------------------
-        // RESPONSE
-        // ----------------------------------------------------
-
         return res.json({
 
-            locations: results,
+            locations:
+                results,
 
             count:
                 results.length,
 
-            cached: false,
+            cached:
+                false,
         });
 
     } catch (error) {
@@ -709,6 +825,148 @@ const getNearbyLocations = async (
 };
 
 
+// ============================================================
+// ECHS LOCATIONS
+// SEPARATE LIGHTWEIGHT SEARCH
+// ============================================================
+
+const getECHSLocations = async (
+    req,
+    res
+) => {
+
+    try {
+
+        const latitude =
+            Number(req.query.latitude);
+
+        const longitude =
+            Number(req.query.longitude);
+
+        let radius =
+            Number(
+                req.query.radius || 5000
+            );
+
+
+        if (
+            Number.isNaN(latitude) ||
+            Number.isNaN(longitude)
+        ) {
+
+            return res.status(400).json({
+                message:
+                    "Valid latitude and longitude are required.",
+            });
+        }
+
+
+        if (radius < 1000) {
+            radius = 1000;
+        }
+
+
+        if (radius > 10000) {
+            radius = 10000;
+        }
+
+
+        const cacheKey =
+            `echs_${latitude.toFixed(4)}_${longitude.toFixed(4)}_${radius}`;
+
+
+        const cached =
+            locationCache.get(cacheKey);
+
+
+        if (
+            cached &&
+            Date.now() - cached.timestamp <
+                CACHE_DURATION
+        ) {
+
+            return res.json({
+                locations:
+                    cached.locations,
+
+                count:
+                    cached.locations.length,
+
+                cached: true,
+            });
+        }
+
+
+        const query =
+            buildECHSQuery(
+                latitude,
+                longitude,
+                radius
+            );
+
+
+        const data =
+            await requestOverpass(query);
+
+
+        const results =
+            formatLocationResults(
+                data,
+                latitude,
+                longitude,
+                "ECHS"
+            );
+
+
+        locationCache.set(
+            cacheKey,
+            {
+                timestamp:
+                    Date.now(),
+
+                locations:
+                    results,
+            }
+        );
+
+
+        return res.json({
+
+            locations:
+                results,
+
+            count:
+                results.length,
+
+            cached:
+                false,
+        });
+
+    } catch (error) {
+
+        console.error(
+            "ECHS locations error:",
+            error
+        );
+
+
+        return res.status(500).json({
+
+            message:
+                "Unable to load nearby ECHS locations.",
+
+            error:
+                error.message,
+        });
+    }
+};
+
+
+// ============================================================
+// EXPORTS
+// ============================================================
+
 export {
     getNearbyLocations,
+    getECHSLocations,
 };

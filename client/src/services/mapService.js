@@ -4,7 +4,7 @@
 
 
 // ============================================================
-// GET NEARBY LOCATIONS
+// NORMAL NEARBY LOCATIONS
 // ============================================================
 
 export const getNearbyLocations = async (
@@ -12,10 +12,6 @@ export const getNearbyLocations = async (
     longitude,
     radius = 5000
 ) => {
-
-    // --------------------------------------------------------
-    // Validate coordinates
-    // --------------------------------------------------------
 
     if (
         latitude === undefined ||
@@ -30,10 +26,6 @@ export const getNearbyLocations = async (
     }
 
 
-    // --------------------------------------------------------
-    // Backend API
-    // --------------------------------------------------------
-
     const url =
         `http://localhost:5000/api/map/nearby` +
         `?latitude=${encodeURIComponent(latitude)}` +
@@ -42,25 +34,17 @@ export const getNearbyLocations = async (
 
 
     console.log(
-        "Loading nearby locations from VeAssist backend..."
+        "Loading normal nearby locations..."
     );
 
-
-    // --------------------------------------------------------
-    // Request
-    // --------------------------------------------------------
 
     const response =
         await fetch(url);
 
 
-    // --------------------------------------------------------
-    // Handle error
-    // --------------------------------------------------------
-
     if (!response.ok) {
 
-        let errorMessage =
+        let message =
             "Unable to load nearby locations.";
 
 
@@ -71,7 +55,7 @@ export const getNearbyLocations = async (
 
 
             if (errorData.message) {
-                errorMessage =
+                message =
                     errorData.message;
             }
 
@@ -80,20 +64,16 @@ export const getNearbyLocations = async (
         }
 
 
-        throw new Error(errorMessage);
+        throw new Error(message);
     }
 
-
-    // --------------------------------------------------------
-    // Response
-    // --------------------------------------------------------
 
     const data =
         await response.json();
 
 
     console.log(
-        "Nearby locations received:",
+        "Normal locations received:",
         data.locations?.length || 0
     );
 
@@ -103,53 +83,116 @@ export const getNearbyLocations = async (
 
 
 // ============================================================
-// GET LOCATIONS BY CATEGORY
+// ECHS LOCATIONS
 // ============================================================
 
-export const getNearbyLocationsByCategory = async (
-    latitude,
-    longitude,
-    category,
-    radius = 5000
-) => {
-
-    const locations =
-        await getNearbyLocations(
-            latitude,
-            longitude,
-            radius
-        );
-
-
-    return locations.filter(
-        (location) =>
-            location.category === category
-    );
-};
-
-
-// ============================================================
-// GET EMERGENCY LOCATIONS
-// ============================================================
-
-export const getNearbyEmergencyLocations = async (
+export const getNearbyECHSLocations = async (
     latitude,
     longitude,
     radius = 5000
 ) => {
 
-    const locations =
-        await getNearbyLocations(
-            latitude,
-            longitude,
-            radius
+    if (
+        latitude === undefined ||
+        latitude === null ||
+        longitude === undefined ||
+        longitude === null
+    ) {
+
+        throw new Error(
+            "Valid latitude and longitude are required."
         );
+    }
 
 
-    return locations.filter(
-        (location) =>
-            location.category === "Emergency" ||
-            location.category === "Hospitals" ||
-            location.category === "Police"
+    const url =
+        `http://localhost:5000/api/map/echs` +
+        `?latitude=${encodeURIComponent(latitude)}` +
+        `&longitude=${encodeURIComponent(longitude)}` +
+        `&radius=${encodeURIComponent(radius)}`;
+
+
+    console.log(
+        "Loading ECHS locations..."
     );
+
+
+    const response =
+        await fetch(url);
+
+
+    if (!response.ok) {
+
+        let message =
+            "Unable to load nearby ECHS locations.";
+
+
+        try {
+
+            const errorData =
+                await response.json();
+
+
+            if (errorData.message) {
+                message =
+                    errorData.message;
+            }
+
+        } catch {
+            // Ignore JSON parsing error
+        }
+
+
+        throw new Error(message);
+    }
+
+
+    const data =
+        await response.json();
+
+
+    console.log(
+        "ECHS locations received:",
+        data.locations?.length || 0
+    );
+
+
+    return data.locations || [];
 };
+
+
+// ============================================================
+// CATEGORY FILTER
+// ============================================================
+
+export const getNearbyLocationsByCategory =
+    async (
+        latitude,
+        longitude,
+        category,
+        radius = 5000
+    ) => {
+
+        const locations =
+            await getNearbyLocations(
+                latitude,
+                longitude,
+                radius
+            );
+
+
+        if (
+            !category ||
+            category === "All"
+        ) {
+
+            return locations;
+        }
+
+
+        return locations.filter(
+            (location) =>
+                location.category ===
+                category
+        );
+    };

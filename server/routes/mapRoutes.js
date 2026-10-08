@@ -6,6 +6,7 @@ import express from "express";
 
 import {
     getNearbyLocations,
+    getECHSLocations,
 } from "../controllers/mapController.js";
 
 
@@ -13,12 +14,22 @@ const router = express.Router();
 
 
 // ============================================================
-// GET NEARBY LOCATIONS
+// NORMAL NEARBY LOCATIONS
 // ============================================================
 
 router.get(
     "/nearby",
     getNearbyLocations
+);
+
+
+// ============================================================
+// ECHS LOCATIONS
+// ============================================================
+
+router.get(
+    "/echs",
+    getECHSLocations
 );
 
 
