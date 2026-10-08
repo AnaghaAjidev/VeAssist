@@ -18,6 +18,7 @@ import WelfareAssistancePage from "./pages/family/WelfareAssistancePage";
 import ScholarshipAssistancePage from "./pages/family/ScholarshipAssistancePage";
 import WidowVocationalTrainingPage from "./pages/family/WidowVocationalTrainingPage";
 import FamilyContactHelpCenter from "./pages/family/FamilyContactHelpCenter";
+import HelpNearMe from "./pages/family/HelpNearMe";
 
 import OfficerDashboard from "./pages/officer/OfficerDashboard";
 import OfficerCaseDetails from "./pages/officer/OfficerCaseDetails";
@@ -70,6 +71,7 @@ function App() {
         <Route path="/family/scholarships" element={<ScholarshipAssistancePage />} />
         <Route path="/family/vocational-training" element={<WidowVocationalTrainingPage />} />
         <Route path="/family/contacts" element={<FamilyContactHelpCenter />}/>
+        <Route path="/family/help-near-me" element={<HelpNearMe />} />
 
         {/* OFFICER */}
         <Route path="/officer/dashboard" element={<OfficerDashboard />} />

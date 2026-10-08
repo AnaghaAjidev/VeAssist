@@ -7,6 +7,7 @@ import {
     FileText,
     ClipboardList,
     Bell,
+    MapPinned,
     ArrowRight,
     ShieldCheck,
     MessageCircle,
@@ -239,7 +240,7 @@ const FamilyDashboard = () => {
                                     (application) =>
                                         application.status &&
                                         application.status !==
-                                            "Draft"
+                                        "Draft"
                                 )
                                 .map(
                                     (application) =>
@@ -451,13 +452,13 @@ const FamilyDashboard = () => {
 
                 setPendingDocumentCount(
                     totalPendingDocuments +
-                        welfarePendingDocuments
+                    welfarePendingDocuments
                 );
 
                 setApplicationCount(
                     totalApplications +
-                        scholarshipCount +
-                        vocationalCount
+                    scholarshipCount +
+                    vocationalCount
                 );
 
                 setRecentActivities(
@@ -481,7 +482,7 @@ const FamilyDashboard = () => {
 
                 setCaseError(
                     error.response?.data?.message ||
-                        "Unable to load assistance cases."
+                    "Unable to load assistance cases."
                 );
             } finally {
                 setLoadingCases(false);
@@ -533,7 +534,7 @@ const FamilyDashboard = () => {
 
             setCaseError(
                 error.response?.data?.message ||
-                    "Unable to load case details."
+                "Unable to load case details."
             );
         }
     };
@@ -574,7 +575,7 @@ const FamilyDashboard = () => {
 
             setCommunicationError(
                 error.response?.data?.message ||
-                    "Unable to load case communications."
+                "Unable to load case communications."
             );
         } finally {
             setLoadingCommunications(false);
@@ -646,7 +647,7 @@ const FamilyDashboard = () => {
 
             setCommunicationError(
                 error.response?.data?.message ||
-                    "Unable to send your message."
+                "Unable to send your message."
             );
         } finally {
             setSendingCommunication(false);
@@ -740,19 +741,19 @@ const FamilyDashboard = () => {
 
                                 {upcomingDeadlines.length >
                                     0 && (
-                                    <span
-                                        className="absolute -top-1 -right-1
+                                        <span
+                                            className="absolute -top-1 -right-1
                                         min-w-[18px] h-[18px]
                                         px-1 rounded-full
                                         bg-red-500 text-white
                                         text-[10px] font-bold
                                         flex items-center justify-center"
-                                    >
-                                        {
-                                            upcomingDeadlines.length
-                                        }
-                                    </span>
-                                )}
+                                        >
+                                            {
+                                                upcomingDeadlines.length
+                                            }
+                                        </span>
+                                    )}
 
                             </button>
 
@@ -811,7 +812,7 @@ const FamilyDashboard = () => {
                                     <div className="max-h-[400px] overflow-y-auto">
 
                                         {upcomingDeadlines.length ===
-                                        0 ? (
+                                            0 ? (
 
                                             <div className="px-5 py-8 text-center">
 
@@ -845,10 +846,10 @@ const FamilyDashboard = () => {
                                                                 deadline -
                                                                 today
                                                             ) /
-                                                                (1000 *
-                                                                    60 *
-                                                                    60 *
-                                                                    24)
+                                                            (1000 *
+                                                                60 *
+                                                                60 *
+                                                                24)
                                                         );
 
                                                     return (
@@ -891,7 +892,7 @@ const FamilyDashboard = () => {
                                                                         text-[#1F4E79]"
                                                                     >
                                                                         {item.opportunityType ===
-                                                                        "Vocational Training"
+                                                                            "Vocational Training"
                                                                             ? "Vocational Training"
                                                                             : "Scholarship"}
                                                                     </p>
@@ -924,12 +925,12 @@ const FamilyDashboard = () => {
                                                                         mt-1"
                                                                     >
                                                                         {daysRemaining ===
-                                                                        0
+                                                                            0
                                                                             ? "Deadline is today"
                                                                             : daysRemaining ===
-                                                                              1
-                                                                            ? "1 day remaining"
-                                                                            : `${daysRemaining} days remaining`}
+                                                                                1
+                                                                                ? "1 day remaining"
+                                                                                : `${daysRemaining} days remaining`}
                                                                     </p>
 
                                                                 </div>
@@ -1369,10 +1370,10 @@ const FamilyDashboard = () => {
                                 {loadingCases
                                     ? "..."
                                     : cases.filter(
-                                          (item) =>
-                                              item.status !==
-                                              "Closed"
-                                      ).length}
+                                        (item) =>
+                                            item.status !==
+                                            "Closed"
+                                    ).length}
 
                             </p>
 
@@ -1756,15 +1757,14 @@ const FamilyDashboard = () => {
                                                         rounded-full
                                                         text-sm font-semibold
                                                         whitespace-nowrap
-                                                        ${
-                                                            task.status ===
-                                                            "Completed"
+                                                        ${task.status ===
+                                                                "Completed"
                                                                 ? "bg-green-50 text-green-700"
                                                                 : task.status ===
-                                                                  "In Progress"
-                                                                ? "bg-amber-50 text-amber-700"
-                                                                : "bg-slate-100 text-slate-600"
-                                                        }`}
+                                                                    "In Progress"
+                                                                    ? "bg-amber-50 text-amber-700"
+                                                                    : "bg-slate-100 text-slate-600"
+                                                            }`}
                                                     >
                                                         {task.status}
                                                     </div>
@@ -1929,7 +1929,7 @@ const FamilyDashboard = () => {
                                         </p>
 
                                     ) : communications.length ===
-                                      0 ? (
+                                        0 ? (
 
                                         <div className="text-center py-8">
 
@@ -2239,24 +2239,24 @@ const FamilyDashboard = () => {
                                                 <p className="text-sm text-[#1F4E79] mt-1 font-medium">
 
                                                     {activity.status ===
-                                                    "Submitted"
+                                                        "Submitted"
                                                         ? "Application Submitted"
                                                         : activity.status ===
-                                                          "Under Review"
-                                                        ? "Under Welfare Officer Review"
-                                                        : activity.status ===
-                                                          "Forwarded to Authority"
-                                                        ? "Forwarded to Authority"
-                                                        : activity.status ===
-                                                          "Under Authority Review"
-                                                        ? "Under Authority Review"
-                                                        : activity.status ===
-                                                          "Approved"
-                                                        ? "Application Approved"
-                                                        : activity.status ===
-                                                          "Rejected"
-                                                        ? "Application Rejected"
-                                                        : activity.status}
+                                                            "Under Review"
+                                                            ? "Under Welfare Officer Review"
+                                                            : activity.status ===
+                                                                "Forwarded to Authority"
+                                                                ? "Forwarded to Authority"
+                                                                : activity.status ===
+                                                                    "Under Authority Review"
+                                                                    ? "Under Authority Review"
+                                                                    : activity.status ===
+                                                                        "Approved"
+                                                                        ? "Application Approved"
+                                                                        : activity.status ===
+                                                                            "Rejected"
+                                                                            ? "Application Rejected"
+                                                                            : activity.status}
 
                                                 </p>
 
@@ -2368,6 +2368,648 @@ const FamilyDashboard = () => {
                         </div>
 
                     </button>
+
+                </section>
+
+                {/* ==================================================
+    HELP NEAR ME
+================================================== */}
+                <section className="mb-12">
+
+                    <div
+                        className="
+            relative
+            overflow-hidden
+            bg-white
+            border border-slate-200
+            rounded-2xl
+            shadow-sm
+            hover:shadow-xl
+            transition-all
+            duration-300
+        "
+                    >
+
+                        {/* Decorative background */}
+
+                        <div
+                            className="
+                absolute
+                -top-24
+                -right-24
+                w-64
+                h-64
+                rounded-full
+                bg-[#EEF5FF]
+                opacity-70
+            "
+                        />
+
+                        <div
+                            className="
+                absolute
+                -bottom-32
+                -left-20
+                w-56
+                h-56
+                rounded-full
+                bg-[#F8F3E3]
+                opacity-60
+            "
+                        />
+
+
+                        <div className="relative p-4">
+
+                            {/* HEADER */}
+
+                            <div className="flex items-center justify-between gap-5">
+
+                                <div className="flex items-center gap-4">
+
+                                    <div
+                                        className="
+                                w-12
+                                h-12
+                                rounded-xl
+                                bg-[#0B1F3A]
+                                flex
+                                items-center
+                                justify-center
+                                shrink-0
+                            "
+                                    >
+
+                                        <MapPinned
+                                            size={20}
+                                            className="text-[#D4AF37]"
+                                        />
+
+                                    </div>
+
+
+                                    <div>
+
+                                        <div className="flex items-center gap-3">
+
+                                            <h3
+                                                className="
+                                    text-xl
+                                    font-bold
+                                    text-[#0B1F3A]
+                                "
+                                            >
+                                                Help Near Me
+                                            </h3>
+
+
+                                            <span
+                                                className="
+                                    inline-flex
+                                    items-center
+                                    gap-1.5
+                                    px-3
+                                    py-1
+                                    rounded-full
+                                    bg-green-50
+                                    text-green-700
+                                    text-xs
+                                    font-semibold
+                                "
+                                            >
+
+                                                <span
+                                                    className="
+                                        w-2
+                                        h-2
+                                        rounded-full
+                                        bg-green-500
+                                    "
+                                                />
+
+                                                LIVE
+
+                                            </span>
+
+                                        </div>
+
+
+                                        <p className="text-gray-600 mt-1">
+
+                                            Find assistance and important services
+                                            around your current location.
+
+                                        </p>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+
+                            {/* CONTENT */}
+
+                            <div className="grid grid-cols-[1fr_300px] gap-5 mt-5">
+
+
+                                {/* MAP PREVIEW */}
+
+                                <div
+                                    className="
+                        relative
+                        h-[350px]
+                        rounded-2xl
+                        overflow-hidden
+                        border
+                        border-slate-200
+                        bg-[#E8EEF3]
+                    "
+                                >
+
+                                    {/* Map-style background */}
+
+                                    <div
+                                        className="
+                            absolute
+                            inset-0
+                            opacity-50
+                        "
+                                        style={{
+                                            backgroundImage: `
+                                linear-gradient(
+                                    90deg,
+                                    rgba(255,255,255,0.8) 1px,
+                                    transparent 1px
+                                ),
+                                linear-gradient(
+                                    rgba(255,255,255,0.8) 1px,
+                                    transparent 1px
+                                )
+                            `,
+                                            backgroundSize:
+                                                "45px 45px",
+                                        }}
+                                    />
+
+
+                                    {/* Decorative roads */}
+
+                                    <div
+                                        className="
+                            absolute
+                            w-[120%]
+                            h-8
+                            bg-white/80
+                            rotate-[18deg]
+                            top-28
+                            -left-10
+                        "
+                                    />
+
+                                    <div
+                                        className="
+                            absolute
+                            w-[120%]
+                            h-6
+                            bg-white/70
+                            rotate-[-25deg]
+                            top-48
+                            -left-10
+                        "
+                                    />
+
+
+                                    {/* Radar circles */}
+
+                                    <div
+                                        className="
+                            absolute
+                            left-1/2
+                            top-1/2
+                            -translate-x-1/2
+                            -translate-y-1/2
+                        "
+                                    >
+
+                                        <div
+                                            className="
+                                absolute
+                                -inset-20
+                                rounded-full
+                                border
+                                border-[#1F4E79]/20
+                            "
+                                        />
+
+                                        <div
+                                            className="
+                                absolute
+                                -inset-14
+                                rounded-full
+                                border
+                                border-[#1F4E79]/25
+                            "
+                                        />
+
+                                        <div
+                                            className="
+                                absolute
+                                -inset-8
+                                rounded-full
+                                border
+                                border-[#1F4E79]/30
+                            "
+                                        />
+
+
+                                        {/* Current location */}
+
+                                        <div
+                                            className="
+                                relative
+                                w-14
+                                h-14
+                                rounded-full
+                                bg-[#1F4E79]
+                                border-4
+                                border-white
+                                shadow-xl
+                                flex
+                                items-center
+                                justify-center
+                                z-10
+                            "
+                                        >
+
+                                            <MapPinned
+                                                size={25}
+                                                className="text-white"
+                                            />
+
+                                        </div>
+
+                                    </div>
+
+
+                                    {/* Nearby markers */}
+
+                                    <div
+                                        className="
+                            absolute
+                            top-16
+                            left-[25%]
+                            w-10
+                            h-10
+                            rounded-full
+                            bg-white
+                            shadow-md
+                            flex
+                            items-center
+                            justify-center
+                            text-[#1F4E79]
+                        "
+                                    >
+
+                                        🏥
+
+                                    </div>
+
+
+                                    <div
+                                        className="
+                            absolute
+                            bottom-20
+                            left-[28%]
+                            w-10
+                            h-10
+                            rounded-full
+                            bg-white
+                            shadow-md
+                            flex
+                            items-center
+                            justify-center
+                        "
+                                    >
+
+                                        💊
+
+                                    </div>
+
+
+                                    <div
+                                        className="
+                            absolute
+                            top-24
+                            right-[22%]
+                            w-10
+                            h-10
+                            rounded-full
+                            bg-white
+                            shadow-md
+                            flex
+                            items-center
+                            justify-center
+                        "
+                                    >
+
+                                        🏛️
+
+                                    </div>
+
+
+                                    <div
+                                        className="
+                            absolute
+                            bottom-16
+                            right-[28%]
+                            w-10
+                            h-10
+                            rounded-full
+                            bg-white
+                            shadow-md
+                            flex
+                            items-center
+                            justify-center
+                        "
+                                    >
+
+                                        🛡️
+
+                                    </div>
+
+
+                                    {/* Map label */}
+
+                                    <div
+                                        className="
+                            absolute
+                            left-5
+                            bottom-5
+                            bg-white/95
+                            backdrop-blur
+                            rounded-xl
+                            px-4
+                            py-3
+                            shadow-md
+                        "
+                                    >
+
+                                        <p
+                                            className="
+                                text-xs
+                                font-semibold
+                                text-[#1F4E79]
+                            "
+                                        >
+                                            LOCATION SERVICES
+                                        </p>
+
+                                        <p
+                                            className="
+                                text-sm
+                                font-medium
+                                text-[#0B1F3A]
+                                mt-0.5
+                            "
+                                        >
+                                            Discover nearby support
+                                        </p>
+
+                                    </div>
+
+                                </div>
+
+
+                                {/* SERVICE SUMMARY */}
+
+                                <div
+                                    className="
+                        bg-[#F8FBFF]
+                        border border-[#DCEAF7]
+                        rounded-2xl
+                        p-4
+                        flex
+                        flex-col
+                    "
+                                >
+
+                                    <p
+                                        className="
+                            text-xs
+                            font-bold
+                            tracking-wider
+                            text-[#1F4E79]
+                        "
+                                    >
+                                        NEARBY SERVICES
+                                    </p>
+
+
+                                    <h4
+                                        className="
+                            text-xl
+                            font-bold
+                            text-[#0B1F3A]
+                            mt-2
+                        "
+                                    >
+                                        Find help around you
+                                    </h4>
+
+
+                                    <p
+                                        className="
+                            text-sm
+                            text-gray-600
+                            mt-2
+                            leading-relaxed
+                        "
+                                    >
+                                        Discover important facilities and
+                                        assistance services near your current
+                                        location.
+                                    </p>
+
+
+                                    {/* SERVICE TYPES */}
+
+                                    <div className="mt-4 space-y-2">
+
+                                        <div
+                                            className="
+                                flex
+                                items-center
+                                gap-3
+                                bg-white
+                                border
+                                border-slate-200
+                                rounded-xl
+                                px-4
+                                py-3
+                            "
+                                        >
+
+                                            <span className="text-lg">
+                                                🏥
+                                            </span>
+
+                                            <span
+                                                className="
+                                    text-sm
+                                    font-semibold
+                                    text-[#0B1F3A]
+                                "
+                                            >
+                                                Hospitals & Clinics
+                                            </span>
+
+                                        </div>
+
+
+                                        <div
+                                            className="
+                                flex
+                                items-center
+                                gap-3
+                                bg-white
+                                border
+                                border-slate-200
+                                rounded-xl
+                                px-4
+                                py-3
+                            "
+                                        >
+
+                                            <span className="text-lg">
+                                                💊
+                                            </span>
+
+                                            <span
+                                                className="
+                                    text-sm
+                                    font-semibold
+                                    text-[#0B1F3A]
+                                "
+                                            >
+                                                Pharmacies
+                                            </span>
+
+                                        </div>
+
+
+                                        <div
+                                            className="
+                                flex
+                                items-center
+                                gap-3
+                                bg-white
+                                border
+                                border-slate-200
+                                rounded-xl
+                                px-4
+                                py-3
+                            "
+                                        >
+
+                                            <span className="text-lg">
+                                                🏛️
+                                            </span>
+
+                                            <span
+                                                className="
+                                    text-sm
+                                    font-semibold
+                                    text-[#0B1F3A]
+                                "
+                                            >
+                                                Welfare & Government Offices
+                                            </span>
+
+                                        </div>
+
+
+                                        <div
+                                            className="
+                                flex
+                                items-center
+                                gap-3
+                                bg-white
+                                border
+                                border-slate-200
+                                rounded-xl
+                                px-4
+                                py-3
+                            "
+                                        >
+
+                                            <span className="text-lg">
+                                                🛡️
+                                            </span>
+
+                                            <span
+                                                className="
+                                    text-sm
+                                    font-semibold
+                                    text-[#0B1F3A]
+                                "
+                                            >
+                                                ECHS & Emergency Services
+                                            </span>
+
+                                        </div>
+
+                                    </div>
+
+
+                                    {/* ACTION */}
+
+                                    <button
+                                        onClick={() =>
+                                            navigate(
+                                                "/family/help-near-me"
+                                            )
+                                        }
+                                        className="
+                            group
+                            mt-5
+                            flex
+                            items-center
+                            justify-center
+                            gap-2
+                            w-full
+                            bg-[#0B1F3A]
+                            text-white
+                            px-5
+                            py-3.5
+                            rounded-xl
+                            font-semibold
+                            hover:bg-[#1F4E79]
+                            transition
+                        "
+                                    >
+
+                                        <MapPinned size={18} />
+
+                                        Find Help Around Me
+
+                                        <ArrowRight
+                                            size={18}
+                                            className="
+                                group-hover:translate-x-1
+                                transition
+                            "
+                                        />
+
+                                    </button>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
 
                 </section>
 
