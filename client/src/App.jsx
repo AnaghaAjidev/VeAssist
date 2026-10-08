@@ -17,6 +17,7 @@ import ApplicationDocumentsPage from "./pages/family/ApplicationDocumentsPage";
 import WelfareAssistancePage from "./pages/family/WelfareAssistancePage";
 import ScholarshipAssistancePage from "./pages/family/ScholarshipAssistancePage";
 import WidowVocationalTrainingPage from "./pages/family/WidowVocationalTrainingPage";
+import FamilyContactHelpCenter from "./pages/family/FamilyContactHelpCenter";
 
 import OfficerDashboard from "./pages/officer/OfficerDashboard";
 import OfficerCaseDetails from "./pages/officer/OfficerCaseDetails";
@@ -36,6 +37,7 @@ import AdminApplicationManagement from "./pages/admin/AdminApplicationManagement
 import AdminAuthorityManagement from "./pages/admin/AdminAuthorityManagement";
 import AdminReports from "./pages/admin/AdminReports";
 import AdminCaseManagement from "./pages/admin/AdminCaseManagement";
+import AdminContactDirectory from "./pages/admin/AdminContactDirectory";
 
 function App() {
   return (
@@ -67,6 +69,7 @@ function App() {
         <Route path="/family/welfare-assistance" element={<WelfareAssistancePage />} />
         <Route path="/family/scholarships" element={<ScholarshipAssistancePage />} />
         <Route path="/family/vocational-training" element={<WidowVocationalTrainingPage />} />
+        <Route path="/family/contacts" element={<FamilyContactHelpCenter />}/>
 
         {/* OFFICER */}
         <Route path="/officer/dashboard" element={<OfficerDashboard />} />
@@ -88,6 +91,7 @@ function App() {
         <Route path="/admin/authorities" element={<AdminAuthorityManagement />} />
         <Route path="/admin/reports" element={<AdminReports />} />
         <Route path="/admin/cases" element={<AdminCaseManagement />} />
+        <Route path="/admin/contacts" element={<AdminContactDirectory />} />
         
 
       </Routes>
