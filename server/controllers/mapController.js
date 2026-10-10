@@ -1,972 +1,555 @@
+import echsFacilities from "../data/echsFacilities.js";
 // ============================================================
 // VeAssist - Map Controller
 // ============================================================
 
+// Public Overpass instances are rate-limited. Keep this list short and try
+// servers sequentially instead of launching parallel requests.
 const OVERPASS_URLS = [
     "https://overpass-api.de/api/interpreter",
-    "https://maps.mail.ru/osm/tools/overpass/api/interpreter"
+    "https://overpass.kumi.systems/api/interpreter",
+    "https://overpass.private.coffee/api/interpreter",
+    "https://overpass.openstreetmap.fr/api/interpreter",
 ];
 
-
-// ============================================================
-// NORMAL CATEGORY TAGS
-// ECHS IS INTENTIONALLY NOT INCLUDED HERE
-// ============================================================
-
-const CATEGORY_TAGS = {
-
-    Hospitals: [
-        ["amenity", "hospital"],
-        ["healthcare", "hospital"],
-    ],
-
-    Pharmacies: [
-        ["amenity", "pharmacy"],
-        ["healthcare", "pharmacy"],
-    ],
-
-    Clinics: [
-        ["amenity", "clinic"],
-        ["amenity", "doctors"],
-        ["healthcare", "clinic"],
-        ["healthcare", "doctor"],
-    ],
-
-    "Welfare Offices": [
-        ["amenity", "social_facility"],
-        ["office", "government"],
-        ["office", "association"],
-        ["office", "charity"],
-        ["office", "ngo"],
-    ],
-
-    "Diagnostic Centres": [
-        ["healthcare", "laboratory"],
-        ["healthcare", "medical_imaging"],
-        ["healthcare", "sample_collection"],
-        ["healthcare", "diagnostic"],
-        ["healthcare:speciality", "diagnostic_radiology"],
-        ["healthcare:speciality", "clinical_pathology"],
-    ],
-
-    "Government Offices": [
-        ["office", "government"],
-    ],
-
-    Police: [
-        ["amenity", "police"],
-    ],
-
-    Banks: [
-        ["amenity", "bank"],
-    ],
-
-    "Post Offices": [
-        ["amenity", "post_office"],
-    ],
-};
-
-
-// ============================================================
-// CACHE
-// ============================================================
-
+const CACHE_DURATION = 5 * 60 * 1000;
+const REQUEST_TIMEOUT_MS = 20000;
 const locationCache = new Map();
 
-const CACHE_DURATION = 60 * 1000;
-
+const NORMAL_DEFAULT_RADIUS = 2000;
+const MAX_NORMAL_RADIUS = 5000;
+const ECHS_DEFAULT_RADIUS = 2000;
+const MAX_ECHS_RADIUS = 15000;
 
 // ============================================================
 // DISTANCE
 // ============================================================
 
-const calculateDistance = (
-    latitude1,
-    longitude1,
-    latitude2,
-    longitude2
-) => {
-
+const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    const toRadians = (value) => (value * Math.PI) / 180;
     const earthRadius = 6371;
-
-    const dLatitude =
-        ((latitude2 - latitude1) * Math.PI) / 180;
-
-    const dLongitude =
-        ((longitude2 - longitude1) * Math.PI) / 180;
+    const dLat = toRadians(lat2 - lat1);
+    const dLon = toRadians(lon2 - lon1);
 
     const a =
-        Math.sin(dLatitude / 2) *
-            Math.sin(dLatitude / 2) +
-        Math.cos((latitude1 * Math.PI) / 180) *
-            Math.cos((latitude2 * Math.PI) / 180) *
-            Math.sin(dLongitude / 2) *
-            Math.sin(dLongitude / 2);
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos(toRadians(lat1)) *
+        Math.cos(toRadians(lat2)) *
+        Math.sin(dLon / 2) ** 2;
 
-    const c =
-        2 *
-        Math.atan2(
-            Math.sqrt(a),
-            Math.sqrt(1 - a)
-        );
-
-    return earthRadius * c;
+    return earthRadius * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 };
 
-
-// ============================================================
-// FORMAT DISTANCE
-// ============================================================
-
-const formatDistance = (distance) => {
-
-    if (distance < 1) {
-        return `${Math.round(distance * 1000)} m`;
-    }
-
-    return `${distance.toFixed(1)} km`;
-};
-
+const formatDistance = (distance) =>
+    distance < 1
+        ? `${Math.round(distance * 1000)} m`
+        : `${distance.toFixed(1)} km`;
 
 // ============================================================
 // ADDRESS
 // ============================================================
 
-const buildAddress = (tags) => {
+const buildAddress = (tags = {}) => {
+    const keys = [
+        "addr:housenumber",
+        "addr:street",
+        "addr:suburb",
+        "addr:city",
+        "addr:district",
+        "addr:state",
+        "addr:postcode",
+    ];
 
-    const parts = [];
-
-    if (tags["addr:housenumber"]) {
-        parts.push(tags["addr:housenumber"]);
-    }
-
-    if (tags["addr:street"]) {
-        parts.push(tags["addr:street"]);
-    }
-
-    if (tags["addr:suburb"]) {
-        parts.push(tags["addr:suburb"]);
-    }
-
-    if (tags["addr:city"]) {
-        parts.push(tags["addr:city"]);
-    }
-
-    if (tags["addr:district"]) {
-        parts.push(tags["addr:district"]);
-    }
-
-    if (tags["addr:state"]) {
-        parts.push(tags["addr:state"]);
-    }
-
-    if (tags["addr:postcode"]) {
-        parts.push(tags["addr:postcode"]);
-    }
-
-    return parts.join(", ");
+    return [...new Set(keys.map((key) => tags[key]).filter(Boolean))].join(
+        ", "
+    );
 };
-
 
 // ============================================================
 // CATEGORY DETECTION
 // ============================================================
 
-const getCategory = (tags) => {
+const getCategory = (tags = {}) => {
+    const name = [
+        tags.name,
+        tags["name:en"],
+        tags.official_name,
+        tags["official_name:en"],
+        tags.short_name,
+    ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
 
-    const name = (
-        tags.name ||
-        tags["name:en"] ||
-        tags.official_name ||
-        tags["official_name:en"] ||
-        ""
-    ).toLowerCase();
+    const operator = [tags.operator, tags["operator:en"]]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
 
-    const operator = (
-        tags.operator ||
-        tags["operator:en"] ||
-        ""
-    ).toLowerCase();
+    const searchable = `${name} ${operator}`;
+    const socialFor = String(tags["social_facility:for"] || "").toLowerCase();
+    const speciality = String(tags["healthcare:speciality"] || "").toLowerCase();
 
-    const socialFor = (
-        tags["social_facility:for"] ||
-        ""
-    ).toLowerCase();
-
-    const healthcareSpeciality = (
-        tags["healthcare:speciality"] ||
-        ""
-    ).toLowerCase();
-
-
-    // ========================================================
-    // ECHS
-    // This is also used when ECHS data is returned separately.
-    // ========================================================
-
+    // ECHS is checked before generic welfare/health categories.
     if (
-        name.includes("echs") ||
-        name.includes("ex-servicemen") ||
-        name.includes("ex servicemen") ||
-        name.includes("exservicemen") ||
-        name.includes("veteran") ||
-        operator.includes("echs") ||
-        operator.includes("ex-servicemen") ||
-        operator.includes("veteran")
+        /\bechs\b/.test(searchable) ||
+        (/ex[\s-]?servicemen/.test(searchable) &&
+            /contributory|health|poly\s?clinic|medical|hospital/.test(searchable))
     ) {
         return "ECHS";
     }
 
-
-    // ========================================================
-    // WELFARE
-    // ========================================================
-
     if (
-        name.includes("welfare") ||
-        name.includes("social welfare") ||
-        name.includes("sainik board") ||
-        name.includes("zila sainik") ||
-        name.includes("district sainik") ||
-        name.includes("ex-servicemen welfare") ||
-        name.includes("ex servicemen welfare") ||
-        name.includes("veteran welfare") ||
-        operator.includes("welfare") ||
-        operator.includes("sainik board") ||
-        operator.includes("ex-servicemen") ||
-        socialFor.includes("veteran")
+        /welfare|sainik board|zila sainik|district sainik|veteran|ex[\s-]?servicemen/.test(
+            searchable
+        ) ||
+        socialFor.includes("veteran") ||
+        socialFor.includes("ex-servicemen")
     ) {
         return "Welfare Offices";
     }
 
-
-    // ========================================================
-    // DIAGNOSTIC CENTRES
-    // ========================================================
-
     if (
-        tags.healthcare === "laboratory" ||
-        tags.healthcare === "medical_imaging" ||
-        tags.healthcare === "sample_collection" ||
-        tags.healthcare === "diagnostic" ||
-        healthcareSpeciality.includes("diagnostic_radiology") ||
-        healthcareSpeciality.includes("clinical_pathology") ||
-        name.includes("diagnostic") ||
-        name.includes("diagnostics") ||
-        name.includes("laboratory") ||
-        name.includes("lab") ||
-        name.includes("pathology") ||
-        name.includes("imaging")
+        ["laboratory", "medical_imaging", "sample_collection", "diagnostic"].includes(
+            tags.healthcare
+        ) ||
+        (tags.amenity !== "hospital" &&
+            /diagnostic_radiology|clinical_pathology/.test(speciality)) ||
+        /\b(diagnostic|diagnostics|laboratory|pathology|imaging)\b/.test(name) ||
+        /\blab\b/.test(name)
     ) {
         return "Diagnostic Centres";
     }
 
-
-    // ========================================================
-    // HOSPITALS
-    // ========================================================
-
-    if (
-        tags.amenity === "hospital" ||
-        tags.healthcare === "hospital"
-    ) {
+    if (tags.amenity === "hospital" || tags.healthcare === "hospital") {
         return "Hospitals";
     }
-
-
-    // ========================================================
-    // PHARMACIES
-    // ========================================================
-
-    if (
-        tags.amenity === "pharmacy" ||
-        tags.healthcare === "pharmacy"
-    ) {
+    if (tags.amenity === "pharmacy" || tags.healthcare === "pharmacy") {
         return "Pharmacies";
     }
-
-
-    // ========================================================
-    // CLINICS
-    // ========================================================
-
     if (
-        tags.amenity === "clinic" ||
-        tags.amenity === "doctors" ||
-        tags.healthcare === "clinic" ||
-        tags.healthcare === "doctor"
+        ["clinic", "doctors"].includes(tags.amenity) ||
+        ["clinic", "doctor"].includes(tags.healthcare)
     ) {
         return "Clinics";
     }
+    if (tags.amenity === "police") return "Police";
+    if (tags.amenity === "bank") return "Banks";
+    if (tags.amenity === "post_office") return "Post Offices";
+    if (tags.office === "government") return "Government Offices";
 
-
-    // ========================================================
-    // POLICE
-    // ========================================================
-
-    if (tags.amenity === "police") {
-        return "Police";
+    if (
+        tags.amenity === "social_facility" ||
+        ["association", "charity", "ngo"].includes(tags.office)
+    ) {
+        return "Welfare Offices";
     }
-
-
-    // ========================================================
-    // BANKS
-    // ========================================================
-
-    if (tags.amenity === "bank") {
-        return "Banks";
-    }
-
-
-    // ========================================================
-    // POST OFFICES
-    // ========================================================
-
-    if (tags.amenity === "post_office") {
-        return "Post Offices";
-    }
-
-
-    // ========================================================
-    // GOVERNMENT OFFICES
-    // ========================================================
-
-    if (tags.office === "government") {
-        return "Government Offices";
-    }
-
 
     return "Other";
 };
 
-
 // ============================================================
-// BUILD NORMAL OVERPASS QUERY
+// OVERPASS QUERY BUILDERS
+// Ordinary search is split into small groups. If one group fails, successful
+// groups can still be returned instead of losing every nearby result.
 // ============================================================
-const buildOverpassQuery = (latitude, longitude, radius) => {
-    return `
-        [out:json][timeout:25];
 
+const buildNearbyQueryGroups = (latitude, longitude, radius) => {
+    const area = `around:${radius},${latitude},${longitude}`;
+
+    const buildGroup = (filters) => `
+        [out:json][timeout:10];
         (
-            node(around:${radius},${latitude},${longitude})
-                ["amenity"~"hospital|pharmacy|clinic|doctors|social_facility|police|bank|post_office"];
-
-            way(around:${radius},${latitude},${longitude})
-                ["amenity"~"hospital|pharmacy|clinic|doctors|social_facility|police|bank|post_office"];
-
-            node(around:${radius},${latitude},${longitude})
-                ["healthcare"~"hospital|pharmacy|clinic|doctor|laboratory|medical_imaging|sample_collection|diagnostic"];
-
-            way(around:${radius},${latitude},${longitude})
-                ["healthcare"~"hospital|pharmacy|clinic|doctor|laboratory|medical_imaging|sample_collection|diagnostic"];
-
-            node(around:${radius},${latitude},${longitude})
-                ["office"~"government|association|charity|ngo"];
-
-            way(around:${radius},${latitude},${longitude})
-                ["office"~"government|association|charity|ngo"];
+            ${filters
+            .flatMap((filter) => [
+                `node(${area})${filter};`,
+                `way(${area})${filter};`,
+            ])
+            .join("\n            ")}
         );
+        out center tags;
+    `;
 
+    return [
+        {
+            name: "healthcare",
+            query: buildGroup([
+                '["amenity"~"hospital|pharmacy|clinic|doctors"]',
+                '["healthcare"~"hospital|pharmacy|clinic|doctor"]',
+            ]),
+        },
+        {
+            name: "diagnostics",
+            query: buildGroup([
+                '["healthcare"~"laboratory|medical_imaging|sample_collection|diagnostic"]',
+                '["healthcare:speciality"~"diagnostic_radiology|clinical_pathology"]',
+            ]),
+        },
+        {
+            name: "civic",
+            query: buildGroup([
+                '["amenity"~"social_facility|police|bank|post_office"]',
+                '["office"~"government|association|charity|ngo"]',
+            ]),
+        },
+    ];
+};
+
+const buildECHSQuery = (latitude, longitude, radius) => {
+    const area = `around:${radius},${latitude},${longitude}`;
+    const pattern =
+        "echs|ex-servicemen|ex servicemen|exservicemen|ex-service men";
+
+    const keys = ["name", "name:en", "official_name"];
+
+    const lines = keys.flatMap((key) => [
+        `node(${area})["${key}"~"${pattern}",i];`,
+        `way(${area})["${key}"~"${pattern}",i];`,
+    ]);
+
+    return `
+        [out:json][timeout:15];
+        (
+            ${lines.join("\n")}
+        );
         out center tags;
     `;
 };
 
 // ============================================================
-// BUILD ECHS QUERY
+// OVERPASS REQUEST QUEUE / LIMITED FALLBACK
+// Each query tries at most two servers once. No second full retry pass.
 // ============================================================
 
-const buildECHSQuery = (
-    latitude,
-    longitude,
-    radius
+let overpassQueue = Promise.resolve();
+
+const enqueueOverpass = (task) => {
+    const run = overpassQueue.then(task);
+    overpassQueue = run.catch(() => { });
+    return run;
+};
+
+const tryServers = async (
+    query,
+    { timeoutMs = REQUEST_TIMEOUT_MS } = {}
 ) => {
-
-    return `
-        [out:json][timeout:20];
-
-        (
-            nwr(
-                around:${radius},
-                ${latitude},
-                ${longitude}
-            )["name"~"echs|ex-servicemen|ex servicemen|exservicemen|veteran",i];
-
-            nwr(
-                around:${radius},
-                ${latitude},
-                ${longitude}
-            )["official_name"~"echs|ex-servicemen|ex servicemen|exservicemen|veteran",i];
-
-            nwr(
-                around:${radius},
-                ${latitude},
-                ${longitude}
-            )["operator"~"echs|ex-servicemen|ex servicemen|exservicemen|veteran",i];
-
-            nwr(
-                around:${radius},
-                ${latitude},
-                ${longitude}
-            )["social_facility:for"~"veteran",i];
-        );
-
-        out center tags;
-    `;
-};
-
-
-// ============================================================
-// REQUEST OVERPASS
-// ============================================================
-
-const requestOverpass = async (query) => {
-
-    let lastError = null;
-
+    let lastError;
 
     for (const url of OVERPASS_URLS) {
+        const controller = new AbortController();
 
-        const controller =
-            new AbortController();
-
-        const timeout =
-            setTimeout(
-                () => controller.abort(),
-                30000
-            );
-
+        const timer = setTimeout(
+            () => controller.abort(),
+            timeoutMs
+        );
 
         try {
-
-            console.log(
-                "Trying Overpass server:",
-                url
-            );
-
-
-            const response =
-                await fetch(
-                    url,
-                    {
-                        method: "POST",
-
-                        headers: {
-                            "Content-Type":
-                                "application/x-www-form-urlencoded; charset=UTF-8",
-
-                            "User-Agent":
-                                "VeAssist/1.0",
-                        },
-
-                        body:
-                            new URLSearchParams({
-                                data: query,
-                            }).toString(),
-
-                        signal:
-                            controller.signal,
-                    }
-                );
-
-
-            clearTimeout(timeout);
-
+            const response = await fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-Type":
+                        "application/x-www-form-urlencoded; charset=UTF-8",
+                    "User-Agent": "VeAssist/1.0",
+                },
+                body: new URLSearchParams({
+                    data: query,
+                }).toString(),
+                signal: controller.signal,
+            });
 
             if (!response.ok) {
-
-                const errorText =
-                    await response.text();
-
-
-                console.warn(
-                    "Overpass server failed:",
-                    url,
-                    response.status,
-                    errorText.substring(0, 500)
+                lastError = new Error(
+                    `Overpass server returned ${response.status}`
                 );
 
-
-                lastError =
-                    new Error(
-                        `Overpass server returned ${response.status}`
-                    );
-
+                console.warn(
+                    "Overpass failed:",
+                    url,
+                    response.status
+                );
 
                 continue;
             }
 
+            const data = await response.json();
 
-            const data =
-                await response.json();
+            if (
+                data?.remark &&
+                /timed out|timeout|out of memory|runtime error/i.test(
+                    data.remark
+                )
+            ) {
+                lastError = new Error(
+                    `Overpass query failed: ${data.remark}`
+                );
 
+                console.warn(
+                    "Overpass query failed:",
+                    url,
+                    data.remark
+                );
 
-            console.log(
-                "Overpass server succeeded:",
-                url
-            );
-
+                continue;
+            }
 
             return data;
-
         } catch (error) {
-
-            clearTimeout(timeout);
-
+            lastError = error.name === "AbortError"
+                ? new Error(
+                    `Overpass request timed out: ${url}`
+                )
+                : error;
 
             console.warn(
                 "Overpass connection failed:",
                 url,
-                error.message
+                lastError.message
             );
-
-
-            lastError = error;
+        } finally {
+            clearTimeout(timer);
         }
     }
 
-
-    throw (
-        lastError ||
-        new Error(
-            "All Overpass servers failed."
-        )
+    throw lastError || new Error(
+        "All configured Overpass servers failed."
     );
 };
 
+const requestOverpass = (
+    query,
+    options = {}
+) => enqueueOverpass(
+    () => tryServers(query, options)
+);
 
 // ============================================================
-// FORMAT LOCATION RESULTS
+// FORMAT RESULTS
 // ============================================================
 
-const formatLocationResults = (
-    data,
-    latitude,
-    longitude,
-    categoryFilter = null
-) => {
-
+const formatLocationResults = (data, latitude, longitude, categoryFilter = null) => {
     const results = [];
+    const seen = new Set();
 
-    const seenIds = new Set();
-
-
-    for (const element of data.elements || []) {
-
-        const tags =
-            element.tags || {};
-
-
-        const elementLatitude =
-            element.lat ??
-            element.center?.lat;
-
-
-        const elementLongitude =
-            element.lon ??
-            element.center?.lon;
-
+    for (const element of data?.elements || []) {
+        const tags = element.tags || {};
+        const placeLatitude = element.lat ?? element.center?.lat;
+        const placeLongitude = element.lon ?? element.center?.lon;
 
         if (
-            elementLatitude === undefined ||
-            elementLatitude === null ||
-            elementLongitude === undefined ||
-            elementLongitude === null
+            !Number.isFinite(Number(placeLatitude)) ||
+            !Number.isFinite(Number(placeLongitude))
         ) {
             continue;
         }
 
-
-        const locationName =
+        const name =
             tags.name ||
             tags["name:en"] ||
             tags.official_name ||
-            tags["official_name:en"];
+            tags["official_name:en"] ||
+            tags.short_name;
 
+        if (!name) continue;
 
-        if (!locationName) {
-            continue;
-        }
+        const category = getCategory(tags);
+        if (categoryFilter && category !== categoryFilter) continue;
+        if (!categoryFilter && category === "Other") continue;
 
+        const lat = Number(placeLatitude);
+        const lon = Number(placeLongitude);
+        const dedupeKey = `${name.toLowerCase()}|${lat.toFixed(3)}|${lon.toFixed(3)}`;
+        if (seen.has(dedupeKey)) continue;
+        seen.add(dedupeKey);
 
-        const id =
-            `${element.type}-${element.id}`;
-
-
-        if (seenIds.has(id)) {
-            continue;
-        }
-
-
-        seenIds.add(id);
-
-
-        const category =
-            getCategory(tags);
-
-
-        if (
-            categoryFilter &&
-            category !== categoryFilter
-        ) {
-            continue;
-        }
-
-
-        // Don't show unrelated OSM social facilities
-        // in the normal "All" result.
-        if (
-            !categoryFilter &&
-            category === "Other"
-        ) {
-            continue;
-        }
-
-
-        const distance =
-            calculateDistance(
-                latitude,
-                longitude,
-                elementLatitude,
-                elementLongitude
-            );
-
-
+        const distanceValue = calculateDistance(latitude, longitude, lat, lon);
         results.push({
-
-            id,
-
-            name:
-                locationName,
-
+            id: `${element.type}-${element.id}`,
+            name,
             category,
-
-            latitude:
-                elementLatitude,
-
-            longitude:
-                elementLongitude,
-
-            distance:
-                formatDistance(distance),
-
-            distanceValue:
-                distance,
-
-            address:
-                buildAddress(tags),
-
-            phone:
-                tags.phone ||
-                tags["contact:phone"] ||
-                "",
-
-            website:
-                tags.website ||
-                tags["contact:website"] ||
-                "",
-
-            openStatus:
-                tags.opening_hours ||
-                "Opening hours not available",
-
-            emergency:
-                false,
-
-            operator:
-                tags.operator ||
-                "",
+            latitude: lat,
+            longitude: lon,
+            distance: formatDistance(distanceValue),
+            distanceValue,
+            address: buildAddress(tags),
+            phone: tags.phone || tags["contact:phone"] || tags["contact:mobile"] || "",
+            email: tags.email || tags["contact:email"] || "",
+            website: tags.website || tags["contact:website"] || "",
+            openStatus: tags.opening_hours || "Opening hours not available",
+            emergency: false,
+            operator: tags.operator || "",
         });
     }
-
-
-    results.sort(
-        (a, b) =>
-            a.distanceValue -
-            b.distanceValue
-    );
-
 
     return results;
 };
 
+const mergeUnique = (...lists) => {
+    const unique = new Map();
+
+    lists.flat().forEach((location) => {
+        const key = `${location.name.toLowerCase()}|${Number(location.latitude).toFixed(3)}|${Number(location.longitude).toFixed(3)}`;
+        if (!unique.has(key)) unique.set(key, location);
+    });
+
+    return [...unique.values()].sort(
+        (a, b) => (a.distanceValue ?? Infinity) - (b.distanceValue ?? Infinity)
+    );
+};
 
 // ============================================================
-// NORMAL NEARBY LOCATIONS
+// INPUT VALIDATION
 // ============================================================
 
-const getNearbyLocations = async (
-    req,
-    res
-) => {
+const readCoordinates = (req, res, defaultRadius, maxRadius) => {
+    const latitude = Number(req.query.latitude);
+    const longitude = Number(req.query.longitude);
+    let radius = Number(req.query.radius || defaultRadius);
 
-    try {
-
-        const latitude =
-            Number(req.query.latitude);
-
-        const longitude =
-            Number(req.query.longitude);
-
-        let radius =
-            Number(
-                req.query.radius || 5000
-            );
-
-
-        if (
-            Number.isNaN(latitude) ||
-            Number.isNaN(longitude)
-        ) {
-
-            return res.status(400).json({
-                message:
-                    "Valid latitude and longitude are required.",
-            });
-        }
-
-
-        if (radius < 1000) {
-            radius = 1000;
-        }
-
-
-        if (radius > 5000) {
-            radius = 5000;
-        }
-
-
-        const cacheKey =
-            `normal_${latitude.toFixed(4)}_${longitude.toFixed(4)}_${radius}`;
-
-
-        const cached =
-            locationCache.get(cacheKey);
-
-
-        if (
-            cached &&
-            Date.now() - cached.timestamp <
-                CACHE_DURATION
-        ) {
-
-            return res.json({
-                locations:
-                    cached.locations,
-
-                count:
-                    cached.locations.length,
-
-                cached: true,
-            });
-        }
-
-
-        const query =
-            buildOverpassQuery(
-                latitude,
-                longitude,
-                radius
-            );
-
-
-        const data =
-            await requestOverpass(query);
-
-
-        const results =
-            formatLocationResults(
-                data,
-                latitude,
-                longitude
-            );
-
-
-        locationCache.set(
-            cacheKey,
-            {
-                timestamp:
-                    Date.now(),
-
-                locations:
-                    results,
-            }
-        );
-
-
-        return res.json({
-
-            locations:
-                results,
-
-            count:
-                results.length,
-
-            cached:
-                false,
+    if (
+        req.query.latitude === undefined ||
+        req.query.longitude === undefined ||
+        !Number.isFinite(latitude) ||
+        !Number.isFinite(longitude) ||
+        latitude < -90 ||
+        latitude > 90 ||
+        longitude < -180 ||
+        longitude > 180
+    ) {
+        res.status(400).json({
+            message: "Valid latitude and longitude are required.",
         });
+        return null;
+    }
 
-    } catch (error) {
+    if (!Number.isFinite(radius) || radius <= 0) radius = defaultRadius;
+    radius = Math.max(1000, Math.min(radius, maxRadius));
 
-        console.error(
-            "Nearby locations error:",
-            error
-        );
+    return { latitude, longitude, radius };
+};
 
+// ============================================================
+// CACHE
+// Expired entries remain available as fallback when Overpass is unavailable.
+// ============================================================
 
-        return res.status(500).json({
+const makeCacheKey = (type, latitude, longitude, radius) =>
+    `${type}_${latitude.toFixed(3)}_${longitude.toFixed(3)}_${radius}`;
 
-            message:
-                "Unable to load nearby locations.",
+const getCachedEntry = (key, allowStale = false) => {
+    const entry = locationCache.get(key);
+    if (!entry) return null;
+    if (allowStale || Date.now() - entry.timestamp < CACHE_DURATION) return entry;
+    return null;
+};
 
-            error:
-                error.message,
+const sendLocations = (res, locations, { cached = false, stale = false, partial = false } = {}) =>
+    res.json({
+        locations,
+        count: locations.length,
+        cached,
+        ...(stale ? { stale: true } : {}),
+        ...(partial ? { partial: true } : {}),
+    });
+
+// ============================================================
+// NORMAL NEARBY HANDLER - sequential small groups with partial success
+// ============================================================
+
+const getNearbyLocations = async (req, res) => {
+    const coordinates = readCoordinates(
+        req,
+        res,
+        NORMAL_DEFAULT_RADIUS,
+        MAX_NORMAL_RADIUS
+    );
+    if (!coordinates) return;
+
+    const { latitude, longitude, radius } = coordinates;
+    const cacheKey = makeCacheKey("normal", latitude, longitude, radius);
+    const freshCache = getCachedEntry(cacheKey);
+
+    if (freshCache) {
+        return sendLocations(res, freshCache.locations, { cached: true, partial: freshCache.partial });
+    }
+
+    const groups = buildNearbyQueryGroups(latitude, longitude, radius);
+    const successfulLists = [];
+    let failedGroups = 0;
+    let lastError = null;
+
+    for (const group of groups) {
+        try {
+            const data = await requestOverpass(group.query);
+            successfulLists.push(formatLocationResults(data, latitude, longitude));
+        } catch (error) {
+            failedGroups += 1;
+            lastError = error;
+            console.warn(`Nearby query group '${group.name}' failed:`, error.message);
+        }
+    }
+
+    if (successfulLists.length > 0) {
+        const locations = mergeUnique(...successfulLists);
+        const partial = failedGroups > 0;
+        locationCache.set(cacheKey, {
+            timestamp: Date.now(),
+            locations,
+            partial,
+        });
+        return sendLocations(res, locations, { partial });
+    }
+
+    const stale = getCachedEntry(cacheKey, true);
+    if (stale) {
+        return sendLocations(res, stale.locations, {
+            cached: true,
+            stale: true,
+            partial: stale.partial,
         });
     }
+
+    console.error("Nearby locations error:", lastError?.message || "All query groups failed");
+    return res.status(503).json({
+        message: "Nearby places are temporarily unavailable. Please try again shortly.",
+        error: lastError?.message || "All nearby query groups failed.",
+    });
+};
+
+// ============================================================
+// ECHS HANDLER - independent query and cache
+// ============================================================
+
+
+const getECHSLocations = async (req, res) => {
+    const coordinates = readCoordinates(
+        req,
+        res,
+        ECHS_DEFAULT_RADIUS,
+        MAX_ECHS_RADIUS
+    );
+
+    if (!coordinates) return;
+
+    const { latitude, longitude } = coordinates;
+
+    // ECHS is served from the local directory dataset.
+    // This endpoint does not depend on Overpass.
+    const locations = echsFacilities.map((facility) => ({
+        ...facility,
+        distance: "Distance unavailable",
+        distanceValue: null,
+        openStatus: "Contact the facility to confirm hours",
+        emergency: false,
+        operator: "ECHS",
+    }));
+
+    return res.json({
+        locations,
+        count: locations.length,
+        cached: false,
+        source: "local-echs-directory",
+    });
 };
 
 
-// ============================================================
-// ECHS LOCATIONS
-// SEPARATE LIGHTWEIGHT SEARCH
-// ============================================================
-
-const getECHSLocations = async (
-    req,
-    res
-) => {
-
-    try {
-
-        const latitude =
-            Number(req.query.latitude);
-
-        const longitude =
-            Number(req.query.longitude);
-
-        let radius =
-            Number(
-                req.query.radius || 5000
-            );
-
-
-        if (
-            Number.isNaN(latitude) ||
-            Number.isNaN(longitude)
-        ) {
-
-            return res.status(400).json({
-                message:
-                    "Valid latitude and longitude are required.",
-            });
-        }
-
-
-        if (radius < 1000) {
-            radius = 1000;
-        }
-
-
-        if (radius > 10000) {
-            radius = 10000;
-        }
-
-
-        const cacheKey =
-            `echs_${latitude.toFixed(4)}_${longitude.toFixed(4)}_${radius}`;
-
-
-        const cached =
-            locationCache.get(cacheKey);
-
-
-        if (
-            cached &&
-            Date.now() - cached.timestamp <
-                CACHE_DURATION
-        ) {
-
-            return res.json({
-                locations:
-                    cached.locations,
-
-                count:
-                    cached.locations.length,
-
-                cached: true,
-            });
-        }
-
-
-        const query =
-            buildECHSQuery(
-                latitude,
-                longitude,
-                radius
-            );
-
-
-        const data =
-            await requestOverpass(query);
-
-
-        const results =
-            formatLocationResults(
-                data,
-                latitude,
-                longitude,
-                "ECHS"
-            );
-
-
-        locationCache.set(
-            cacheKey,
-            {
-                timestamp:
-                    Date.now(),
-
-                locations:
-                    results,
-            }
-        );
-
-
-        return res.json({
-
-            locations:
-                results,
-
-            count:
-                results.length,
-
-            cached:
-                false,
-        });
-
-    } catch (error) {
-
-        console.error(
-            "ECHS locations error:",
-            error
-        );
-
-
-        return res.status(500).json({
-
-            message:
-                "Unable to load nearby ECHS locations.",
-
-            error:
-                error.message,
-        });
-    }
-};
-
-
-// ============================================================
-// EXPORTS
-// ============================================================
-
-export {
-    getNearbyLocations,
-    getECHSLocations,
-};
+export { getNearbyLocations, getECHSLocations };
