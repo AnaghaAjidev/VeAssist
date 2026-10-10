@@ -285,6 +285,50 @@ const categories = [
 ];
 
 
+const getDistanceKm = (userLocation, location) => {
+    if (
+        !userLocation ||
+        userLocation.latitude == null ||
+        userLocation.longitude == null ||
+        location.latitude == null ||
+        location.longitude == null ||
+        location.latitude === "" ||
+        location.longitude === ""
+    ) {
+        return null;
+    }
+
+    const toRadians = (degrees) => (degrees * Math.PI) / 180;
+    const earthRadiusKm = 6371;
+
+    const lat1 = toRadians(Number(userLocation.latitude));
+    const lat2 = toRadians(Number(location.latitude));
+    const latDiff = toRadians(
+        Number(location.latitude) - Number(userLocation.latitude)
+    );
+    const lonDiff = toRadians(
+        Number(location.longitude) - Number(userLocation.longitude)
+    );
+
+    if (
+        ![lat1, lat2, latDiff, lonDiff].every(Number.isFinite)
+    ) {
+        return null;
+    }
+
+    const a =
+        Math.sin(latDiff / 2) ** 2 +
+        Math.cos(lat1) *
+        Math.cos(lat2) *
+        Math.sin(lonDiff / 2) ** 2;
+
+    return (
+        earthRadiusKm *
+        2 *
+        Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+    );
+};
+
 
 const HelpNearMe = () => {
 
@@ -347,20 +391,43 @@ const HelpNearMe = () => {
 
                 return nearbyLocations;
 
+
             case "ECHS":
                 if (!userDistrict) return [];
-                return echsLocations.filter(
-                    (location) =>
-                        getECHSDistrict(location) === normalizeDistrict(userDistrict)
-                );
+                return echsLocations
+                    .filter(
+                        (location) =>
+                            getECHSDistrict(location) ===
+                            normalizeDistrict(userDistrict)
+                    )
+                    .map((location) => {
+                        const km = getDistanceKm(userLocation, location);
+
+                        return {
+                            ...location,
+                            distanceValue: km,
+                            distance: km != null ? `${km.toFixed(2)} km` : null,
+                        };
+                    });
 
             case "District Sainik Welfare Offices":
                 if (!userDistrict) return [];
-                return sainikOffices.filter(
-                    (office) =>
-                        normalizeDistrict(office.distance) ===
-                        normalizeDistrict(userDistrict)
-                );
+                return sainikOffices
+                    .filter(
+                        (office) =>
+                            normalizeDistrict(office.distance) ===
+                            normalizeDistrict(userDistrict)
+                    )
+                    .map((office) => {
+                        const km = getDistanceKm(userLocation, office);
+
+                        return {
+                            ...office,
+                            distanceValue: km,
+                            distance: km != null ? `${km.toFixed(2)} km` : null,
+                        };
+                    });
+
 
             default:
 
@@ -488,7 +555,7 @@ const HelpNearMe = () => {
 
                     error.message ||
 
-                        "ECHS facilities are temporarily unavailable. Please try again."
+                    "ECHS facilities are temporarily unavailable. Please try again."
 
                 );
 
@@ -689,7 +756,7 @@ const HelpNearMe = () => {
                     console.error("Nearby locations error:", error);
                     alert(
                         error.message ||
-                            "Unable to load nearby locations. Please try again."
+                        "Unable to load nearby locations. Please try again."
                     );
                 } finally {
                     setLoadingLocations(false);
@@ -703,8 +770,8 @@ const HelpNearMe = () => {
                     error.code === 1
                         ? "Location permission was denied. Please allow location access."
                         : error.code === 3
-                          ? "Getting your location timed out. Check device location settings and try again."
-                          : "Unable to access your location. Please try again.";
+                            ? "Getting your location timed out. Check device location settings and try again."
+                            : "Unable to access your location. Please try again.";
 
                 alert(message);
             },
@@ -851,8 +918,8 @@ const HelpNearMe = () => {
                                 {loadingLocation
                                     ? "Getting Location..."
                                     : loadingLocations
-                                      ? "Loading..."
-                                      : "Use My Location"}
+                                        ? "Loading..."
+                                        : "Use My Location"}
 
                             </button>
 
@@ -890,23 +957,23 @@ const HelpNearMe = () => {
 
             <div className="max-w-7xl mx-auto px-6 lg:px-10 py-8">
 
-                {/* SEARCH */}
+                {/* SEARCH  */}
 
                 <div className="mb-6">
 
                     <div className="relative max-w-xl">
 
-                        <Search
+                        {/* <Search
 
                             size={20}
 
                             className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
 
-                        />
+                        /> */}
 
 
 
-                        <input
+                        {/* <input
 
                             type="text"
 
@@ -918,7 +985,7 @@ const HelpNearMe = () => {
 
                             className="w-full bg-white border border-slate-200 rounded-xl pl-12 pr-4 py-3 outline-none focus:ring-2 focus:ring-[#1F4E79]"
 
-                        />
+                        /> */}
 
                     </div>
 
@@ -952,15 +1019,13 @@ const HelpNearMe = () => {
 
                                 }
 
-                                className={`flex items-center gap-2 whitespace-nowrap px-4 py-2.5 rounded-xl border transition ${
-
-                                    isActive
+                                className={`flex items-center gap-2 whitespace-nowrap px-4 py-2.5 rounded-xl border transition ${isActive
 
                                         ? "bg-[#0B1F3A] text-white border-[#0B1F3A]"
 
                                         : "bg-white text-[#0B1F3A] border-slate-200 hover:border-[#1F4E79]"
 
-                                }`}
+                                    }`}
 
                             >
 
@@ -1024,9 +1089,9 @@ const HelpNearMe = () => {
 
                                             : selectedCategory === "District Sainik Welfare Offices"
 
-                                              ? "District Sainik Welfare Offices"
+                                                ? "District Sainik Welfare Offices"
 
-                                              : "Nearby Places"}
+                                                : "Nearby Places"}
 
                                     </h2>
 
@@ -1088,15 +1153,15 @@ const HelpNearMe = () => {
 
                                                 : userLocation
 
-                                                  ? "No ECHS locations found"
+                                                    ? "No ECHS locations found"
 
-                                                  : "Use My Location to search ECHS"
+                                                    : "Use My Location to search ECHS"
 
                                             : selectedCategory === "District Sainik Welfare Offices"
 
-                                              ? "No offices match your search"
+                                                ? "No offices match your search"
 
-                                              : "No locations loaded yet"}
+                                                : "No locations loaded yet"}
 
                                     </h3>
 
@@ -1114,9 +1179,9 @@ const HelpNearMe = () => {
 
                                             : selectedCategory === "District Sainik Welfare Offices"
 
-                                              ? "Try a different search term to find a district Sainik Welfare Office."
+                                                ? "Try a different search term to find a district Sainik Welfare Office."
 
-                                              : "Use My Location to load nearby hospitals, welfare offices, pharmacies, clinics and other useful places."}
+                                                : "Use My Location to load nearby hospitals, welfare offices, pharmacies, clinics and other useful places."}
 
                                     </p>
 
@@ -1466,15 +1531,13 @@ const HelpNearMe = () => {
 
                                     disabled={!selectedLocation.phone}
 
-                                    className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl transition ${
-
-                                        selectedLocation.phone
+                                    className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl transition ${selectedLocation.phone
 
                                             ? "border border-[#0B1F3A] text-[#0B1F3A] hover:bg-[#0B1F3A] hover:text-white"
 
                                             : "border border-gray-200 text-gray-400 cursor-not-allowed"
 
-                                    }`}
+                                        }`}
 
                                 >
 

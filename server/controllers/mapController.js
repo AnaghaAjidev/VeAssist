@@ -362,6 +362,9 @@ const formatLocationResults = (data, latitude, longitude, categoryFilter = null)
         seen.add(dedupeKey);
 
         const distanceValue = calculateDistance(latitude, longitude, lat, lon);
+        if ((tags.name || "").toLowerCase().includes("federal bank")) {
+    console.log("[DEBUG Federal Bank tags]", tags);
+}
         results.push({
             id: `${element.type}-${element.id}`,
             name,
@@ -370,11 +373,18 @@ const formatLocationResults = (data, latitude, longitude, categoryFilter = null)
             longitude: lon,
             distance: formatDistance(distanceValue),
             distanceValue,
-            address: buildAddress(tags),
+            address:
+                buildAddress(tags) ||
+                [tags["addr:full"], tags["contact:address"], tags["addr:place"]]
+                    .filter(Boolean)
+                    .join(", "),
             phone: tags.phone || tags["contact:phone"] || tags["contact:mobile"] || "",
             email: tags.email || tags["contact:email"] || "",
             website: tags.website || tags["contact:website"] || "",
-            openStatus: tags.opening_hours || "Opening hours not available",
+            openStatus:
+                tags.opening_hours ||
+                tags["opening_hours:covid19"] ||
+                "Opening hours not available",
             emergency: false,
             operator: tags.operator || "",
         });
