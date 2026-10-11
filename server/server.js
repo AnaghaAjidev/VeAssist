@@ -61,9 +61,9 @@ app.use("/api/applications", applicationRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/communications", communicationRoutes);
 app.use("/api/scholarships", scholarshipRoutes);
-app.use("/api/vocational-training",vocationalTrainingRoutes);
-app.use("/api/admin",adminRoutes);
-app.use("/api/admin/users",adminUserRoutes);
+app.use("/api/vocational-training", vocationalTrainingRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/admin/users", adminUserRoutes);
 app.use("/api/contacts", contactDirectoryRoutes);
 app.use("/api/map", mapRoutes);
 

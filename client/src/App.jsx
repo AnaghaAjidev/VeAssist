@@ -70,7 +70,7 @@ function App() {
         <Route path="/family/welfare-assistance" element={<WelfareAssistancePage />} />
         <Route path="/family/scholarships" element={<ScholarshipAssistancePage />} />
         <Route path="/family/vocational-training" element={<WidowVocationalTrainingPage />} />
-        <Route path="/family/contacts" element={<FamilyContactHelpCenter />}/>
+        <Route path="/family/contacts" element={<FamilyContactHelpCenter />} />
         <Route path="/family/help-near-me" element={<HelpNearMe />} />
 
         {/* OFFICER */}
@@ -94,7 +94,7 @@ function App() {
         <Route path="/admin/reports" element={<AdminReports />} />
         <Route path="/admin/cases" element={<AdminCaseManagement />} />
         <Route path="/admin/contacts" element={<AdminContactDirectory />} />
-        
+
 
       </Routes>
     </BrowserRouter>

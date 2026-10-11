@@ -757,7 +757,6 @@ const FamilyDashboard = () => {
 
                             </button>
 
-
                             {/* DEADLINE DROPDOWN */}
 
                             {showDeadlines && (
@@ -805,7 +804,6 @@ const FamilyDashboard = () => {
                                         </button>
 
                                     </div>
-
 
                                     {/* DEADLINES */}
 
@@ -950,7 +948,6 @@ const FamilyDashboard = () => {
                             )}
 
                         </div>
-
 
                         <div className="hidden sm:block text-right">
 

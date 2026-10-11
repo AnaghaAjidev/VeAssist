@@ -363,8 +363,8 @@ const formatLocationResults = (data, latitude, longitude, categoryFilter = null)
 
         const distanceValue = calculateDistance(latitude, longitude, lat, lon);
         if ((tags.name || "").toLowerCase().includes("federal bank")) {
-    console.log("[DEBUG Federal Bank tags]", tags);
-}
+            console.log("[DEBUG Federal Bank tags]", tags);
+        }
         results.push({
             id: `${element.type}-${element.id}`,
             name,

@@ -236,19 +236,19 @@ const HelpMap = ({
 
                             {(hasValidCoordinates(location) ||
                                 location.address) && (
-                                <a
-                                    href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
-                                        hasValidCoordinates(location)
-                                            ? `${location.latitude},${location.longitude}`
-                                            : location.address
-                                    )}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-block mt-3 text-sm font-medium text-blue-700 underline"
-                                >
-                                    Get Directions
-                                </a>
-                            )}
+                                    <a
+                                        href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
+                                            hasValidCoordinates(location)
+                                                ? `${location.latitude},${location.longitude}`
+                                                : location.address
+                                        )}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-block mt-3 text-sm font-medium text-blue-700 underline"
+                                    >
+                                        Get Directions
+                                    </a>
+                                )}
                         </div>
                     </Popup>
                 </Marker>

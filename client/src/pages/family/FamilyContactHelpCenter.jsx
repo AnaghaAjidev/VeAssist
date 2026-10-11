@@ -867,16 +867,16 @@ const FamilyContactHelpCenter = () => {
                                                             </div>
                                                             {/* ACTIONS */}
                                                             {phone && (
-                        <div className="flex gap-2 lg:shrink-0">
-                            <a
-                                href={`tel:${phone}`}
-                                onClick={(e) => {
-                                    if (!isMobileDevice()) {
-                                        e.preventDefault();
-                                        handleContactAction(phone, "call");
-                                    }
-                                }}
-                                className="inline-flex items-center justify-center gap-2
+                                                                <div className="flex gap-2 lg:shrink-0">
+                                                                    <a
+                                                                        href={`tel:${phone}`}
+                                                                        onClick={(e) => {
+                                                                            if (!isMobileDevice()) {
+                                                                                e.preventDefault();
+                                                                                handleContactAction(phone, "call");
+                                                                            }
+                                                                        }}
+                                                                        className="inline-flex items-center justify-center gap-2
                                            px-4 py-2.5
                                            bg-[#0B1F3A]
                                            text-white
@@ -885,19 +885,19 @@ const FamilyContactHelpCenter = () => {
                                            transition
                                            text-sm
                                            font-semibold"
-                            >
-                                <Phone size={16} />
-                                Call
-                            </a>
-                            <a
-                                href={`sms:${phone}`}
-                                onClick={(e) => {
-                                    if (!isMobileDevice()) {
-                                        e.preventDefault();
-                                        handleContactAction(phone, "send an SMS");
-                                    }
-                                }}
-                                className="inline-flex items-center justify-center gap-2
+                                                                    >
+                                                                        <Phone size={16} />
+                                                                        Call
+                                                                    </a>
+                                                                    <a
+                                                                        href={`sms:${phone}`}
+                                                                        onClick={(e) => {
+                                                                            if (!isMobileDevice()) {
+                                                                                e.preventDefault();
+                                                                                handleContactAction(phone, "send an SMS");
+                                                                            }
+                                                                        }}
+                                                                        className="inline-flex items-center justify-center gap-2
                                            px-4 py-2.5
                                            bg-[#E8F1F8]
                                            text-[#163A63]
@@ -906,12 +906,12 @@ const FamilyContactHelpCenter = () => {
                                            transition
                                            text-sm
                                            font-semibold"
-                            >
-                                <MessageSquare size={16} />
-                                <span className="hidden sm:inline">SMS</span>
-                            </a>
-                        </div>
-                    )}
+                                                                    >
+                                                                        <MessageSquare size={16} />
+                                                                        <span className="hidden sm:inline">SMS</span>
+                                                                    </a>
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     );
                                                 }
